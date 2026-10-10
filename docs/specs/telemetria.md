@@ -109,16 +109,26 @@ Mismo esquema en ambos topics, en `GET /autos` y en el WebSocket.
 
 Jerarquía: **empresa → flotas → autos**. En el MVP los nombres visibles se derivan de los IDs (`emp-01` → "Empresa 01", `emp-01-f1` → "Flota 1"); no hay catálogo aparte.
 
-## 5. Escenario y ruta
+## 5. Rutas y escenario
 
-| Elemento | Valor |
-|---|---|
-| Ruta | **Av. Brasil**, de Plaza Bolognesi a Magdalena del Mar. Dos calzadas de un solo sentido de ~5,2 km cada una. |
-| Geometría | OpenStreetMap (© OpenStreetMap contributors, ODbL): 65 tramos `highway=primary` unidos en las polilíneas `ida` y `vuelta` (`telemetry-api/src/main/resources/rutas/av-brasil.geojson`). |
-| Autos | `auto-1` y `auto-2` (Empresa 01 · Flota 1) y `auto-3` (Empresa 02 · Flota 1). Salen del 0 %, 35 % y 70 % de la ruta a 42, 35 y 48 km/h (`resources/escenarios/av-brasil.json`). |
-| Frecuencia | 1 evento por auto y por segundo |
+Rutas establecidas, elegibles desde el dashboard. Cada una es una sola polilínea en el sentido de la carrera (de la salida a la meta):
 
-Para cambiar los autos o la ruta basta con editar el escenario o agregar otro GeoJSON con calzadas `ida` y `vuelta`.
+| id | Ruta | Salida → Meta | Longitud |
+|---|---|---|---|
+| `av-brasil` | Av. Brasil | Plaza Bolognesi → Magdalena del Mar | 5,2 km |
+| `panamericana-sur` | Panamericana Sur (PE-1S) | Puente Atocongo → Lurín | 20,5 km |
+| `panamericana-norte` | Panamericana Norte (PE-1N) | Av. Caquetá (Rímac) → Puente Piedra | 16,8 km |
+| `via-los-libertadores` | Vía Los Libertadores (PE-28A) | Pisco (San Clemente) → Ayacucho | 325 km |
+
+**Geometría.** Se tomó de OpenStreetMap (© OpenStreetMap contributors, ODbL). La de las carreteras se calculó con OSRM entre salida y meta y se recortó al tramo de la vía (PE-1S, PE-1N y PE-28A). Para la Vía Los Libertadores se usaron como puntos de paso nodos reales de la PE-28A, de modo que no tome otras carreteras. Las geometrías largas se simplificaron (Douglas-Peucker, 10 m).
+
+**Archivos.** `telemetry-api/src/main/resources/rutas/{id}.geojson` y el índice `rutas/indice.json`.
+
+**Escenario** (`resources/escenarios/carrera.json`):
+- `auto-1` y `auto-2` (Empresa 01 · Flota 1) y `auto-3` (Empresa 02 · Flota 1).
+- Velocidades iniciales de 60, 70 y 80 km/h, ajustables desde el dashboard entre 10 y 500 km/h.
+
+Para agregar una ruta basta con un GeoJSON de una `LineString` y su entrada en el índice.
 
 ## 6. Especificación de Kafka
 
@@ -144,22 +154,25 @@ Reglas:
 - Un solo broker, replicación 1 (solo local), imagen `apache/kafka:4.2.1`. No usar 4.0.x: por [KAFKA-19888](https://issues.apache.org/jira/browse/KAFKA-19888), un retroceso del reloj de la VM de Docker deja inutilizable el coordinador de grupos (los consumidores no se unen ni confirman offsets).
 - Si cambia el contrato del evento, recrear los topics: `ultima-posicion` está compactado y conserva el último evento de cada auto con el formato anterior.
 
-## 7. Simulación (feature `simulacion` de Quarkus)
+## 7. Carrera (feature `simulacion` de Quarkus)
 
 ### Requisitos funcionales
-- **RF-S1:** el escenario (JSON) define la ruta y los autos, con `carId`, `companyId`, `fleetId`, posición inicial (fracción de la calzada), calzada inicial (`ida`/`vuelta`) y velocidad de crucero.
-- **RF-S2:** cada auto avanza por su calzada a su velocidad (±3 km/h). Al final da media vuelta y sigue por la otra calzada, indefinidamente. El `heading` es el rumbo del tramo en el sentido de marcha.
-- **RF-S3:** cada 500 m hay un semáforo donde el auto para con 60 % de probabilidad durante 5–15 s. En el 20 % de esas paradas apaga el motor unos 20 s más (`engine=OFF`).
-- **RF-S4:** un temporizador de Vert.x publica cada **1 s** un evento por auto en `telemetria` (key `carId`, JSON compacto, canal `telemetria-out`). Al iniciar publica de inmediato la posición inicial.
-- **RF-S5:** arranca **detenida**. `iniciar` y `detener` son idempotentes. Al reiniciar, los autos vuelven a sus posiciones iniciales.
+- **RF-S1:** `iniciar(ruta)` coloca a todos los autos del escenario **en la salida** (km 0), con la velocidad elegida para cada uno. Todos avanzan **en un solo sentido**, hacia la meta.
+- **RF-S2:** cada auto avanza a su velocidad, que se puede cambiar en cualquier momento, también en plena carrera, entre **10 y 500 km/h**. El `heading` es el rumbo del tramo.
+- **RF-S3:** al cruzar la meta, el auto queda en el último punto con `engine=OFF` y registra su tiempo de llegada, interpolado dentro del intervalo. Cuando llegan todos, la carrera pasa a `TERMINADA`.
+- **RF-S4:** un temporizador de Vert.x avanza la carrera cada **1 s** y publica en `telemetria` un evento por cada auto que sigue en pista, más el evento final del que acaba de llegar (key `carId`, canal `telemetria-out`). Al iniciar se publica de inmediato la salida.
+- **RF-S5:** estados `LISTA` → `EN_CURSO` → `TERMINADA`. `detener` corta la carrera y los autos quedan donde están. Iniciar de nuevo empieza otra carrera desde la salida. Las velocidades elegidas se conservan entre carreras.
+- **RF-S6:** la clasificación ordena primero a los que llegaron (por tiempo) y luego a los que corren (por distancia recorrida).
 
 ### Contratos
 | Endpoint | Respuesta |
 |---|---|
-| `GET /simulacion` | `{"enCurso": bool, "escenario": "av-brasil", "autos": 3, "desde": ISO-8601 \| null}` |
-| `POST /simulacion/iniciar` | Estado tras iniciar |
+| `GET /rutas` | `[{"id","nombre","desde","hasta","km"}]` |
+| `GET /rutas/{id}` | GeoJSON (`application/geo+json`) con una `LineString`; 404 `RUTA_NO_ENCONTRADA` |
+| `GET /simulacion` | `{"estado","ruta","inicio","longitudM","autos":[{"posicion","carId","companyId","fleetId","velocidadKmh","recorridoM","llegadaMs"}]}` |
+| `POST /simulacion/iniciar` | Cuerpo `{"ruta":"panamericana-sur"}` → estado de la nueva carrera; 400 `RUTA_REQUERIDA`, 404 `RUTA_NO_ENCONTRADA` |
 | `POST /simulacion/detener` | Estado tras detener |
-| `GET /rutas/{nombre}` | GeoJSON (`application/geo+json`) con las calzadas `ida` y `vuelta`; 404 `RUTA_NO_ENCONTRADA` si no existe |
+| `PUT /simulacion/autos/{carId}/velocidad` | Cuerpo `{"kmh":120}` → estado; 400 `VELOCIDAD_INVALIDA` (fuera de 10–500), 404 `AUTO_NO_ENCONTRADO` |
 
 ### Configuración
 ```properties
@@ -167,7 +180,7 @@ mp.messaging.outgoing.telemetria-out.connector=smallrye-kafka
 mp.messaging.outgoing.telemetria-out.topic=telemetria
 mp.messaging.outgoing.telemetria-out.key.serializer=org.apache.kafka.common.serialization.StringSerializer
 mp.messaging.outgoing.telemetria-out.value.serializer=org.apache.kafka.common.serialization.StringSerializer
-simulacion.escenario=av-brasil
+simulacion.escenario=carrera
 simulacion.intervalo-ms=1000
 ```
 

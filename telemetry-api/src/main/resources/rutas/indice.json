@@ -1,0 +1,30 @@
+[
+  {
+    "id": "av-brasil",
+    "nombre": "Av. Brasil",
+    "desde": "Plaza Bolognesi",
+    "hasta": "Magdalena del Mar",
+    "km": 5.2
+  },
+  {
+    "id": "panamericana-sur",
+    "nombre": "Panamericana Sur",
+    "desde": "Puente Atocongo",
+    "hasta": "Lurín",
+    "km": 20.5
+  },
+  {
+    "id": "panamericana-norte",
+    "nombre": "Panamericana Norte",
+    "desde": "Av. Caquetá (Rímac)",
+    "hasta": "Puente Piedra",
+    "km": 16.8
+  },
+  {
+    "id": "via-los-libertadores",
+    "nombre": "Vía Los Libertadores",
+    "desde": "Pisco (San Clemente)",
+    "hasta": "Ayacucho",
+    "km": 325.0
+  }
+]

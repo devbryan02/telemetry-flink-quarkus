@@ -1,0 +1,8 @@
+{
+  "nombre": "Carrera de 3 autos",
+  "autos": [
+    { "carId": "auto-1", "companyId": "emp-01", "fleetId": "emp-01-f1", "velocidadKmh": 60 },
+    { "carId": "auto-2", "companyId": "emp-01", "fleetId": "emp-01-f1", "velocidadKmh": 70 },
+    { "carId": "auto-3", "companyId": "emp-02", "fleetId": "emp-02-f1", "velocidadKmh": 80 }
+  ]
+}
