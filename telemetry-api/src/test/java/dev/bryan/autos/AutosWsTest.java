@@ -13,6 +13,7 @@ import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySource;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import java.util.List;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -56,8 +57,8 @@ class AutosWsTest {
     }
 
     private void publicar(Auto auto) {
-        InMemorySource<Auto> fuente = connector.source("ultima-posicion");
-        fuente.send(auto);
+        InMemorySource<List<Auto>> fuente = connector.source("ultima-posicion");
+        fuente.send(List.of(auto));  // el canal consume por lotes
     }
 
     @Test

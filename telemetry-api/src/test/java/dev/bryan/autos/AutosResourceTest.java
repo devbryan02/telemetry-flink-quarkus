@@ -13,6 +13,7 @@ import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySource;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import java.util.List;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +29,8 @@ class AutosResourceTest {
     AutosStore store;
 
     private void publicar(Auto auto) {
-        InMemorySource<Auto> fuente = connector.source("ultima-posicion");
-        fuente.send(auto);
+        InMemorySource<List<Auto>> fuente = connector.source("ultima-posicion");
+        fuente.send(List.of(auto));  // el canal consume por lotes
     }
 
     @Test

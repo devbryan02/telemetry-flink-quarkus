@@ -336,7 +336,7 @@ Notas de classpath:
 | Filtro espacial | No | `GET /autos?bbox=minLon,minLat,maxLon,maxLat` (opcional) |
 
 ### Requisitos funcionales
-- **RF-Q1:** consumir `ultima-posicion` y actualizar el mapa en memoria.
+- **RF-Q1:** consumir `ultima-posicion` y actualizar el mapa en memoria. El consumidor recibe **lotes** (`batch=true`, `List<Auto>`) y es `@NonBlocking`: un `void recibir(Auto)` se ejecuta como bloqueante, con un salto de hilo por mensaje, y medido con 10.000 autos acumulaba ~11 s de atraso.
 - **RF-Q2:** marcar cada auto actualizado en un set de "sucios".
 - **RF-Q3:** cada 500 ms, emitir por WebSocket un único mensaje JSON con el arreglo de autos sucios y limpiar el set.
 - **RF-Q4:** `GET /autos` devuelve el estado completo (≈ 1 MB sin comprimir).
@@ -363,6 +363,7 @@ kafka.bootstrap.servers=localhost:9092
 mp.messaging.incoming.ultima-posicion.connector=smallrye-kafka
 mp.messaging.incoming.ultima-posicion.group.id=quarkus-dash
 mp.messaging.incoming.ultima-posicion.auto.offset.reset=earliest
+mp.messaging.incoming.ultima-posicion.batch=true
 quarkus.http.cors.enabled=true
 quarkus.http.cors.origins=http://localhost:3000
 quarkus.http.enable-compression=true
