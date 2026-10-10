@@ -54,3 +54,15 @@ Mapa con shadcn/ui y mapcn (MapLibre): toda la flota se pinta en una sola capa W
 La carga inicial llega por `GET /autos` (axios) y los cambios por WebSocket; si el backend se cae, el cliente reconecta solo.
 La tarjeta superior muestra autos visibles, lotes/s, edad del último dato y latencia p95 (`Date.now() - ts`).
 `components/ui/` es código generado por las CLIs de shadcn/mapcn y no pasa por el lint.
+
+## Pruebas de carga
+
+Con Kafka, `telemetry-api` y el dashboard arriba:
+
+```bash
+./scripts/medir-carga.sh 10000 600          # simulador + muestreo de lag, CPU y memoria (tabla Markdown)
+# en paralelo, con Edge/Chrome abierto con --remote-debugging-port=9222:
+node scripts/medir-navegador.mjs http://localhost:3000 15   # FPS y latencia p95 leídos del dashboard
+```
+
+Resultados y criterios de aceptación: [`docs/plans/resultados-carga.md`](docs/plans/resultados-carga.md).

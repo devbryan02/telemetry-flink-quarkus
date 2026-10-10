@@ -36,9 +36,10 @@ final class UltimaPosicionJob {
                 .setStartingOffsets(OffsetsInitializer.latest())
                 .setValueOnlyDeserializer(new PosicionJson.Deserializador())
                 // Sin checkpoints Flink no confirma offsets; el auto-commit del consumidor los confirma
-                // para poder medir el lag del grupo (spec §11). No afecta al procesamiento.
+                // para poder medir el lag del grupo (spec §11). Cada 100 ms, para que la lectura del lag no
+                // se infle con lo acumulado entre confirmaciones. No afecta al procesamiento.
                 .setProperty("enable.auto.commit", "true")
-                .setProperty("auto.commit.interval.ms", "1000")
+                .setProperty("auto.commit.interval.ms", "100")
                 .build();
 
         KafkaSink<Posicion> destino = KafkaSink.<Posicion>builder()
