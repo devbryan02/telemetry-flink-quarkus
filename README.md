@@ -51,7 +51,7 @@ npm install
 npm run dev                     # http://localhost:3000
 ```
 
-Mapa con shadcn/ui y mapcn (MapLibre): toda la flota se pinta en una sola capa WebGL `circle`, verde con motor encendido y rojo apagado.
+Mapa con shadcn/ui y mapcn (MapLibre). Sin selección se ve una burbuja por empresa y los autos particulares sueltos (verde: motor encendido, rojo: apagado). Al elegir una empresa (en el selector o con clic en su burbuja) aparecen sus flotas, y desde zoom 14, sus autos. Las burbujas que se solapan se fusionan y abren una lista para elegir.
 La carga inicial llega por `GET /autos` (axios) y los cambios por WebSocket; si el backend se cae, el cliente reconecta solo.
 La tarjeta superior muestra autos visibles, lotes/s, edad del último dato y latencia p95 (`Date.now() - ts`).
 `components/ui/` es código generado por las CLIs de shadcn/mapcn y no pasa por el lint.

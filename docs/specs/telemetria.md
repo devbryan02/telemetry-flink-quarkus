@@ -433,7 +433,13 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
 - **RF-U3:** instancia axios en `lib/` (`baseURL = NEXT_PUBLIC_API_URL`) usada por `features/autos/api.ts` para `GET /autos`; hook `features/autos/hooks/use-autos-socket.ts` con WebSocket nativo y reconexión con backoff. Cada lote se **fusiona por `carId`** en un `Map<carId, Auto>` guardado en `useRef` (no en estado React, para no re-renderizar 10.000 elementos) y se aplica con un único `source.setData()` por `requestAnimationFrame`.
 - **RF-U4:** color por `engine` con una expresión de estilo: `["match", ["get","engine"], "ON", "#16a34a", "#dc2626"]` (verde `ON`, rojo `OFF`).
 - **RF-U5:** el popup/tooltip se crea solo en `mouseenter` sobre la capa (`map.on('mouseenter', 'autos', ...)`), no para los 10.000.
-- **RF-U6:** contador en pantalla con un `Card` de shadcn: autos visibles, lotes/s y edad del último dato.
+- **RF-U6:** contador en pantalla con un `Card` de shadcn: autos en pantalla, lotes/s, edad del último dato y latencia p95; empresas, flotas y particulares, o, con una empresa seleccionada, sus autos, flotas y % de motor encendido.
+- **RF-U7 (empresas y flotas):** nunca se pintan todos los autos de empresa a la vez.
+  - **Sin selección:** una burbuja por empresa (marcador de mapcn) anclada en su flota más grande, con el total y una barra de % de motor encendido. Los particulares siempre se ven sueltos.
+  - **Al elegir una empresa** (con el `Select` del panel o con clic en su burbuja): se ven sus flotas como burbujas y el mapa se encuadra en la empresa.
+  - **Desde zoom 14:** las burbujas de flota dan paso a los autos individuales de esa empresa. Clic en una flota acerca el zoom a ella.
+  - **Burbujas solapadas:** si quedarían a menos de 70 px en pantalla, se fusionan ("3 flotas"), con borde punteado y una lista para elegir. Se recalculan al terminar cada movimiento del mapa.
+- **RF-U8:** la agregación por empresa y por flota (`features/autos/agrupar.ts`) son funciones puras O(n) que se ejecutan en el mismo `requestAnimationFrame` del repintado y se publican al estado de React como mucho cada 500 ms.
 
 > Si hiciera falta más rendimiento, la alternativa es deck.gl `ScatterplotLayer` sobre el mismo mapa MapLibre.
 
