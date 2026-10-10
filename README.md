@@ -1,6 +1,6 @@
 # Telemetría de autos en tiempo real
 
-Tres autos simulados recorren la **Av. Brasil** (Lima) y se siguen en un mapa en tiempo real:
+**Carreras** de 3 autos simulados en rutas reales del Perú, seguidas en un mapa en tiempo real:
 simulación en Quarkus → Kafka → Flink embebido en Quarkus → WebSocket → Next.js.
 Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Planes: [`docs/plans/`](docs/plans/README.md).
 
@@ -33,29 +33,39 @@ Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Plane
    npm run dev                        # http://localhost:3000
    ```
 
-4. En el dashboard, pulsa **"Iniciar simulación"**.
+4. En el dashboard, elige una ruta y pulsa **"Iniciar carrera"**.
 
 ## Qué se ve
 
-- **Ruta:** la Av. Brasil dibujada, con sus dos calzadas sacadas de OpenStreetMap.
-- **Autos:** 3 íconos de vehículo que circulan por su calzada y dan media vuelta en los extremos.
-  - Van orientados según su rumbo y son verdes o rojos según el motor.
-  - Paran a veces en semáforos.
-  - Su movimiento se interpola, así que circulan sin saltar.
-- **Filtro empresa → flota:** "Empresa 01" muestra sus 2 autos y "Empresa 02" su único auto; con la flota se acota todavía más.
-- **Panel:** conexión, autos mostrados, edad del último dato y latencia p95. Al pasar el mouse sobre un auto se ven su empresa, flota, motor y batería.
+- **Rutas establecidas:** se eligen en un selector y se dibujan con su Salida y su Meta (geometría de OpenStreetMap).
+
+  | Ruta | Salida → Meta | Longitud |
+  |---|---|---|
+  | Av. Brasil | Plaza Bolognesi → Magdalena del Mar | 5,2 km |
+  | Panamericana Sur | Puente Atocongo → Lurín | 20,5 km |
+  | Panamericana Norte | Av. Caquetá (Rímac) → Puente Piedra | 16,8 km |
+  | Vía Los Libertadores | Pisco → Ayacucho | 325 km |
+
+- **Carrera:** los 3 autos salen juntos y en un solo sentido; al llegar a la meta se detienen con su tiempo.
+  - La clasificación se actualiza en vivo y "Nueva carrera" los devuelve a la salida.
+  - Cada auto tiene un **slider de velocidad** (10–500 km/h) que se puede mover en plena carrera.
+  - **"Seguir al líder"** centra el mapa en el primero, útil en la ruta de 325 km.
+- **Autos:** íconos de vehículo orientados según su rumbo, con movimiento interpolado entre posiciones.
+- **Filtro empresa → flota:** "Empresa 01" muestra sus 2 autos y "Empresa 02" su único auto.
+- **Panel:** conexión, edad del último dato y latencia p95. Al pasar el mouse sobre un auto se ven su empresa, flota, motor y batería.
 
 ## API
 
 | Endpoint | Descripción |
 |---|---|
-| `POST /simulacion/iniciar` · `POST /simulacion/detener` · `GET /simulacion` | Control y estado de la simulación |
+| `GET /rutas` · `GET /rutas/{id}` | Rutas establecidas y su GeoJSON (de la salida a la meta) |
+| `POST /simulacion/iniciar` `{"ruta":"panamericana-sur"}` · `POST /simulacion/detener` · `GET /simulacion` | Control de la carrera y clasificación |
+| `PUT /simulacion/autos/{carId}/velocidad` `{"kmh":120}` | Velocidad de un auto (10–500 km/h) |
 | `GET /autos` | Última posición de cada auto (`?bbox=minLon,minLat,maxLon,maxLat` para filtrar) |
 | `WS /ws/autos` | Cada 500 ms, un arreglo con los autos que cambiaron |
-| `GET /rutas/av-brasil` | GeoJSON de la ruta (calzadas `ida` y `vuelta`) |
 
 ## Notas
 
 - **Estado del backend:** vive en memoria y se reconstruye al arrancar releyendo `ultima-posicion` desde el inicio. Si detienes el proceso a la fuerza, el grupo `quarkus-dash` puede tardar hasta ~45 s en reasignar particiones.
-- **Escenario:** el escenario (autos, empresas, flotas, velocidades) está en `telemetry-api/src/main/resources/escenarios/av-brasil.json`, y la ruta en `resources/rutas/av-brasil.geojson`.
+- **Autos y rutas:** los autos (empresa, flota, velocidad inicial) están en `telemetry-api/src/main/resources/escenarios/carrera.json`; las rutas, en `resources/rutas/` (`indice.json` y un GeoJSON por ruta).
 - **Código generado:** `dashboard-next/components/ui/` lo generan las CLIs de shadcn/mapcn y no pasa por el lint.

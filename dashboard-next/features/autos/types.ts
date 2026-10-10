@@ -15,11 +15,36 @@ export type Auto = {
   ts: number
 }
 
-/** Estado de la simulación en el backend (`GET /simulacion`). */
+/** Ruta establecida (`GET /rutas`). */
+export type ResumenRuta = {
+  id: string
+  nombre: string
+  desde: string
+  hasta: string
+  km: number
+}
+
+export type EstadoCarrera = "LISTA" | "EN_CURSO" | "TERMINADA"
+
+/** Un auto en la clasificación de la carrera. */
+export type Clasificado = {
+  posicion: number
+  carId: string
+  companyId: string | null
+  fleetId: string | null
+  velocidadKmh: number
+  recorridoM: number
+  /** Tiempo de carrera al cruzar la meta; `null` mientras corre */
+  llegadaMs: number | null
+}
+
+/** Estado de la carrera en el backend (`GET /simulacion`). */
 export type EstadoSimulacion = {
-  enCurso: boolean
-  escenario: string
-  autos: number
-  /** ISO-8601; `null` si está detenida */
-  desde: string | null
+  estado: EstadoCarrera
+  /** Ruta de la carrera actual o de la última; `null` antes de la primera */
+  ruta: string | null
+  /** ISO-8601 */
+  inicio: string | null
+  longitudM: number
+  autos: Clasificado[]
 }
