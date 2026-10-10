@@ -146,7 +146,8 @@ kafka-topics.sh --create --topic ultima-posicion --partitions 12 --bootstrap-ser
 
 Reglas:
 - La key es siempre `carId`: mismo auto, misma partición, orden garantizado.
-- Un solo broker, replicación 1 (solo local).
+- Un solo broker, replicación 1 (solo local), imagen `apache/kafka:4.2.1`. No usar 4.0.x: por [KAFKA-19888](https://issues.apache.org/jira/browse/KAFKA-19888), un retroceso del reloj de la VM de Docker deja inutilizable el coordinador de grupos (los consumidores no se unen ni confirman offsets).
+- Si cambia el contrato del evento, recrear los topics (`./scripts/crear-topics.sh --recrear`): `ultima-posicion` está compactado y conserva el último evento de cada auto con el formato anterior.
 
 ## 7. Simulador (Python)
 
@@ -540,6 +541,7 @@ Organización **por features** en backend y frontend (ver `knowledge/standards/S
 | Flink y Quarkus comparten heap | Backpressure, GC largos | Subir `-Xmx`, paralelismo 2-4, o sacar Flink a Docker (v5) |
 | Classloaders de Flink dentro de Quarkus | El job no arranca (`ClassNotFoundException`) | `pipeline.classpaths` con las clases de la app y `parent-first` (§8) |
 | Flink embebido sin `--add-opens` (no observado con JDK 17.0.20) | `InaccessibleObjectException` al serializar | Pasar los flags JVM de §8 en dev y en el jar |
+| Coordinador de grupos de Kafka 4.0.x con el reloj de la VM retrocediendo (KAFKA-19888) | Consumidores sin unirse ni confirmar offsets, lag que crece sin fin | Kafka 4.2.1 (§6) |
 | `ultima-posicion` sin compactar en desarrollo | Al arrancar, Quarkus relee todo el historial del topic | La compactación solo actúa sobre segmentos cerrados; si molesta, bajar `segment.ms` del topic |
 | Conflictos de classpath Flink/Quarkus | Errores al arrancar (`kafka-clients`, classloader de dev mode) | Excluir `kafka-clients` del conector; si dev mode falla, ejecutar con el jar (`quarkus-run.jar`) |
 | `GET /autos` de 1 MB en cada carga | Arranque lento | Compresión HTTP y filtro `bbox` |

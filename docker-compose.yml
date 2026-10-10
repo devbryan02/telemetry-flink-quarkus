@@ -1,6 +1,8 @@
 services:
   kafka:
-    image: apache/kafka:4.0.0
+    # 4.1.2+ corrige KAFKA-19888: con 4.0.0, un retroceso del reloj (frecuente en la VM de Docker Desktop)
+    # deja inutilizable el coordinador de grupos y los consumidores no pueden unirse ni confirmar offsets.
+    image: apache/kafka:4.2.1
     container_name: telemetria-kafka
     ports:
       - "9092:9092"
