@@ -83,35 +83,40 @@ sequenceDiagram
 
 ## 4. Modelo de datos
 
-Mismo esquema en ambos topics (≈ **101 bytes** por evento en JSON compacto, medido).
+Mismo esquema en ambos topics, en `GET /autos` y en el WebSocket (≈ **145 bytes** por evento en JSON compacto, medido).
 
 ```json
-{"carId":"auto-1","lat":-12.0471,"lon":-77.0419,"engine":"ON","battery":87,"ts":1760000000000}
+{"carId":"auto-1","companyId":"emp-03","fleetId":"emp-03-f2","lat":-12.0471,"lon":-77.0419,"heading":135,"engine":"ON","battery":87,"ts":1760000000000}
 ```
 
 | Campo | Tipo | Descripción | Restricciones |
 |---|---|---|---|
 | `carId` | string | Identificador del auto | No nulo; igual a la key del mensaje |
+| `companyId` | string \| null | Empresa dueña del auto | `null` = auto particular |
+| `fleetId` | string \| null | Flota dentro de la empresa | `null` si y solo si `companyId` es `null`; empieza por el `companyId` |
 | `lat` | double | Latitud | -90 a 90 |
 | `lon` | double | Longitud | -180 a 180 |
+| `heading` | int | Rumbo en grados desde el norte, sentido horario | 0 a 359; se conserva con el auto detenido |
 | `engine` | string | Estado del motor | `ON` / `OFF` |
 | `battery` | int | Batería en % | 0 a 100 |
 | `ts` | long | Epoch ms UTC del evento | > 0 |
+
+Jerarquía: **empresa → flotas → autos**, más autos particulares sin empresa. En el MVP los nombres visibles se derivan de los IDs (`emp-03` → "Empresa 03", `emp-03-f2` → "Flota 2"); no hay catálogo aparte.
 
 ## 5. Dimensionamiento
 
 | Magnitud | Cálculo | Resultado |
 |---|---|---|
 | Eventos por segundo | 10.000 ÷ 2 s | **5.000 ev/s** |
-| Ancho de banda de entrada | 5.000 × 101 B | **≈ 0,5 MB/s** (sin comprimir) |
+| Ancho de banda de entrada | 5.000 × 145 B | **≈ 0,7 MB/s** (sin comprimir) |
 | Eventos por día | 5.000 × 86.400 | 432 millones |
-| Volumen por día en `telemetria` | 432 M × 101 B | **≈ 43,6 GB/día** |
+| Volumen por día en `telemetria` | 432 M × 145 B | **≈ 63 GB/día** |
 | Estado de Flink | 10.000 claves × ~100 B | < 2 MB |
 | Estado de Quarkus | 10.000 autos × ~150 B | < 3 MB |
-| Respuesta de `GET /autos` | 10.000 × 101 B | **≈ 1 MB** |
+| Respuesta de `GET /autos` | 10.000 × 145 B | **≈ 1,5 MB** |
 
 **Decisiones derivadas**
-- Retención de `telemetria` en **1 hora** (≈ 1,8 GB) para desarrollo, en vez de 7 días.
+- Retención de `telemetria` en **1 hora** (≈ 2,6 GB) para desarrollo, en vez de 7 días.
 - `ultima-posicion` con **log compaction** (queda solo el último valor por auto).
 - **12 particiones** en ambos topics, para poder escalar paralelismo hasta 12.
 - El cuello de botella no es Kafka ni Flink, es **entregar 5.000 mensajes/s a un navegador**. De ahí el envío por lotes.
@@ -146,10 +151,11 @@ Reglas:
 ## 7. Simulador (Python)
 
 ### Requisitos funcionales
-- **RF-S1:** `N` autos (por defecto 10.000), posición inicial aleatoria en torno a Lima (-12.0464, -77.0428), ±0.1°.
+- **RF-S1:** `N` autos (por defecto 10.000). Una fracción `--particulares` (por defecto 20 %) son autos particulares. El resto se reparte entre `--empresas` empresas (por defecto 12) con tamaños sesgados (pocas grandes, muchas chicas), y cada empresa se divide en flotas de 5 a 300 autos, con distribución log-uniforme: abundan las de 10 a 30.
+- **RF-S1b:** cada flota opera alrededor de un *hub* situado en un distrito real de Lima y Callao (lista ponderada de 15 centros) y sus autos nacen cerca (σ ≈ 1–2 km). Los particulares se reparten por los distritos con más dispersión (σ ≈ 3 km). `--semilla` repite exactamente las mismas empresas, flotas y posiciones.
 - **RF-S2:** cada auto reporta cada `INTERVALO` s (por defecto 2).
 - **RF-S3:** el envío se **reparte en 100 rebanadas** (100 autos cada 20 ms) para evitar ráfagas de 10.000 mensajes simultáneos.
-- **RF-S4:** movimiento aleatorio de ±0.0005° por evento; motor cambia de estado con 1 % de probabilidad; batería baja gradualmente.
+- **RF-S4:** cada auto tiene velocidad (20–50 km/h) y rumbo con giros suaves (σ 15° por evento), así que el `heading` es estable. Con motor OFF el auto está detenido. Los autos de flota vuelven hacia su hub si se alejan más de 2,5σ, y ningún auto sale de Lima. El motor cambia de estado con 1 % de probabilidad; la batería baja mientras el auto anda.
 - **RF-S5:** key = `carId`, value = JSON compacto.
 
 ### Configuración del productor
@@ -163,7 +169,7 @@ Reglas:
 | `buffer_memory` | 128 MB | Absorbe picos |
 
 ### Parámetros de línea de comandos
-`--autos 10000 --intervalo 2 --rebanadas 100 --bench --duracion 5`
+`--autos 10000 --intervalo 2 --rebanadas 100 --empresas 12 --particulares 0.2 --semilla 7 --bench --duracion 5`
 
 El modo `--bench` mide cuántos eventos/s puede **generar** el simulador sin Kafka.
 
@@ -171,9 +177,9 @@ El modo `--bench` mide cuántos eventos/s puede **generar** el simulador sin Kaf
 
 | Métrica | Valor |
 |---|---|
-| Eventos generados + serializados | **≈ 163.000 ev/s** |
+| Eventos generados + serializados | **≈ 170.000–198.000 ev/s** |
 | Necesario para 10.000 autos / 2 s | 5.000 ev/s |
-| Margen de generación | ≈ 32× |
+| Margen de generación | ≈ 34× |
 
 La generación no es el límite. El límite será el cliente Kafka, que normalmente rinde decenas de miles de mensajes/s con estos ajustes. Si no alcanzara, se lanzan varios procesos con rangos de autos distintos (`--desde` / `--hasta`).
 
