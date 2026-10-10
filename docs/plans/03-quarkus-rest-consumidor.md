@@ -8,7 +8,7 @@
 - **No incluye:** WebSocket (04) ni Flink (05). Se prueba publicando a mano en `ultima-posicion`.
 
 ## Tareas
-- [ ] Crear el proyecto Quarkus 3.40 (Java 17, Maven) con las extensiones de spec §9: `rest`, `rest-jackson`, `websockets-next`, `messaging-kafka`, `scheduler`.
+- [ ] Proyecto base ya creado en `telemetry-api/` (Quarkus 3.40.1, Java 17, `rest` + `arc`). Añadir las extensiones faltantes de spec §9: `rest-jackson`, `websockets-next`, `messaging-kafka`, `scheduler`; eliminar `GreetingResource` y sus tests.
 - [ ] `application.properties` según §9 (Kafka, `auto.offset.reset=earliest`, CORS `http://localhost:3000`, compresión).
 - [ ] `autos/Auto` como `record` con el esquema §4.
 - [ ] `autos/AutosStore`: `ConcurrentHashMap<String, Auto>` + set concurrente de "sucios"; solo reemplaza si `ts` es mayor.
@@ -18,11 +18,11 @@
 - [ ] Tests: store (ts viejo no reemplaza), resource (lista y bbox).
 
 ## Archivos
-`backend-quarkus/pom.xml` · `backend-quarkus/src/main/resources/application.properties` · `.../autos/{Auto,AutosStore,AutosConsumer,AutosResource}.java` · `.../shared/error/*.java` · tests en `src/test`.
+`telemetry-api/pom.xml` · `telemetry-api/src/main/resources/application.properties` · `.../autos/{Auto,AutosStore,AutosConsumer,AutosResource}.java` · `.../shared/error/*.java` · tests en `src/test`.
 
 ## Verificación
 ```bash
-cd backend-quarkus && ./mvnw test
+cd telemetry-api && ./mvnw test
 ./mvnw quarkus:dev
 # publicar 2 eventos del mismo auto con ts distinto en ultima-posicion
 curl -s localhost:8080/autos | jq length

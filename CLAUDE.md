@@ -43,7 +43,7 @@ Decisiones que no son obvias si no se lee toda la spec:
 docker compose up -d                                   # Kafka KRaft :9092
 kafka-topics.sh --create --topic telemetria --partitions 12 --bootstrap-server localhost:9092 --config retention.ms=3600000
 kafka-topics.sh --create --topic ultima-posicion --partitions 12 --bootstrap-server localhost:9092 --config cleanup.policy=compact
-cd backend-quarkus && ./mvnw quarkus:dev -Djvm.args="--add-opens=java.base/java.lang=ALL-UNNAMED ..."   # :8080 + Flink UI :8081
+cd telemetry-api && ./mvnw quarkus:dev -Djvm.args="--add-opens=java.base/java.lang=ALL-UNNAMED ..."   # :8080 + Flink UI :8081
 cd dashboard-next && npm run dev                       # :3000
 python simulador/simulador.py --autos 10000 --intervalo 2   # --bench para medir solo generación
 kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group flink-ultima-pos   # lag (también quarkus-dash)

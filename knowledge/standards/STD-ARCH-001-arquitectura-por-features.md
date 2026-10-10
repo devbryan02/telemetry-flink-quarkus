@@ -5,7 +5,7 @@ El código se organiza **por feature (capacidad de negocio)**, no por capa técn
 ## Backend (Quarkus)
 
 ```text
-com.comsatel.telemetria
+dev.bryan
 ├── autos/                  feature: estado y difusión de la última posición
 │   ├── Auto.java           record del evento (esquema de la spec §4)
 │   ├── AutosStore.java     ConcurrentHashMap + set de "sucios"
