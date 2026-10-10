@@ -1,5 +1,6 @@
 package dev.bryan.simulacion;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.bryan.shared.error.ComsatelException;
@@ -13,49 +14,50 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/** Lee las rutas (`resources/rutas/*.geojson`) y los escenarios (`resources/escenarios/*.json`). */
+/** Rutas de carrera (`resources/rutas/indice.json` y `*.geojson`) y escenarios (`resources/escenarios`). */
 @ApplicationScoped
 class CatalogoRutas {
 
     private static final Pattern NOMBRE_VALIDO = Pattern.compile("[a-z0-9-]{1,40}");
 
-    /** Las dos calzadas de una avenida, cada una en su sentido de circulación. */
-    record Calzadas(Ruta ida, Ruta vuelta) {
+    /** Resumen de una ruta para el selector del dashboard. */
+    record Resumen(String id, String nombre, String desde, String hasta, double km) {
     }
 
     @Inject
     ObjectMapper mapper;
 
+    List<Resumen> listar() {
+        try (InputStream in = abrir("rutas/indice.json")) {
+            return mapper.readValue(in, new TypeReference<List<Resumen>>() {
+            });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    Resumen resumen(String id) {
+        return listar().stream().filter(r -> r.id().equals(id)).findFirst().orElseThrow(() -> noEncontrada(id));
+    }
+
     /** El GeoJSON de la ruta tal cual, para dibujarla en el dashboard. */
-    byte[] geojson(String nombre) {
-        try (InputStream in = abrir("rutas/" + validar(nombre) + ".geojson")) {
+    byte[] geojson(String id) {
+        try (InputStream in = abrir("rutas/" + validar(id) + ".geojson")) {
             return in.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    Calzadas calzadas(String nombre) {
-        try (InputStream in = abrir("rutas/" + validar(nombre) + ".geojson")) {
-            JsonNode raiz = mapper.readTree(in);
-            Ruta ida = null;
-            Ruta vuelta = null;
-            for (JsonNode feature : raiz.path("features")) {
-                List<double[]> coordenadas = new ArrayList<>();
-                for (JsonNode c : feature.path("geometry").path("coordinates")) {
-                    coordenadas.add(new double[] {c.get(0).asDouble(), c.get(1).asDouble()});
-                }
-                String sentido = feature.path("properties").path("sentido").asText();
-                if ("ida".equals(sentido)) {
-                    ida = new Ruta(coordenadas);
-                } else if ("vuelta".equals(sentido)) {
-                    vuelta = new Ruta(coordenadas);
-                }
+    /** La polilínea de la ruta en el sentido de la carrera (de la salida a la meta). */
+    Ruta ruta(String id) {
+        try (InputStream in = abrir("rutas/" + validar(id) + ".geojson")) {
+            JsonNode linea = mapper.readTree(in).path("features").path(0).path("geometry").path("coordinates");
+            List<double[]> coordenadas = new ArrayList<>();
+            for (JsonNode c : linea) {
+                coordenadas.add(new double[] {c.get(0).asDouble(), c.get(1).asDouble()});
             }
-            if (ida == null || vuelta == null) {
-                throw new IllegalStateException("La ruta " + nombre + " necesita las calzadas 'ida' y 'vuelta'");
-            }
-            return new Calzadas(ida, vuelta);
+            return new Ruta(coordenadas);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -85,6 +87,6 @@ class CatalogoRutas {
     }
 
     private static ComsatelException noEncontrada(String nombre) {
-        return new ComsatelException(Response.Status.NOT_FOUND, "RUTA_NO_ENCONTRADA", "No existe la ruta o escenario " + nombre);
+        return new ComsatelException(Response.Status.NOT_FOUND, "RUTA_NO_ENCONTRADA", "No existe la ruta " + nombre);
     }
 }

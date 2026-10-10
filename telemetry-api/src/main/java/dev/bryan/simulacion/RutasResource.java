@@ -5,8 +5,10 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 
-/** Geometría de las rutas simuladas (GeoJSON con las calzadas de ida y vuelta) para dibujarlas. */
+/** Rutas de carrera disponibles y su geometría (GeoJSON, de la salida a la meta). */
 @Path("/rutas")
 public class RutasResource {
 
@@ -14,9 +16,15 @@ public class RutasResource {
     CatalogoRutas catalogo;
 
     @GET
-    @Path("/{nombre}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<CatalogoRutas.Resumen> listar() {
+        return catalogo.listar();
+    }
+
+    @GET
+    @Path("/{id}")
     @Produces("application/geo+json")
-    public byte[] ruta(@PathParam("nombre") String nombre) {
-        return catalogo.geojson(nombre);
+    public byte[] ruta(@PathParam("id") String id) {
+        return catalogo.geojson(id);
     }
 }
