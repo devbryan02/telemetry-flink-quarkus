@@ -37,3 +37,6 @@ El estado vive en memoria y se reconstruye al arrancar releyendo `ultima-posicio
 Si detienes el proceso a la fuerza, el grupo `quarkus-dash` puede tardar hasta ~45 s en reasignar particiones.
 
 Cliente WebSocket de prueba (Node 22+): `new WebSocket('ws://localhost:8080/ws/autos')` recibe cada 500 ms un arreglo con los autos que cambiaron.
+
+El job de Flink corre dentro de Quarkus y arranca solo; su UI queda en http://localhost:8081.
+Para probarlo de punta a punta: `simulador.py --autos 1000` escribe en `telemetria`, Flink publica en `ultima-posicion` y `GET /autos` refleja los cambios.
