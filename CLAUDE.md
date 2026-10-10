@@ -16,7 +16,7 @@ Simulador Python ──► Kafka "telemetria" (12 part., retención 1 h, key=car
           │     KafkaSource → keyBy(carId) → KeyedProcessFunction(ValueState<ts>)  │
           │     → KafkaSink "ultima-posicion" (compact)                            │
           │  @Incoming ultima-posicion → AutosStore (ConcurrentHashMap + "sucios") │
-          │     → GET /autos   ·   @Scheduled 500 ms → WS /ws/autos (lotes)        │
+          │     → GET /autos   ·   Vert.x timer 500 ms → WS /ws/autos (lotes)     │
           └────────────────────────────────────────────────────────────────────────┘
                          │
           Next.js 16 + shadcn/ui + mapcn (MapLibre): axios GET inicial + WebSocket nativo

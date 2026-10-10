@@ -11,7 +11,8 @@ dev.bryan
 │   ├── AutosStore.java     ConcurrentHashMap + set de "sucios"
 │   ├── AutosConsumer.java  @Incoming ultima-posicion
 │   ├── AutosResource.java  GET /autos
-│   └── AutosWs.java        /ws/autos + @Scheduled 500 ms
+│   ├── AutosWs.java        endpoint /ws/autos
+│   └── AutosBroadcaster.java  timer Vert.x de 500 ms que envía los lotes
 ├── flink/                  feature: job Flink embebido
 │   ├── FlinkJobRunner.java
 │   ├── UltimaPosicionJob.java
