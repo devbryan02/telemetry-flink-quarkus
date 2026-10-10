@@ -1,78 +1,86 @@
 "use client"
 
+import type { FeatureCollection, LineString } from "geojson"
 import type { LngLatBoundsLike } from "maplibre-gl"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { Map, type MapRef, type MapViewport } from "@/components/ui/map"
+import { Map, type MapRef } from "@/components/ui/map"
 
-import { type Grupo, type ResumenFlota, resumirEmpresas, resumirFlotas } from "../agrupar"
-import { obtenerAutos } from "../api"
+import { Animador } from "../animacion"
+import { detenerSimulacion, iniciarSimulacion, obtenerAutos, obtenerRuta, obtenerSimulacion } from "../api"
+import { cumpleFiltro, empresasDisponibles, type Filtro, flotasDisponibles, type Opcion, SIN_FILTRO } from "../filtros"
 import { aGeoJSON } from "../geojson"
 import { useAutosSocket, type EstadoConexion } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
-import type { Auto } from "../types"
-import { AutosLayer, type AutosLayerHandle, ZOOM_AUTOS } from "./autos-layer"
+import type { Auto, EstadoSimulacion } from "../types"
+import { AutosLayer, type AutosLayerHandle } from "./autos-layer"
 import { AutosStats, type ResumenMetricas } from "./autos-stats"
-import { Burbujas } from "./burbuja"
+import { RutaLayer } from "./ruta-layer"
 
-const LIMA: [number, number] = [-77.0428, -12.0464]
-const ZOOM_INICIAL = 11
+const RUTA = "av-brasil"
+const CENTRO_AV_BRASIL: [number, number] = [-77.057, -12.079]
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL
-/** Las burbujas se recalculan con cada repintado, pero se publican al estado como mucho cada 500 ms. */
-const REFRESCO_BURBUJAS_MS = 500
 
-type Agrupacion = ResumenFlota & { flotas: Grupo[] }
-const SIN_DATOS: Agrupacion = { empresas: [], flotasTotal: 0, particulares: 0, flotas: [] }
+function limitesDe(ruta: FeatureCollection<LineString>): LngLatBoundsLike {
+  let [minLon, minLat, maxLon, maxLat] = [180, 90, -180, -90]
+  for (const f of ruta.features) {
+    for (const [lon, lat] of f.geometry.coordinates) {
+      minLon = Math.min(minLon, lon)
+      minLat = Math.min(minLat, lat)
+      maxLon = Math.max(maxLon, lon)
+      maxLat = Math.max(maxLat, lat)
+    }
+  }
+  return [
+    [minLon, minLat],
+    [maxLon, maxLat],
+  ]
+}
 
-/**
- * Mapa a pantalla completa (spec §10). Sin empresa seleccionada: una burbuja por empresa y los
- * particulares sueltos. Con una empresa: sus flotas como burbujas y, desde ZOOM_AUTOS, sus autos.
- */
+function mensaje(e: unknown): string {
+  return e instanceof Error ? e.message : "Error desconocido"
+}
+
+/** Mapa de la Av. Brasil con los autos simulados, filtrables por empresa y flota (spec §10). */
 export default function AutosMap() {
   const mapa = useRef<MapRef>(null)
   const capa = useRef<AutosLayerHandle>(null)
-  // El estado de la flota vive fuera de React: con 10.000 autos no se rerenderiza por cada cambio
+  // El estado de los autos vive fuera de React; el Animador interpola su movimiento entre eventos
   const autos = useRef(new globalThis.Map<string, Auto>())
+  const animador = useRef(new Animador())
   const metricas = useRef(new Metricas())
-  const repintado = useRef<number | null>(null)
-  const ultimaAgrupacion = useRef(0)
+  const cuadro = useRef<number | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState<string | null>(null)
-  const seleccion = useRef<string | null>(null)
-  const [agrupacion, setAgrupacion] = useState<Agrupacion>(SIN_DATOS)
-  const [zoomAutos, setZoomAutos] = useState(false)
+  const [ruta, setRuta] = useState<FeatureCollection<LineString> | null>(null)
+  const [filtro, setFiltro] = useState<Filtro>(SIN_FILTRO)
+  const filtroActual = useRef(filtro)
+  const [simulacion, setSimulacion] = useState<EstadoSimulacion | null>(null)
+  const [ocupado, setOcupado] = useState(false)
 
-  const agrupar = useCallback((forzar = false) => {
-    const ahora = performance.now()
-    if (!forzar && ahora - ultimaAgrupacion.current < REFRESCO_BURBUJAS_MS) return
-    ultimaAgrupacion.current = ahora
-    const empresa = seleccion.current
-    setAgrupacion({
-      ...resumirEmpresas(autos.current.values()),
-      flotas: empresa ? resumirFlotas(autos.current.values(), empresa) : [],
-    })
+  /** Repinta en cada frame mientras algún auto esté en camino; luego se detiene solo. */
+  const animar = useCallback(() => {
+    if (cuadro.current !== null) return
+    const paso = () => {
+      const ahora = performance.now()
+      capa.current?.pintar(aGeoJSON(animador.current.posiciones(ahora)))
+      cuadro.current = animador.current.enMovimiento(ahora) ? requestAnimationFrame(paso) : null
+    }
+    cuadro.current = requestAnimationFrame(paso)
   }, [])
 
-  /** Agrupa todos los cambios recibidos hasta el próximo frame en un único setData() (RF-U3). */
-  const programarRepintado = useCallback(() => {
-    if (repintado.current !== null) return
-    repintado.current = requestAnimationFrame(() => {
-      repintado.current = null
-      capa.current?.pintar(aGeoJSON(autos.current.values()))
-      agrupar()
-    })
-  }, [agrupar])
-
-  /** Fusiona por carId: solo reemplaza si el evento es más reciente. */
+  /** Fusiona por carId: solo acepta el evento si es más reciente que el guardado. */
   const fusionar = useCallback(
     (lista: Auto[]) => {
+      const ahora = performance.now()
       for (const auto of lista) {
         const actual = autos.current.get(auto.carId)
-        if (!actual || auto.ts > actual.ts) autos.current.set(auto.carId, auto)
+        if (actual && auto.ts <= actual.ts) continue
+        autos.current.set(auto.carId, auto)
+        animador.current.actualizar(auto, ahora)
       }
-      programarRepintado()
+      animar()
     },
-    [programarRepintado],
+    [animar],
   )
 
   const alRecibirLote = useCallback(
@@ -85,128 +93,138 @@ export default function AutosMap() {
 
   const conexion = useAutosSocket(WS_URL, alRecibirLote)
 
+  // Carga inicial: autos y ruta
   useEffect(() => {
     const control = new AbortController()
     obtenerAutos(control.signal)
       .then(fusionar)
       .catch((e: unknown) => {
-        if (!control.signal.aborted) setError(e instanceof Error ? e.message : "Error desconocido")
+        if (!control.signal.aborted) setError(`No se pudo cargar la flota: ${mensaje(e)}`)
+      })
+    obtenerRuta(RUTA, control.signal)
+      .then(setRuta)
+      .catch((e: unknown) => {
+        if (!control.signal.aborted) setError(`No se pudo cargar la ruta: ${mensaje(e)}`)
       })
     return () => {
       control.abort()
-      if (repintado.current !== null) cancelAnimationFrame(repintado.current)
+      if (cuadro.current !== null) cancelAnimationFrame(cuadro.current)
     }
   }, [fusionar])
 
-  const encuadrar = useCallback((limites: Grupo["limites"], zoomMinimo?: number) => {
-    const m = mapa.current
-    if (!m) return
-    const camara = m.cameraForBounds(limites as LngLatBoundsLike, { padding: 80, maxZoom: 16 })
-    if (!camara) return
-    m.easeTo({ ...camara, zoom: Math.max(camara.zoom ?? ZOOM_INICIAL, zoomMinimo ?? 0), duration: 800 })
+  // Estado de la simulación: al inicio y cada 5 s (pudo iniciarse o detenerse desde otra pestaña)
+  useEffect(() => {
+    const consultar = () =>
+      obtenerSimulacion()
+        .then(setSimulacion)
+        .catch(() => setSimulacion(null))
+    consultar()
+    const id = setInterval(consultar, 5_000)
+    return () => clearInterval(id)
   }, [])
 
-  const seleccionarEmpresa = useCallback(
-    (companyId: string | null) => {
-      seleccion.current = companyId
-      setEmpresaSeleccionada(companyId)
-      agrupar(true)
-      if (companyId) {
-        const empresa = resumirEmpresas(autos.current.values()).empresas.find((e) => e.id === companyId)
-        if (empresa) encuadrar(empresa.limites)
-      } else {
-        mapa.current?.easeTo({ center: LIMA, zoom: ZOOM_INICIAL, duration: 800 })
-      }
-    },
-    [agrupar, encuadrar],
-  )
+  // Encuadrar la Av. Brasil cuando llega su geometría
+  useEffect(() => {
+    if (ruta) mapa.current?.fitBounds(limitesDe(ruta), { padding: 60, duration: 0 })
+  }, [ruta])
 
-  const alMoverMapa = useCallback((vista: MapViewport) => setZoomAutos(vista.zoom >= ZOOM_AUTOS), [])
+  const alternarSimulacion = useCallback(async () => {
+    setOcupado(true)
+    try {
+      setSimulacion(await (simulacion?.enCurso ? detenerSimulacion() : iniciarSimulacion()))
+      setError(null)
+    } catch (e) {
+      setError(`No se pudo cambiar la simulación: ${mensaje(e)}`)
+    } finally {
+      setOcupado(false)
+    }
+  }, [simulacion])
 
-  const resumir = useCallback(
-    (): ResumenMetricas => ({
+  const cambiarFiltro = useCallback((nuevo: Filtro) => {
+    filtroActual.current = nuevo
+    setFiltro(nuevo)
+  }, [])
+
+  const resumir = useCallback((): ResumenMetricas => {
+    let mostrados = 0
+    for (const a of autos.current.values()) if (cumpleFiltro(a, filtroActual.current)) mostrados++
+    return {
       total: autos.current.size,
-      visibles: capa.current?.visibles(autos.current.values()) ?? 0,
+      mostrados,
       lotesPorSegundo: metricas.current.lotesPorSegundo(),
       edadUltimoDatoMs: metricas.current.edadUltimoDato(),
       latenciaP95Ms: metricas.current.latenciaP95(),
+    }
+  }, [])
+
+  const opciones = useCallback(
+    (): { empresas: Opcion[]; flotas: Opcion[] } => ({
+      empresas: empresasDisponibles(autos.current.values()),
+      flotas: filtroActual.current.empresa
+        ? flotasDisponibles(autos.current.values(), filtroActual.current.empresa)
+        : [],
     }),
     [],
   )
 
   return (
     <div className="relative h-full w-full">
-      <Map ref={mapa} center={LIMA} zoom={ZOOM_INICIAL} onViewportChange={alMoverMapa}>
-        <AutosLayer ref={capa} empresaSeleccionada={empresaSeleccionada} />
-        {!empresaSeleccionada && (
-          <Burbujas
-            grupos={agrupacion.empresas}
-            variante="empresa"
-            onSeleccionar={(g) => seleccionarEmpresa(g.id)}
-          />
-        )}
-        {empresaSeleccionada && !zoomAutos && (
-          <Burbujas
-            grupos={agrupacion.flotas}
-            variante="flota"
-            onSeleccionar={(g) => encuadrar(g.limites, ZOOM_AUTOS + 0.2)}
-          />
-        )}
+      <Map ref={mapa} center={CENTRO_AV_BRASIL} zoom={14}>
+        <RutaLayer ruta={ruta} />
+        <AutosLayer ref={capa} filtro={filtro} />
       </Map>
       <div className="absolute top-3 left-3 z-10">
         <PanelMetricas
           resumir={resumir}
+          opciones={opciones}
           conexion={conexion}
           error={error}
-          agrupacion={agrupacion}
-          empresaSeleccionada={empresaSeleccionada}
-          onSeleccionarEmpresa={seleccionarEmpresa}
+          simulacion={simulacion}
+          ocupado={ocupado}
+          onAlternarSimulacion={alternarSimulacion}
+          filtro={filtro}
+          onCambiarFiltro={cambiarFiltro}
         />
       </div>
     </div>
   )
 }
 
-/** Refresca los contadores una vez por segundo sin rerenderizar el mapa. */
+/** Refresca contadores y opciones de los selectores una vez por segundo sin rerenderizar el mapa. */
 function PanelMetricas({
   resumir,
-  conexion,
-  error,
-  agrupacion,
-  empresaSeleccionada,
-  onSeleccionarEmpresa,
+  opciones,
+  filtro,
+  ...resto
 }: {
   resumir: () => ResumenMetricas
+  opciones: () => { empresas: Opcion[]; flotas: Opcion[] }
   conexion: EstadoConexion
   error: string | null
-  agrupacion: Agrupacion
-  empresaSeleccionada: string | null
-  onSeleccionarEmpresa: (companyId: string | null) => void
+  simulacion: EstadoSimulacion | null
+  ocupado: boolean
+  onAlternarSimulacion: () => void
+  filtro: Filtro
+  onCambiarFiltro: (filtro: Filtro) => void
 }) {
   const [resumen, setResumen] = useState<ResumenMetricas>({
     total: 0,
-    visibles: 0,
+    mostrados: 0,
     lotesPorSegundo: 0,
     edadUltimoDatoMs: null,
     latenciaP95Ms: null,
   })
+  const [listas, setListas] = useState<{ empresas: Opcion[]; flotas: Opcion[] }>({ empresas: [], flotas: [] })
 
   useEffect(() => {
-    const id = setInterval(() => setResumen(resumir()), 1_000)
+    const refrescar = () => {
+      setResumen(resumir())
+      setListas(opciones())
+    }
+    refrescar()
+    const id = setInterval(refrescar, 1_000)
     return () => clearInterval(id)
-  }, [resumir])
+  }, [resumir, opciones, filtro])
 
-  return (
-    <AutosStats
-      metricas={resumen}
-      conexion={conexion}
-      error={error}
-      empresas={agrupacion.empresas}
-      flotasTotal={agrupacion.flotasTotal}
-      particulares={agrupacion.particulares}
-      empresaSeleccionada={empresaSeleccionada}
-      flotasEmpresa={agrupacion.flotas.length}
-      onSeleccionarEmpresa={onSeleccionarEmpresa}
-    />
-  )
+  return <AutosStats metricas={resumen} empresas={listas.empresas} flotas={listas.flotas} filtro={filtro} {...resto} />
 }

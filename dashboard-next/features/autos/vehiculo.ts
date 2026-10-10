@@ -6,7 +6,7 @@ const ALTO = 32
 const ESCALA = 2 // se dibuja al doble de resolución para pantallas de alta densidad
 
 const COLOR_MOTOR = { on: "#16a34a", off: "#dc2626" } as const
-/** Borde blanco para particulares y celeste para autos de empresa (como sus burbujas). */
+/** Borde blanco para particulares y celeste para autos de empresa. */
 const COLOR_BORDE = { p: "#ffffff", e: "#38bdf8" } as const
 
 export type Motor = keyof typeof COLOR_MOTOR

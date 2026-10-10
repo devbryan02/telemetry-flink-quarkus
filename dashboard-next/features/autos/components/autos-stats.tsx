@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import type { Grupo } from "../agrupar"
+import type { Filtro, Opcion } from "../filtros"
 import type { EstadoConexion } from "../hooks/use-autos-socket"
+import type { EstadoSimulacion } from "../types"
 
 export type ResumenMetricas = {
   total: number
-  visibles: number
+  mostrados: number
   lotesPorSegundo: number
   edadUltimoDatoMs: number | null
   latenciaP95Ms: number | null
@@ -38,91 +39,122 @@ function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   )
 }
 
-/** Panel: selector de empresa y contadores en pantalla (spec §10, RF-U6). */
+function Selector({
+  etiqueta,
+  todas,
+  opciones,
+  valor,
+  deshabilitado,
+  onCambiar,
+}: {
+  etiqueta: string
+  todas: string
+  opciones: Opcion[]
+  valor: string | null
+  deshabilitado?: boolean
+  onCambiar: (id: string | null) => void
+}) {
+  const items = [
+    { value: TODAS, label: todas },
+    ...opciones.map((o) => ({ value: o.id, label: `${o.nombre} · ${numero.format(o.autos)}` })),
+  ]
+  return (
+    <Select
+      items={items}
+      value={valor ?? TODAS}
+      disabled={deshabilitado}
+      onValueChange={(v) => onCambiar(!v || v === TODAS ? null : String(v))}
+    >
+      <SelectTrigger size="sm" className="w-full" aria-label={etiqueta}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {items.map((i) => (
+          <SelectItem key={i.value} value={i.value}>
+            {i.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+/** Panel: control de la simulación, filtro empresa → flota y contadores (spec §10). */
 export function AutosStats({
   metricas,
   conexion,
   error,
+  simulacion,
+  ocupado,
+  onAlternarSimulacion,
   empresas,
-  flotasTotal,
-  particulares,
-  empresaSeleccionada,
-  flotasEmpresa,
-  onSeleccionarEmpresa,
+  flotas,
+  filtro,
+  onCambiarFiltro,
 }: {
   metricas: ResumenMetricas
   conexion: EstadoConexion
   error: string | null
-  empresas: Grupo[]
-  flotasTotal: number
-  particulares: number
-  empresaSeleccionada: string | null
-  flotasEmpresa: number
-  onSeleccionarEmpresa: (companyId: string | null) => void
+  simulacion: EstadoSimulacion | null
+  ocupado: boolean
+  onAlternarSimulacion: () => void
+  empresas: Opcion[]
+  flotas: Opcion[]
+  filtro: Filtro
+  onCambiarFiltro: (filtro: Filtro) => void
 }) {
-  const empresa = empresas.find((e) => e.id === empresaSeleccionada)
-  const opciones = [
-    { value: TODAS, label: "Todas las empresas" },
-    ...empresas.map((e) => ({ value: e.id, label: `${e.nombre} · ${numero.format(e.total)}` })),
-  ]
+  const enCurso = simulacion?.enCurso ?? false
 
   return (
     <Card size="sm" className="w-64">
       <CardHeader className="flex items-center justify-between gap-2">
-        <CardTitle>Flota</CardTitle>
+        <CardTitle>Av. Brasil</CardTitle>
         <Badge variant={conexion === "abierta" ? "default" : "destructive"}>{ETIQUETA_CONEXION[conexion]}</Badge>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <Select
-            items={opciones}
-            value={empresaSeleccionada ?? TODAS}
-            onValueChange={(valor) => onSeleccionarEmpresa(!valor || valor === TODAS ? null : String(valor))}
+          <Button
+            size="sm"
+            className="flex-1"
+            variant={enCurso ? "destructive" : "default"}
+            disabled={ocupado || simulacion === null}
+            onClick={onAlternarSimulacion}
           >
-            <SelectTrigger size="sm" className="w-full" aria-label="Empresa">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {opciones.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {empresaSeleccionada && (
-            <Button size="sm" variant="ghost" onClick={() => onSeleccionarEmpresa(null)}>
-              Quitar
-            </Button>
-          )}
+            {enCurso ? "Detener simulación" : "Iniciar simulación"}
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {simulacion === null ? "…" : enCurso ? `${simulacion.autos} autos` : "Detenida"}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Selector
+            etiqueta="Empresa"
+            todas="Todas las empresas"
+            opciones={empresas}
+            valor={filtro.empresa}
+            onCambiar={(empresa) => onCambiarFiltro({ empresa, flota: null })}
+          />
+          <Selector
+            etiqueta="Flota"
+            todas="Todas las flotas"
+            opciones={flotas}
+            valor={filtro.flota}
+            deshabilitado={!filtro.empresa}
+            onCambiar={(flota) => onCambiarFiltro({ ...filtro, flota })}
+          />
         </div>
 
         <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm tabular-nums">
-          {empresa ? (
-            <>
-              <Fila etiqueta="Autos de la empresa" valor={numero.format(empresa.total)} />
-              <Fila etiqueta="Flotas" valor={numero.format(flotasEmpresa)} />
-              <Fila
-                etiqueta="Motor encendido"
-                valor={`${Math.round((empresa.encendidos / Math.max(1, empresa.total)) * 100)} %`}
-              />
-            </>
-          ) : (
-            <>
-              <Fila etiqueta="Empresas" valor={numero.format(empresas.length)} />
-              <Fila etiqueta="Flotas" valor={numero.format(flotasTotal)} />
-              <Fila etiqueta="Particulares" valor={numero.format(particulares)} />
-            </>
-          )}
           <Fila
-            etiqueta="Autos en pantalla"
-            valor={`${numero.format(metricas.visibles)} / ${numero.format(metricas.total)}`}
+            etiqueta="Autos mostrados"
+            valor={`${numero.format(metricas.mostrados)} / ${numero.format(metricas.total)}`}
           />
-          <Fila etiqueta="Lotes/s" valor={metricas.lotesPorSegundo.toFixed(1)} />
           <Fila etiqueta="Edad último dato" valor={segundos(metricas.edadUltimoDatoMs)} />
           <Fila etiqueta="Latencia p95" valor={segundos(metricas.latenciaP95Ms)} />
+          <Fila etiqueta="Lotes/s" valor={metricas.lotesPorSegundo.toFixed(1)} />
         </dl>
-        {error && <p className="text-xs text-destructive">No se pudo cargar la flota: {error}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
       </CardContent>
     </Card>
   )

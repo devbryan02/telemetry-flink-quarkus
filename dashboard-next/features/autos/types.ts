@@ -14,3 +14,12 @@ export type Auto = {
   /** Epoch ms UTC del evento */
   ts: number
 }
+
+/** Estado de la simulación en el backend (`GET /simulacion`). */
+export type EstadoSimulacion = {
+  enCurso: boolean
+  escenario: string
+  autos: number
+  /** ISO-8601; `null` si está detenida */
+  desde: string | null
+}
