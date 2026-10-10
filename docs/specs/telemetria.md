@@ -1,28 +1,28 @@
 # Especificación del MVP: Telemetría de Autos en Tiempo Real
 
-**Versión:** 3.0
+**Versión:** 3.1
 **Stack:** Apache Kafka (Docker) · Quarkus 3.40 LTS (Java 17) con Apache Flink 2.2 embebido · React 19 + Next.js 16 + shadcn/ui + MapLibre (mapcn)
-**Escenario:** 3 autos recorren la **Av. Brasil** (Lima), ida y vuelta, y se siguen en un mapa en tiempo real.
+**Escenario:** carreras de 3 autos en rutas establecidas (Av. Brasil, Panamericana Sur, Panamericana Norte y Vía Los Libertadores), seguidas en un mapa en tiempo real.
 
 ---
 
 ## 1. Resumen
 
-El backend simula autos que recorren una ruta real de Lima y publica su telemetría en Kafka. Flink calcula la **última posición de cada auto** y Quarkus la expone a un dashboard. Ahí se inicia la simulación con un botón, se filtran los autos por **empresa y flota** y se ven circular sobre la avenida.
+El backend corre **carreras** de 3 autos en rutas reales y publica su telemetría en Kafka. Flink calcula la **última posición de cada auto** y Quarkus la expone a un dashboard. Desde el dashboard se elige la ruta, se lanza la carrera (todos salen del mismo punto y en un solo sentido), se ajusta la **velocidad de cada auto** en vivo, se sigue la clasificación hasta la meta y se filtran los autos por **empresa y flota**.
 
 **Objetivos del MVP**
 1. Validar el flujo extremo a extremo: simulación → Kafka → Flink → Quarkus → navegador.
-2. Seguir en el mapa, con baja latencia, autos que circulan por una ruta real.
+2. Seguir en el mapa, con baja latencia, autos que circulan por rutas reales.
 3. Servir como base de aprendizaje de Kafka y Flink.
 
 ## 2. Alcance
 
 **Incluido:**
-- simulación de autos en ruta, controlable desde el dashboard;
+- carreras en rutas establecidas, controlables desde el dashboard (ruta, inicio y fin, velocidad por auto);
 - ingesta en Kafka;
 - job Flink de última posición;
 - API REST y WebSocket con actualizaciones por lotes;
-- dashboard con mapa, ruta, filtro empresa → flota e íconos de vehículo.
+- dashboard con mapa, ruta con salida y meta, clasificación en vivo, filtro empresa → flota e íconos de vehículo.
 
 **Fuera de alcance:** autenticación, base de datos, ventanas de tiempo, alertas, clúster Flink (Flink corre **embebido dentro del proceso Quarkus**), Avro/Protobuf, alta disponibilidad y pruebas de carga.
 
@@ -33,13 +33,13 @@ flowchart LR
     K1[("Kafka<br/>telemetria<br/>12 particiones")]
     K2[("Kafka<br/>ultima-posicion<br/>12 particiones, compact")]
     subgraph JVM["Quarkus 3.40 · Java 17 (una sola JVM)"]
-        SIM["Simulación<br/>3 autos · Av. Brasil"]
+        SIM["Carrera<br/>3 autos · ruta elegida"]
         FL["Flink 2.2 embebido<br/>MiniCluster local<br/>última posición por auto"]
         QK["Store en memoria<br/>REST + WebSocket"]
     end
     NX["Next.js 16 + shadcn/ui<br/>mapa MapLibre (WebGL)"]
 
-    NX -- "POST /simulacion/iniciar" --> SIM
+    NX -- "POST /simulacion/iniciar · PUT velocidad" --> SIM
     SIM -- "key = carId · 1 ev/s por auto" --> K1
     K1 --> FL
     FL --> K2
@@ -54,11 +54,11 @@ flowchart LR
 
 | Componente | Responsabilidad |
 |---|---|
-| **Simulación** (Quarkus) | Mover los autos del escenario por su ruta y publicar su posición en `telemetria`. Se inicia y detiene por REST. |
+| **Carrera** (Quarkus) | Mover los autos desde la salida hasta la meta de la ruta elegida, a la velocidad de cada uno, y publicar su posición en `telemetria`. Se controla por REST. |
 | **Kafka** | Transportar, retener y ordenar por `carId`. |
 | **Flink** (embebido en Quarkus) | Conservar el evento más reciente por auto y descartar los viejos. Arranca con la aplicación. |
-| **Quarkus** | Mantener el último estado por auto y servirlo por REST y WebSocket (en lotes); servir la geometría de la ruta. |
-| **Next.js** | Botón de simulación, filtro empresa → flota, ruta e íconos de los autos con movimiento interpolado. |
+| **Quarkus** | Mantener el último estado por auto y servirlo por REST y WebSocket (en lotes); servir el catálogo y la geometría de las rutas. |
+| **Next.js** | Selector de ruta, control de la carrera, clasificación con velocidad por auto, filtro empresa → flota, y ruta e íconos de los autos con movimiento interpolado. |
 
 ### Flujo de un evento
 
@@ -72,7 +72,7 @@ sequenceDiagram
     participant Q as Quarkus
     participant A as Next.js
 
-    S->>K1: evento (key=carId, ts) cada 1 s
+    S->>K1: evento (key=carId, ts) cada 1 s por auto en pista
     K1->>F: consume (partición del auto)
     F->>F: ¿ts > ts guardado?
     alt es más nuevo
@@ -214,6 +214,7 @@ El job vive en el backend Quarkus y se ejecuta en un **MiniCluster local dentro 
 | Offsets iniciales | `latest` |
 | Ejecución | **MiniCluster embebido en Quarkus**, con UI web en `:8081` |
 | Checkpoints | Desactivados |
+| Reinicio ante fallos | `exponential-delay` (1 s → 30 s, sin límite); heartbeat de 3 min |
 
 > Flink 2.3.0 ya existe, pero el conector Kafka 5.0.0 se publica para la línea 2.2; se usa la pareja 2.2.1 / 5.0.0-2.2 por compatibilidad.
 
@@ -305,7 +306,7 @@ flink.topic.out=ultima-posicion
 
 ```mermaid
 flowchart TB
-    A["Componente cliente"] --> B["axios: GET /autos, GET /rutas/av-brasil, GET /simulacion"]
+    A["Componente cliente"] --> B["axios: GET /autos, GET /rutas, GET /rutas/{id}, GET /simulacion,<br/>POST iniciar/detener, PUT velocidad"]
     A --> D["useAutosSocket<br/>WebSocket /ws/autos"]
     D --> E["Fusiona por carId (ts más reciente)<br/>Map en useRef"]
     B --> E
@@ -319,7 +320,7 @@ flowchart TB
 | Pieza | Versión / paquete |
 |---|---|
 | Next.js | **16.x** (App Router, React 19, TypeScript, Tailwind CSS v4) |
-| Componentes UI | **shadcn/ui** (`Card`, `Badge`, `Button`, `Select`, `Tooltip`) |
+| Componentes UI | **shadcn/ui** (`Card`, `Badge`, `Button`, `Select`, `Slider`, `Tooltip`) |
 | Mapa | **mapcn** (`@mapcn/map`, registro shadcn sobre **MapLibre GL**) |
 | HTTP | **axios** 1.x |
 | Tiempo real | `WebSocket` nativo del navegador |
@@ -334,21 +335,30 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
 > Basemap: mapcn usa por defecto teselas de CARTO (OpenStreetMap). Para uso comercial se requiere licencia de CARTO o cambiar a otro proveedor compatible con MapLibre.
 
 ### Requisitos funcionales
-- **RF-U1:** mapa a pantalla completa encuadrado en la Av. Brasil. El componente del mapa es `"use client"` y se carga con `dynamic(..., { ssr: false })` dentro de un Client Component, porque MapLibre necesita `window`.
-- **RF-U2:** botón **"Iniciar simulación" / "Detener simulación"** (`Button` de shadcn) que llama a `POST /simulacion/iniciar|detener` y muestra el estado de `GET /simulacion`, consultado al cargar y cada 5 s.
-- **RF-U3:** filtro **empresa → flota** con dos `Select` de shadcn. "Todas las empresas" muestra todos los autos; al elegir una empresa quedan solo sus autos y se habilita el selector de flota; al elegir una flota, solo esa flota. Las opciones (con su número de autos) salen de los datos recibidos. El filtro se aplica con `setFilter` sobre la capa de autos.
-- **RF-U4:** la ruta (`GET /rutas/av-brasil`) se dibuja como capa `line` debajo de los autos.
-- **RF-U5:** cada auto es un **ícono de vehículo** visto desde arriba (capa `symbol` con `icon-allow-overlap`):
+- **RF-U1:** mapa a pantalla completa. El componente del mapa es `"use client"` y se carga con `dynamic(..., { ssr: false })` dentro de un Client Component, porque MapLibre necesita `window`.
+- **RF-U2 (ruta):** `Select` de shadcn con las rutas de `GET /rutas` (nombre y km), deshabilitado durante una carrera. Al elegir una ruta:
+  - se dibuja su geometría (`GET /rutas/{id}`) como capa `line` y el mapa se encuadra en ella, aunque no haya carrera;
+  - aparecen los marcadores **Salida** y **🏁 Meta** (`MapMarker` de mapcn) en sus extremos.
+
+  Al cargar la página se preselecciona la ruta de la carrera actual o de la última.
+- **RF-U3 (carrera):** botón **"Iniciar carrera" / "Detener" / "Nueva carrera"** según el estado, que llama a `POST /simulacion/iniciar {ruta}` o `POST /simulacion/detener`. `GET /simulacion` se consulta cada 1 s durante la carrera y cada 5 s el resto del tiempo.
+- **RF-U4 (clasificación):** una fila por auto con:
+  - posición, empresa · flota y km recorridos;
+  - barra de progreso;
+  - al llegar, 🏁 y el tiempo de carrera (`m:ss,d` o `h:mm:ss,d`).
+- **RF-U5 (velocidad):** `Slider` de shadcn por auto (10–500 km/h, paso de 5). Mientras se arrastra muestra el valor; al soltar envía `PUT /simulacion/autos/{carId}/velocidad`. Funciona antes y durante la carrera.
+- **RF-U6 (seguir al líder):** botón que, mientras está activo, centra el mapa cada segundo en el primero de la clasificación (con su posición interpolada). Es imprescindible en la Vía Los Libertadores (325 km).
+- **RF-U7:** filtro **empresa → flota** con dos `Select` de shadcn. "Todas las empresas" muestra todos los autos; al elegir una empresa quedan solo sus autos y se habilita el selector de flota; al elegir una flota, solo esa flota. Las opciones salen de los datos recibidos. El filtro se aplica con `setFilter` sobre la capa de autos.
+- **RF-U8:** cada auto es un **ícono de vehículo** visto desde arriba (capa `symbol` con `icon-allow-overlap`):
   - orientado según `heading` (`icon-rotate` con `icon-rotation-alignment: map`);
-  - verde con motor ON y rojo con OFF;
+  - verde en carrera y rojo al llegar (motor OFF);
   - borde celeste si es de empresa y blanco si es particular;
   - tamaño interpolado por zoom.
 
-  Las 4 variantes se dibujan en canvas (`features/autos/vehiculo.ts`) y se vuelven a registrar si cambia el estilo del mapa.
-- **RF-U6:** movimiento **interpolado** (`features/autos/animacion.ts`): entre dos eventos de un auto se lo desplaza en línea recta y se gira por el camino corto, repintando con `setData()` en cada `requestAnimationFrame`. El bucle se detiene solo cuando todos llegan a su última posición.
-- **RF-U7:** carga inicial por `GET /autos` (axios) y cambios por WebSocket con reconexión y backoff exponencial. Cada evento se fusiona por `carId` solo si su `ts` es más reciente; el estado vive en `useRef`, fuera de React.
-- **RF-U8:** popup solo al pasar el mouse sobre un auto: auto, empresa, flota, motor, batería y antigüedad del dato.
-- **RF-U9:** panel (`Card` de shadcn) con estado de conexión, autos mostrados (según el filtro) sobre el total, edad del último dato, latencia p95 (`Date.now() - ts`) y lotes/s, refrescado una vez por segundo sin rerenderizar el mapa.
+  Las 4 variantes se dibujan en canvas (`features/autos/vehiculo.ts`).
+- **RF-U9:** movimiento **interpolado** (`features/autos/animacion.ts`): entre dos eventos de un auto se lo desplaza en línea recta y se gira por el camino corto, repintando con `setData()` en cada `requestAnimationFrame`. Un salto de más de 2 km (p. ej. al empezar una carrera en otra ruta) no se anima.
+- **RF-U10:** carga inicial por `GET /autos` (axios) y cambios por WebSocket con reconexión y backoff exponencial. Cada evento se fusiona por `carId` solo si su `ts` es más reciente; el estado vive en `useRef`, fuera de React.
+- **RF-U11:** popup al pasar el mouse sobre un auto y métricas en el panel: estado de conexión, autos mostrados, edad del último dato y latencia p95 (`Date.now() - ts`), refrescadas una vez por segundo sin rerenderizar el mapa.
 
 ## 11. Requisitos no funcionales
 
@@ -364,7 +374,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
 
 ```mermaid
 flowchart LR
-    A["1. docker compose up -d"] --> B["2. ./scripts/crear-topics.sh"] --> C["3. ./mvnw quarkus:dev<br/>:8080 + Flink embebido (UI :8081)"] --> E["4. npm run dev<br/>:3000"] --> F["5. Botón 'Iniciar simulación'"]
+    A["1. docker compose up -d"] --> B["2. ./scripts/crear-topics.sh"] --> C["3. ./mvnw quarkus:dev<br/>:8080 + Flink embebido (UI :8081)"] --> E["4. npm run dev<br/>:3000"] --> F["5. Elegir ruta e 'Iniciar carrera'"]
 ```
 
 | Servicio | Puerto |
@@ -384,14 +394,14 @@ telemetria-flink/
 │   ├── pom.xml                       (extensiones Quarkus + Flink 2.2.1)
 │   └── src/main/
 │       ├── java/dev/bryan/
-│       │   ├── simulacion/  (Simulador, AutoSimulado, Ruta, CatalogoRutas, Escenario, SimulacionResource, RutasResource)
+│       │   ├── simulacion/  (Simulador, AutoCorredor, Ruta, CatalogoRutas, Escenario, SimulacionResource, RutasResource)
 │       │   ├── flink/       (FlinkJobRunner, UltimaPosicionJob, UltimaPosicionFunction, Posicion)
 │       │   ├── autos/       (Auto, AutosStore, AutosConsumer, AutosResource, AutosWs, AutosBroadcaster)
 │       │   └── shared/      (error/)
-│       └── resources/       (application.properties, rutas/*.geojson, escenarios/*.json)
+│       └── resources/       (application.properties, rutas/{indice.json, *.geojson}, escenarios/carrera.json)
 ├── dashboard-next/
 │   ├── app/page.tsx
-│   ├── features/autos/      (components/, hooks/, api.ts, filtros.ts, animacion.ts, vehiculo.ts, types.ts, index.ts)
+│   ├── features/autos/      (components/{autos-map, autos-layer, ruta-layer, salida-meta, carrera-panel}, hooks/, api.ts, filtros.ts, animacion.ts, vehiculo.ts, types.ts)
 │   ├── components/ui/       (shadcn + mapcn)
 │   └── lib/                 (instancia axios, utilidades)
 └── README.md
@@ -401,13 +411,14 @@ Organización **por features** en backend y frontend (ver `knowledge/standards/S
 
 ## 13. Criterios de aceptación
 
-- [x] Con el botón "Iniciar simulación", los 3 autos aparecen sobre la Av. Brasil y circulan por su calzada, dando media vuelta en los extremos; "Detener simulación" los para.
-- [x] El filtro muestra solo los autos de la empresa o flota elegida (Empresa 01: 2 autos; Empresa 01 · Flota 1: 2; Empresa 02: 1; todas: 3).
-- [x] Cada auto se ve como un vehículo orientado según su rumbo, verde o rojo según el motor.
+- [x] El selector ofrece Av. Brasil, Panamericana Sur, Panamericana Norte y Vía Los Libertadores. Al elegir una, se dibuja sobre su vía real con Salida y Meta.
+- [x] "Iniciar carrera" saca a los 3 autos del mismo punto y en un solo sentido. Al cruzar la meta se detienen con su tiempo y la carrera termina cuando llegan todos.
+- [x] La clasificación se actualiza en vivo. Mover el slider de un auto cambia su ritmo en plena carrera y, con él, el orden.
+- [x] "Seguir al líder" mantiene en pantalla al primero de la clasificación.
+- [x] El filtro muestra solo los autos de la empresa o flota elegida (Empresa 01: 2; Empresa 02: 1; todas: 3).
 - [x] Latencia extremo a extremo p95 < 2 s.
 - [x] Un evento con `ts` antiguo no reemplaza a uno más reciente.
-- [x] Al reiniciar Quarkus, el estado se reconstruye desde `ultima-posicion`.
-- [x] Al arrancar Quarkus, el job Flink embebido se inicia solo y la UI `:8081` responde; al detenerlo, el job se cancela limpiamente.
+- [x] Al reiniciar Quarkus, el estado se reconstruye desde `ultima-posicion`. El job Flink se inicia solo y se reinicia solo ante fallos transitorios.
 
 ## 14. Riesgos
 
@@ -418,13 +429,14 @@ Organización **por features** en backend y frontend (ver `knowledge/standards/S
 | Coordinador de grupos de Kafka 4.0.x con el reloj de la VM retrocediendo (KAFKA-19888) | Consumidores sin unirse ni confirmar offsets | Kafka 4.2.1 (§6) |
 | Datos con otro formato en `ultima-posicion` | Autos fantasma o sin empresa en el mapa | `./scripts/crear-topics.sh --recrear` |
 | Flink y Quarkus comparten heap | GC largos | Subir `-Xmx` o sacar Flink a Docker (§15) |
+| Pausa larga de la JVM (heartbeat vencido) | El job Flink falla y no llegan posiciones | Estrategia de reinicio `exponential-delay` y heartbeat de 3 min (§8) |
 | Eventos desordenados | Posición vieja | `KeyedProcessFunction` que compara `ts` y store que solo acepta `ts` mayor |
 
 ## 15. Evolución
 
 ```mermaid
 flowchart LR
-    V3["v3<br/>3 autos en la Av. Brasil<br/>filtro empresa/flota"] --> V4["v4<br/>Más rutas y escenarios<br/>selector de escenario"]
+    V3["v3<br/>Carreras en rutas establecidas<br/>velocidad por auto"] --> V4["v4<br/>Más autos y escenarios<br/>rutas a medida"]
     V4 --> V5["v5<br/>Alertas y OFFLINE<br/>timers + estado"]
     V5 --> V6["v6<br/>Ventanas<br/>velocidad promedio"]
     V6 --> V7["v7<br/>Checkpoints<br/>Flink fuera de Quarkus (Docker)"]

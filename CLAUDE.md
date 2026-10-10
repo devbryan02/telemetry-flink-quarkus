@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Qué es
 
-Demo de telemetría en tiempo real: 3 autos simulados recorren la **Av. Brasil** (Lima) y se siguen en un mapa, con filtro por empresa y flota. La fuente de verdad es `docs/specs/telemetria.md`. Documenta en español, igual que la spec.
+Demo de telemetría en tiempo real: **carreras** de 3 autos en rutas reales (Av. Brasil, Panamericana Sur y Norte, Vía Los Libertadores), con velocidad ajustable por auto, clasificación en vivo y filtro por empresa y flota. La fuente de verdad es `docs/specs/telemetria.md`. Documenta en español, igual que la spec.
 
 ## Arquitectura
 
 ```
-Next.js ── POST /simulacion/iniciar ──► Quarkus 3.40 LTS · Java 17 (una sola JVM)
-                                         │  simulacion/: 3 autos por la Av. Brasil (timer Vert.x 1 s)
+Next.js ── POST /simulacion/iniciar {ruta} ──► Quarkus 3.40 LTS · Java 17 (una sola JVM)
+                                         │  simulacion/: carrera de 3 autos, salida→meta (timer Vert.x 1 s)
                                          │     └─► Kafka "telemetria" (12 part., key=carId)
                                          │  flink/: Flink 2.2.1 embebido (MiniCluster, UI :8081)
                                          │     KafkaSource → keyBy(carId) → KeyedProcessFunction(ValueState<ts>)
@@ -37,7 +37,12 @@ Decisiones que no son obvias si no se lee toda la spec:
   - Kafka **4.2.1**: la 4.0.x tiene KAFKA-19888 y el coordinador de grupos deja de funcionar en Docker Desktop.
 - **`AutosConsumer` es por lotes y `@NonBlocking`.** Un `void recibir(Auto)` se ejecuta como bloqueante, con un salto de hilo por mensaje.
 - **Temporizadores de Vert.x, no `@Scheduled`:** el planificador de Quarkus solo evalúa una vez por segundo.
-- **La ruta y el escenario son recursos del backend:** `resources/rutas/av-brasil.geojson` (calzadas `ida` y `vuelta`, de OpenStreetMap) y `resources/escenarios/av-brasil.json`. El dashboard pide la ruta a `GET /rutas/av-brasil`.
+- **Rutas y escenario son recursos del backend:**
+  - `resources/rutas/indice.json` y un GeoJSON por ruta, con una `LineString` de salida a meta sacada de OpenStreetMap/OSRM;
+  - `resources/escenarios/carrera.json`.
+
+  El dashboard los pide a `GET /rutas` y `GET /rutas/{id}`. La velocidad por auto (10–500 km/h) se cambia con `PUT /simulacion/autos/{carId}/velocidad`.
+- **Flink se reinicia solo:** estrategia `exponential-delay` y heartbeat de 3 min en `FlinkJobRunner`. Sin checkpoints, el job no tiene reinicio por defecto y una pausa larga de la JVM lo dejaba caído.
 - **Frontend:**
   - una fuente GeoJSON con una capa `symbol` de íconos (`vehiculo.ts`), filtrada con `setFilter` según empresa/flota;
   - estado fuera de React (`useRef`);
@@ -53,7 +58,7 @@ cd telemetry-api && ./mvnw test                          # JDK 17
 cd telemetry-api && ./mvnw quarkus:dev                   # :8080 + Flink UI :8081
 cd telemetry-api && ./mvnw test -Dtest=RutaTest          # un solo test
 cd dashboard-next && npm run lint && npm run build && npm run dev   # :3000
-curl -X POST localhost:8080/simulacion/iniciar           # o el botón del dashboard
+curl -H 'Content-Type: application/json' -d '{"ruta":"av-brasil"}' localhost:8080/simulacion/iniciar   # o el dashboard
 ```
 
 ## Base de conocimiento (`knowledge/`)

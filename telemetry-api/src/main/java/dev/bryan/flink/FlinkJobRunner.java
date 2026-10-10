@@ -9,11 +9,14 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
+import java.time.Duration;
 import java.util.List;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
+import org.apache.flink.configuration.HeartbeatManagerOptions;
 import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.RestOptions;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -66,6 +69,14 @@ class FlinkJobRunner {
         //   que se recarga), por eso el classpath apunta a la ubicación real de las clases de la app.
         conf.set(PipelineOptions.CLASSPATHS, List.of(clasesDeLaAplicacion().toString()));
         conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first");
+        // Sin checkpoints Flink no reinicia el job ante un fallo: una pausa larga de la JVM (heartbeat
+        // vencido, equipo suspendido) lo dejaba caído hasta reiniciar Quarkus. Reintentos sin límite con
+        // espera exponencial (1 s → 30 s) y más margen para el heartbeat del MiniCluster.
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY, "exponential-delay");
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_INITIAL_BACKOFF, Duration.ofSeconds(1));
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_MAX_BACKOFF, Duration.ofSeconds(30));
+        conf.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_ATTEMPTS, Integer.MAX_VALUE);
+        conf.set(HeartbeatManagerOptions.HEARTBEAT_TIMEOUT, Duration.ofMinutes(3));
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
         env.setParallelism(paralelismo);

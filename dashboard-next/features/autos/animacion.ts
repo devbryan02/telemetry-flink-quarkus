@@ -3,6 +3,14 @@ import type { Auto } from "./types"
 /** Si dos eventos de un auto llegan más separados que esto, no se interpola (salta a la posición nueva). */
 const DURACION_MAXIMA_MS = 3_000
 const DURACION_MINIMA_MS = 200
+/** Un salto mayor (p. ej. al empezar una carrera en otra ruta) no se anima: el auto aparece en su sitio. */
+const SALTO_MAXIMO_M = 2_000
+
+function metros(a: Pick<Auto, "lat" | "lon">, b: Pick<Auto, "lat" | "lon">): number {
+  const dy = (b.lat - a.lat) * 111_320
+  const dx = (b.lon - a.lon) * 111_320 * Math.cos((a.lat * Math.PI) / 180)
+  return Math.hypot(dx, dy)
+}
 
 type Tramo = {
   desde: Pick<Auto, "lat" | "lon" | "heading">
@@ -31,13 +39,21 @@ export class Animador {
       return
     }
     const intervalo = auto.ts - anterior.hasta.ts
-    const duracion = intervalo > DURACION_MAXIMA_MS ? 0 : Math.max(DURACION_MINIMA_MS, intervalo)
-    this.tramos.set(auto.carId, { desde: this.posicion(anterior, ahora), hasta: auto, inicio: ahora, duracion })
+    const desde = this.posicion(anterior, ahora)
+    const salto = intervalo > DURACION_MAXIMA_MS || metros(desde, auto) > SALTO_MAXIMO_M
+    const duracion = salto ? 0 : Math.max(DURACION_MINIMA_MS, intervalo)
+    this.tramos.set(auto.carId, { desde, hasta: auto, inicio: ahora, duracion })
   }
 
   /** La flota tal como debe dibujarse en este instante. */
   *posiciones(ahora: number): Iterable<Auto> {
     for (const tramo of this.tramos.values()) yield { ...tramo.hasta, ...this.posicion(tramo, ahora) }
+  }
+
+  /** Posición mostrada ahora de un auto, o `null` si no se conoce. */
+  posicionDe(carId: string, ahora: number): Pick<Auto, "lat" | "lon"> | null {
+    const t = this.tramos.get(carId)
+    return t ? this.posicion(t, ahora) : null
   }
 
   /** Si algún auto todavía está en camino hacia su última posición. */

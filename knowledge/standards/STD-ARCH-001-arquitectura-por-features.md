@@ -7,13 +7,13 @@ El código se organiza **por feature (capacidad de negocio)**, no por capa técn
 ```text
 dev.bryan
 ├── simulacion/             feature: autos que recorren una ruta y publican en telemetria
-│   ├── Simulador.java      timer Vert.x de 1 s; iniciar/detener
-│   ├── AutoSimulado.java   movimiento por la ruta, semáforos, media vuelta
+│   ├── Simulador.java      carrera: timer Vert.x de 1 s, iniciar/detener, clasificación
+│   ├── AutoCorredor.java   avance de salida a meta, velocidad ajustable, llegada
 │   ├── Ruta.java           polilínea con distancias acumuladas
-│   ├── CatalogoRutas.java  lee rutas/*.geojson y escenarios/*.json
+│   ├── CatalogoRutas.java  lee rutas/indice.json, rutas/*.geojson y escenarios/*.json
 │   ├── TelemetriaEvento.java  record del evento publicado
-│   ├── SimulacionResource.java  POST /simulacion/iniciar|detener, GET /simulacion
-│   └── RutasResource.java  GET /rutas/{nombre}
+│   ├── SimulacionResource.java  POST /simulacion/iniciar|detener, GET /simulacion, PUT velocidad
+│   └── RutasResource.java  GET /rutas, GET /rutas/{id}
 ├── autos/                  feature: estado y difusión de la última posición
 │   ├── Auto.java           record del evento (esquema de la spec §4)
 │   ├── AutosStore.java     ConcurrentHashMap + set de "sucios"
@@ -45,13 +45,13 @@ dashboard-next/
 ├── app/                    rutas (App Router); páginas delgadas que componen features
 ├── features/
 │   └── autos/
-│       ├── components/     autos-map.tsx, autos-layer.tsx, ruta-layer.tsx, autos-stats.tsx
+│       ├── components/     autos-map.tsx, autos-layer.tsx, ruta-layer.tsx, salida-meta.tsx, carrera-panel.tsx
 │       ├── hooks/          use-autos-socket.ts
-│       ├── api.ts          llamadas axios de la feature (autos, ruta, simulación)
+│       ├── api.ts          llamadas axios de la feature (autos, rutas, carrera, velocidad)
 │       ├── filtros.ts      filtro empresa → flota
 │       ├── animacion.ts    interpolación del movimiento
 │       ├── vehiculo.ts     íconos de vehículo
-│       ├── types.ts        tipos Auto y EstadoSimulacion
+│       ├── types.ts        tipos Auto, ResumenRuta y EstadoSimulacion
 │       └── index.ts        API pública de la feature
 ├── components/ui/          componentes shadcn/mapcn (generados por la CLI, compartidos)
 └── lib/                    utilidades transversales (instancia axios, cn)

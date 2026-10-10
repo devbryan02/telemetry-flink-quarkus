@@ -2,17 +2,23 @@ import type { FeatureCollection, LineString } from "geojson"
 
 import { http } from "@/lib/http"
 
-import type { Auto, EstadoSimulacion } from "./types"
+import type { Auto, EstadoSimulacion, ResumenRuta } from "./types"
 
-/** Estado completo de la flota (`GET /autos`). */
+/** Última posición de cada auto (`GET /autos`). */
 export async function obtenerAutos(signal?: AbortSignal): Promise<Auto[]> {
   const { data } = await http.get<Auto[]>("/autos", { signal })
   return data
 }
 
-/** Geometría de una ruta simulada, con sus calzadas de ida y vuelta (`GET /rutas/{nombre}`). */
-export async function obtenerRuta(nombre: string, signal?: AbortSignal): Promise<FeatureCollection<LineString>> {
-  const { data } = await http.get<FeatureCollection<LineString>>(`/rutas/${encodeURIComponent(nombre)}`, { signal })
+/** Rutas establecidas (`GET /rutas`). */
+export async function listarRutas(signal?: AbortSignal): Promise<ResumenRuta[]> {
+  const { data } = await http.get<ResumenRuta[]>("/rutas", { signal })
+  return data
+}
+
+/** Geometría de una ruta, de la salida a la meta (`GET /rutas/{id}`). */
+export async function obtenerRuta(id: string, signal?: AbortSignal): Promise<FeatureCollection<LineString>> {
+  const { data } = await http.get<FeatureCollection<LineString>>(`/rutas/${encodeURIComponent(id)}`, { signal })
   return data
 }
 
@@ -21,12 +27,19 @@ export async function obtenerSimulacion(): Promise<EstadoSimulacion> {
   return data
 }
 
-export async function iniciarSimulacion(): Promise<EstadoSimulacion> {
-  const { data } = await http.post<EstadoSimulacion>("/simulacion/iniciar")
+/** Nueva carrera en la ruta indicada: todos salen juntos del inicio. */
+export async function iniciarCarrera(ruta: string): Promise<EstadoSimulacion> {
+  const { data } = await http.post<EstadoSimulacion>("/simulacion/iniciar", { ruta })
   return data
 }
 
-export async function detenerSimulacion(): Promise<EstadoSimulacion> {
+export async function detenerCarrera(): Promise<EstadoSimulacion> {
   const { data } = await http.post<EstadoSimulacion>("/simulacion/detener")
+  return data
+}
+
+/** Cambia la velocidad de un auto (10–500 km/h), también en plena carrera. */
+export async function cambiarVelocidad(carId: string, kmh: number): Promise<EstadoSimulacion> {
+  const { data } = await http.put<EstadoSimulacion>(`/simulacion/autos/${encodeURIComponent(carId)}/velocidad`, { kmh })
   return data
 }
