@@ -70,9 +70,9 @@ class AutosWsTest {
                 // descartar
             }
 
-            publicar(new Auto("ws-1", -12.0, -77.0, "ON", 90, 1000));
-            publicar(new Auto("ws-1", -12.1, -77.1, "OFF", 89, 2000));
-            publicar(new Auto("ws-2", -12.2, -77.2, "ON", 70, 1500));
+            publicar(new Auto("ws-1", null, null, -12.0, -77.0, 0, "ON", 90, 1000));
+            publicar(new Auto("ws-1", null, null, -12.1, -77.1, 0, "OFF", 89, 2000));
+            publicar(new Auto("ws-2", null, null, -12.2, -77.2, 0, "ON", 70, 1500));
 
             long ultimoTsWs1 = 0;
             boolean vistoWs2 = false;

@@ -35,10 +35,10 @@ class AutosResourceTest {
 
     @Test
     void devuelveUnRegistroPorAutoConElTsMasReciente() {
-        publicar(new Auto("rest-1", -12.05, -77.05, "ON", 90, 1000));
-        publicar(new Auto("rest-1", -12.06, -77.06, "OFF", 89, 2000));
-        publicar(new Auto("rest-1", -12.00, -77.00, "ON", 99, 500));   // viejo: se descarta
-        publicar(new Auto("rest-2", -12.07, -77.07, "ON", 70, 1500));
+        publicar(new Auto("rest-1", null, null, -12.05, -77.05, 0, "ON", 90, 1000));
+        publicar(new Auto("rest-1", null, null, -12.06, -77.06, 0, "OFF", 89, 2000));
+        publicar(new Auto("rest-1", null, null, -12.00, -77.00, 0, "ON", 99, 500));   // viejo: se descarta
+        publicar(new Auto("rest-2", null, null, -12.07, -77.07, 0, "ON", 70, 1500));
 
         Awaitility.await().until(() -> store.tamanio() >= 2);
 
