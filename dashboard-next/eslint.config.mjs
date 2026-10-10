@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Código generado por las CLIs de shadcn/mapcn: se actualiza con la CLI, no a mano.
+    "components/ui/**",
   ]),
 ]);
 

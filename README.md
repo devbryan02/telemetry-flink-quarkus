@@ -40,3 +40,15 @@ Cliente WebSocket de prueba (Node 22+): `new WebSocket('ws://localhost:8080/ws/a
 
 El job de Flink corre dentro de Quarkus y arranca solo; su UI queda en http://localhost:8081.
 Para probarlo de punta a punta: `simulador.py --autos 1000` escribe en `telemetria`, Flink publica en `ultima-posicion` y `GET /autos` refleja los cambios.
+
+## Dashboard (Next.js)
+
+```bash
+cd dashboard-next
+cp .env.example .env.local      # URL del backend y del WebSocket
+npm install
+npm run dev                     # http://localhost:3000
+```
+
+Mapa con shadcn/ui y mapcn (MapLibre): toda la flota se pinta en una sola capa WebGL `circle`, verde con motor encendido y rojo apagado.
+`components/ui/` es código generado por las CLIs de shadcn/mapcn y no pasa por el lint.
