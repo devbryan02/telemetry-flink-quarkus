@@ -1,0 +1,9 @@
+{
+  "nombre": "Av. Brasil",
+  "ruta": "av-brasil",
+  "autos": [
+    { "carId": "auto-1", "companyId": "emp-01", "fleetId": "emp-01-f1", "inicio": 0.00, "sentido": "ida",    "velocidadKmh": 42 },
+    { "carId": "auto-2", "companyId": "emp-01", "fleetId": "emp-01-f1", "inicio": 0.35, "sentido": "vuelta", "velocidadKmh": 35 },
+    { "carId": "auto-3", "companyId": "emp-02", "fleetId": "emp-02-f1", "inicio": 0.70, "sentido": "ida",    "velocidadKmh": 48 }
+  ]
+}
