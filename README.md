@@ -35,3 +35,5 @@ curl localhost:8080/autos          # estado completo; ?bbox=minLon,minLat,maxLon
 
 El estado vive en memoria y se reconstruye al arrancar releyendo `ultima-posicion` desde el inicio.
 Si detienes el proceso a la fuerza, el grupo `quarkus-dash` puede tardar hasta ~45 s en reasignar particiones.
+
+Cliente WebSocket de prueba (Node 22+): `new WebSocket('ws://localhost:8080/ws/autos')` recibe cada 500 ms un arreglo con los autos que cambiaron.

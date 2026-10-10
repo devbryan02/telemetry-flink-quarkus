@@ -264,7 +264,7 @@ flowchart LR
     K2 --> IN["@Incoming<br/>ultima-posicion"]
     IN --> ST["AutosStore<br/>ConcurrentHashMap + set de 'sucios'"]
     ST --> REST["AutosResource<br/>GET /autos (?bbox opcional)"]
-    ST --> TICK["@Scheduled(every = 0.5s)<br/>vacía el set de sucios"]
+    ST --> TICK["AutosBroadcaster<br/>timer Vert.x 500 ms · vacía el set de sucios"]
     TICK --> WS["AutosWs (websockets-next)<br/>/ws/autos · 1 mensaje = array de autos"]
 ```
 
@@ -286,12 +286,13 @@ flowchart LR
 | `quarkus-rest-jackson` | Serialización JSON |
 | `quarkus-websockets-next` | WebSocket `/ws/autos` |
 | `quarkus-messaging-kafka` | `@Incoming` desde `ultima-posicion` (SmallRye Reactive Messaging) |
-| `quarkus-scheduler` | Ticker de 500 ms (`@Scheduled`) |
 | `quarkus-arc` | CDI (incluida por defecto) |
-| `quarkus-junit5` | Tests (scope `test`) |
+| `quarkus-junit` | Tests (scope `test`) |
+
+> El ticker de 500 ms usa un temporizador de Vert.x: `@Scheduled` (`quarkus-scheduler`) solo evalúa sus triggers una vez por segundo y no sirve para periodos menores.
 
 ```bash
-quarkus ext add rest rest-jackson websockets-next messaging-kafka scheduler
+quarkus ext add rest rest-jackson websockets-next messaging-kafka
 ```
 
 **Dependencias Maven de Flink** (añadir a mano en `pom.xml`):
@@ -506,7 +507,7 @@ telemetria-mvp/
 ├── telemetry-api/
 │   ├── pom.xml                       (extensiones Quarkus + Flink 2.2.1)
 │   └── src/main/java/dev/bryan/
-│       ├── autos/     (Auto, AutosStore, AutosConsumer, AutosResource, AutosWs)
+│       ├── autos/     (Auto, AutosStore, AutosConsumer, AutosResource, AutosWs, AutosBroadcaster)
 │       ├── flink/     (FlinkJobRunner, UltimaPosicionJob, UltimaPosicionFunction)
 │       └── shared/    (error/, config/)
 ├── dashboard-next/

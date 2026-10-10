@@ -34,6 +34,23 @@ class AutosStore {
         return cambio[0];
     }
 
+    /**
+     * Devuelve los autos modificados desde la última llamada y los quita del set de sucios.
+     * Una actualización concurrente vuelve a marcar el auto y entra en el siguiente lote.
+     */
+    List<Auto> drenarSucios() {
+        List<Auto> lote = new ArrayList<>();
+        for (String id : sucios) {
+            if (sucios.remove(id)) {
+                Auto auto = autos.get(id);
+                if (auto != null) {
+                    lote.add(auto);
+                }
+            }
+        }
+        return lote;
+    }
+
     List<Auto> todos() {
         return new ArrayList<>(autos.values());
     }

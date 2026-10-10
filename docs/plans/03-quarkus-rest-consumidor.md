@@ -8,7 +8,7 @@
 - **No incluye:** WebSocket (04) ni Flink (05). Se prueba publicando a mano en `ultima-posicion`.
 
 ## Tareas
-- [ ] Proyecto base ya creado en `telemetry-api/` (Quarkus 3.40.1, Java 17, `rest` + `arc`). Añadir las extensiones faltantes de spec §9: `rest-jackson`, `websockets-next`, `messaging-kafka`, `scheduler`; eliminar `GreetingResource` y sus tests.
+- [ ] Proyecto base ya creado en `telemetry-api/` (Quarkus 3.40.1, Java 17, `rest` + `arc`). Añadir las extensiones faltantes de spec §9: `rest-jackson`, `websockets-next`, `messaging-kafka`; eliminar `GreetingResource` y sus tests.
 - [ ] `application.properties` según §9 (Kafka, `auto.offset.reset=earliest`, CORS `http://localhost:3000`, compresión).
 - [ ] `autos/Auto` como `record` con el esquema §4.
 - [ ] `autos/AutosStore`: `ConcurrentHashMap<String, Auto>` + set concurrente de "sucios"; solo reemplaza si `ts` es mayor.

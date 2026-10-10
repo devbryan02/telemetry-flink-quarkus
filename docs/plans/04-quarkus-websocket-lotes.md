@@ -10,11 +10,11 @@
 ## Tareas
 - [ ] `AutosStore.drenarSucios()`: devuelve la lista de autos sucios y limpia el set sin perder actualizaciones concurrentes.
 - [ ] `autos/AutosWs` con `@WebSocket(path = "/ws/autos")`.
-- [ ] `@Scheduled(every = "0.5s")` que drena y hace broadcast de un solo mensaje JSON (array) a todas las conexiones; no envía si el lote está vacío.
+- [ ] `autos/AutosBroadcaster`: temporizador periódico de Vert.x de 500 ms (`@Scheduled` solo evalúa cada 1 s, no sirve) que drena y hace broadcast de un solo mensaje JSON (array) a todas las conexiones; no envía si el lote está vacío.
 - [ ] Test: dos actualizaciones del mismo auto entre ticks producen una sola entrada en el lote.
 
 ## Archivos
-`.../autos/AutosWs.java` · cambios en `.../autos/AutosStore.java` · test en `src/test`.
+`.../autos/{AutosWs,AutosBroadcaster}.java` · cambios en `.../autos/AutosStore.java` · test en `src/test`.
 
 ## Verificación
 ```bash
