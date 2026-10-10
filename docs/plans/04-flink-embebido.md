@@ -1,7 +1,7 @@
-# 05 · Flink embebido en Quarkus
+# 04 · Flink embebido en Quarkus
 
 **Objetivo:** job que lee `telemetria`, conserva la última posición por auto y escribe en `ultima-posicion`, ejecutado dentro de la JVM de Quarkus.
-**Depende de:** 01, 03 · **Spec:** §8, §9 (dependencias) · **Estándares:** `STD-ARCH-001`
+**Depende de:** 01, 02 · **Spec:** §8, §9 (dependencias) · **Estándares:** `STD-ARCH-001`
 
 ## Alcance
 - **Incluye:** dependencias Flink, feature `flink`, arranque/parada con Quarkus, classloaders de Flink, UI `:8081`.
@@ -24,7 +24,7 @@
 ```bash
 ./mvnw test
 ./mvnw quarkus:dev
-python simulador/simulador.py --autos 1000 --intervalo 2
+curl -s -X POST localhost:8080/simulacion/iniciar
 curl -s localhost:8080/autos | jq length          # ≈ 1000
 # abrir http://localhost:8081
 ```
@@ -34,4 +34,4 @@ Esperado: la UI de Flink muestra el job en `RUNNING` sin backpressure; `GET /aut
 `feature/inc-05-flink-embebido` · `feat(flink): agrega job de ultima posicion embebido en Quarkus`
 
 ## Hecho cuando
-Con el simulador activo el flujo completo `telemetria → Flink → ultima-posicion → GET /autos` funciona, y al detener Quarkus el job se cancela limpiamente.
+Con la simulación en curso el flujo completo `telemetria → Flink → ultima-posicion → GET /autos` funciona, y al detener Quarkus el job se cancela limpiamente.

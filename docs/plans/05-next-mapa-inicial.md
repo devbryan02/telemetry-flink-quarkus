@@ -1,7 +1,7 @@
-# 06 · Next.js: mapa con carga inicial
+# 05 · Next.js: mapa con carga inicial
 
 **Objetivo:** dashboard que pinta en un mapa los autos devueltos por `GET /autos`.
-**Depende de:** 03 · **Spec:** §10 (RF-U1, RF-U2, RF-U4) · **Estándares:** `STD-ARCH-001`
+**Depende de:** 02 · **Spec:** §10 (RF-U1, RF-U2, RF-U4) · **Estándares:** `STD-ARCH-001`
 
 ## Alcance
 - **Incluye:** proyecto Next.js, shadcn, mapcn, axios, feature `autos` con tipos, API y mapa.
@@ -29,4 +29,4 @@ Abrir `http://localhost:3000`. Esperado: mapa de Lima con los autos como puntos 
 `feature/inc-06-next-mapa` · `feat(dashboard): agrega mapa con carga inicial de autos`
 
 ## Hecho cuando
-Con 10.000 autos en el backend, el mapa los muestra todos tras la carga inicial y `npm run build` pasa.
+El mapa muestra todos los autos del backend tras la carga inicial y `npm run build` pasa.

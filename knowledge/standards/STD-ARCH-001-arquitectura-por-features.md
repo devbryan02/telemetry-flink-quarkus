@@ -6,6 +6,14 @@ El código se organiza **por feature (capacidad de negocio)**, no por capa técn
 
 ```text
 dev.bryan
+├── simulacion/             feature: autos que recorren una ruta y publican en telemetria
+│   ├── Simulador.java      timer Vert.x de 1 s; iniciar/detener
+│   ├── AutoSimulado.java   movimiento por la ruta, semáforos, media vuelta
+│   ├── Ruta.java           polilínea con distancias acumuladas
+│   ├── CatalogoRutas.java  lee rutas/*.geojson y escenarios/*.json
+│   ├── TelemetriaEvento.java  record del evento publicado
+│   ├── SimulacionResource.java  POST /simulacion/iniciar|detener, GET /simulacion
+│   └── RutasResource.java  GET /rutas/{nombre}
 ├── autos/                  feature: estado y difusión de la última posición
 │   ├── Auto.java           record del evento (esquema de la spec §4)
 │   ├── AutosStore.java     ConcurrentHashMap + set de "sucios"
@@ -16,18 +24,18 @@ dev.bryan
 ├── flink/                  feature: job Flink embebido
 │   ├── FlinkJobRunner.java
 │   ├── UltimaPosicionJob.java
-│   └── UltimaPosicionFunction.java
+│   ├── UltimaPosicionFunction.java
+│   └── Posicion.java       record del evento que ve el job
 └── shared/                 solo lo transversal de verdad
-    ├── error/              ComsatelException, GlobalExceptionMapper (ver STD-ERR-001)
-    └── config/
+    └── error/              ComsatelException, GlobalExceptionMapper (ver STD-ERR-001)
 ```
 
 Reglas:
 - **Una feature = un paquete.** Las clases son *package-private* por defecto. Solo es `public` lo que otra feature o Quarkus necesita ver.
-- **Las features no se llaman entre sí por dentro.** Si `flink` y `autos` necesitan comunicarse, lo hacen por un contrato explícito: un topic Kafka o una clase `public` documentada. Nunca se accede a los detalles internos de otra feature.
+- **Las features no se llaman entre sí por dentro.** `simulacion`, `flink` y `autos` se comunican por topics de Kafka (`telemetria`, `ultima-posicion`), cada una con su propio record del evento; si hiciera falta otra vía, una clase `public` documentada. Nunca se accede a los detalles internos de otra feature.
 - **`shared/` es para lo transversal:** manejo de errores y configuración común. No es un cajón de sastre. Si algo solo lo usa una feature, va en esa feature.
 - **Sin capas ceremoniales:** no se crean interfaces, puertos, mappers ni `service`/`repository` "por si acaso". Se introduce una abstracción solo cuando hay dos implementaciones reales o se necesita para probar.
-- **Los DTOs se escriben a mano**, como `record` de Java, dentro de la feature que los expone. El contrato JSON es el de `docs/specs/telemetria.md` (§4 y §9).
+- **Los DTOs se escriben a mano**, como `record` de Java, dentro de la feature que los expone. El contrato JSON es el de `docs/specs/telemetria.md` (§4).
 - **Código Flink:** las clases que se serializan (funciones, esquemas) viven en `flink/`. No dependen de beans CDI ni de clases de otras features que no sean serializables.
 
 ## Frontend (Next.js)
@@ -37,10 +45,13 @@ dashboard-next/
 ├── app/                    rutas (App Router); páginas delgadas que componen features
 ├── features/
 │   └── autos/
-│       ├── components/     autos-map.tsx, autos-stats.tsx
+│       ├── components/     autos-map.tsx, autos-layer.tsx, ruta-layer.tsx, autos-stats.tsx
 │       ├── hooks/          use-autos-socket.ts
-│       ├── api.ts          llamadas axios de la feature
-│       ├── types.ts        tipo Auto
+│       ├── api.ts          llamadas axios de la feature (autos, ruta, simulación)
+│       ├── filtros.ts      filtro empresa → flota
+│       ├── animacion.ts    interpolación del movimiento
+│       ├── vehiculo.ts     íconos de vehículo
+│       ├── types.ts        tipos Auto y EstadoSimulacion
 │       └── index.ts        API pública de la feature
 ├── components/ui/          componentes shadcn/mapcn (generados por la CLI, compartidos)
 └── lib/                    utilidades transversales (instancia axios, cn)

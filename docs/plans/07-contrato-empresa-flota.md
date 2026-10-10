@@ -1,17 +1,17 @@
-# 10 · Contrato nuevo en Flink y Quarkus
+# 07 · Empresa, flota y rumbo en el contrato
 
-**Objetivo:** que el job y el backend transporten `companyId`, `fleetId` y `heading` sin cambiar su lógica.
-**Depende de:** 05, 09 · **Spec:** §4, §8, §9
+**Objetivo:** que cada evento lleve la empresa, la flota y el rumbo del auto, y que el job y el backend lo transporten sin cambiar su lógica.
+**Depende de:** 04 · **Spec:** §4, §8, §9
 
 ## Alcance
-- **Incluye:** campos nuevos en `flink/Posicion` y `autos/Auto`, tests actualizados, compatibilidad con eventos sin los campos nuevos.
+- **Incluye:** campos `companyId`, `fleetId` y `heading` en `flink/Posicion` y `autos/Auto`, tests y compatibilidad con eventos sin esos campos.
 - **No incluye:** endpoints nuevos (el frontend agrega desde el estado completo).
 
 ## Tareas
 - [x] `Posicion` y `Auto` con `companyId`, `fleetId` y `heading`.
-- [x] El deserializador de Flink ignora propiedades desconocidas (hoy un campo nuevo descartaría el evento).
+- [x] El deserializador de Flink ignora propiedades desconocidas.
 - [x] Tests: el job conserva los campos; un evento sin ellos se acepta con `null`/0.
-- [x] Recrear los topics antes de probar: `ultima-posicion` compactado guarda eventos viejos sin empresa.
+- [x] `scripts/crear-topics.* --recrear` para reiniciar los topics cuando cambia el contrato (`ultima-posicion` compactado guarda eventos con el formato anterior).
 
 ## Archivos
 `telemetry-api/src/main/java/dev/bryan/{flink/Posicion,flink/PosicionJson,autos/Auto}.java` · tests de ambas features · `scripts/crear-topics.*`
@@ -19,7 +19,7 @@
 ## Verificación
 ```bash
 cd telemetry-api && ./mvnw test
-python simulador/simulador.py --autos 1000 --semilla 7
+curl -s -X POST localhost:8080/simulacion/iniciar
 curl -s localhost:8080/autos | jq '.[0]'      # incluye companyId, fleetId, heading
 ```
 

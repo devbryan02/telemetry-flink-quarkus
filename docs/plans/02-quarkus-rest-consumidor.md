@@ -1,4 +1,4 @@
-# 03 · Quarkus: consumidor y `GET /autos`
+# 02 · Quarkus: consumidor y `GET /autos`
 
 **Objetivo:** backend que mantiene el último estado por auto desde `ultima-posicion` y lo sirve por REST.
 **Depende de:** 01 · **Spec:** §9 · **Estándares:** `STD-ARCH-001`, `STD-ERR-001`
