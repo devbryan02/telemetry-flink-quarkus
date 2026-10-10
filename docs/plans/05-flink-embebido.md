@@ -17,7 +17,7 @@
 - [ ] Test unitario de `UltimaPosicionFunction` con un harness de Flink: evento viejo descartado, nuevo emitido.
 
 ## Archivos
-`backend-quarkus/pom.xml` · `.../flink/{FlinkJobRunner,UltimaPosicionJob,UltimaPosicionFunction}.java` · `application.properties` · `README.md` (flags).
+`telemetry-api/pom.xml` · `.../flink/{FlinkJobRunner,UltimaPosicionJob,UltimaPosicionFunction}.java` · `application.properties` · `README.md` (flags).
 
 ## Verificación
 ```bash

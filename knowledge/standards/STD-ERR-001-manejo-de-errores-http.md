@@ -20,7 +20,7 @@ Sin stack trace en la respuesta. `requestId` correlaciona con logs.
 Clase base `ComsatelException` (`shared/error/`, ver `STD-ARCH-001`) con `status` HTTP + `code`; subclases concretas por caso, nunca se lanza la base directamente. Stack Quarkus (ver `ADR-003`): se usa `jakarta.ws.rs.core.Response.Status`, no tipos de Spring.
 
 ```java
-package com.comsatel.telemetria.shared.error;
+package dev.bryan.shared.error;
 
 import jakarta.ws.rs.core.Response;
 

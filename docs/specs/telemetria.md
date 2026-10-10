@@ -503,9 +503,9 @@ Estructura del repositorio:
 telemetria-mvp/
 ├── docker-compose.yml
 ├── simulador/simulador.py
-├── backend-quarkus/
+├── telemetry-api/
 │   ├── pom.xml                       (extensiones Quarkus + Flink 2.2.1)
-│   └── src/main/java/com/comsatel/telemetria/
+│   └── src/main/java/dev/bryan/
 │       ├── autos/     (Auto, AutosStore, AutosConsumer, AutosResource, AutosWs)
 │       ├── flink/     (FlinkJobRunner, UltimaPosicionJob, UltimaPosicionFunction)
 │       └── shared/    (error/, config/)

@@ -8,7 +8,7 @@
 - **No incluye:** WebSocket, contadores, popup (07).
 
 ## Tareas
-- [ ] Crear el proyecto (comandos en spec §10): Next.js 16, TypeScript, Tailwind, App Router; `shadcn init`; `add card badge tooltip @mapcn/map`; `npm i axios`.
+- [ ] Proyecto base ya creado en `dashboard-next/` (Next.js 16.4, React 19, Tailwind 4). Leer antes la guía en `node_modules/next/dist/docs/` (ver `AGENTS.md`). Ejecutar `shadcn init`, `add card badge tooltip @mapcn/map` y `npm i axios`.
 - [ ] `.env.local` con `NEXT_PUBLIC_API_URL` y `NEXT_PUBLIC_WS_URL`.
 - [ ] `lib/http.ts`: instancia axios con `baseURL`.
 - [ ] `features/autos/types.ts` (tipo `Auto`), `features/autos/api.ts` (`obtenerAutos()`), `features/autos/index.ts`.
