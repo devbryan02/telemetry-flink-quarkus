@@ -28,7 +28,7 @@ Decisiones que no son obvias si no se lee toda la spec:
 - **Versiones fijadas por compatibilidad, no por ser las últimas:**
   - Java 17, que es la versión que recomienda Flink 2.x.
   - Flink 2.2.1 con `flink-connector-kafka:5.0.0-2.2`. Flink 2.3 existe, pero el conector no está publicado para esa línea.
-- **Flink embebido necesita flags `--add-opens` en la JVM**, tanto en `quarkus:dev` como al ejecutar el jar. La lista está en spec §8.
+- **Classloaders de Flink en Quarkus:** `FlinkJobRunner` declara `pipeline.classpaths` con la ubicación de las clases de la app y `parent-first`. Sin eso, el MiniCluster usa el classloader del sistema y el job falla con `ClassNotFoundException`. No lo quites (spec §8). Los `--add-opens` no hicieron falta con JDK 17.
 - **Los operadores de Flink se serializan.** No inyectes beans CDI dentro de ellos ni uses el `ObjectMapper` de Quarkus en ese código.
 - **El cuello de botella es el navegador, no Kafka ni Flink.** El backend envía lotes cada 500 ms con solo los autos cambiados. En el frontend:
   - Una sola fuente GeoJSON con capa `circle` en WebGL, nunca un marcador DOM por auto.
@@ -43,7 +43,7 @@ Decisiones que no son obvias si no se lee toda la spec:
 docker compose up -d                                   # Kafka KRaft :9092
 kafka-topics.sh --create --topic telemetria --partitions 12 --bootstrap-server localhost:9092 --config retention.ms=3600000
 kafka-topics.sh --create --topic ultima-posicion --partitions 12 --bootstrap-server localhost:9092 --config cleanup.policy=compact
-cd telemetry-api && ./mvnw quarkus:dev -Djvm.args="--add-opens=java.base/java.lang=ALL-UNNAMED ..."   # :8080 + Flink UI :8081
+cd telemetry-api && ./mvnw quarkus:dev          # JDK 17 · :8080 + Flink UI :8081
 cd dashboard-next && npm run dev                       # :3000
 python simulador/simulador.py --autos 10000 --intervalo 2   # --bench para medir solo generación
 kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group flink-ultima-pos   # lag (también quarkus-dash)

@@ -224,6 +224,8 @@ public class FlinkJobRunner {
     void onStart(@Observes StartupEvent ev) throws Exception {
         Configuration conf = new Configuration();
         conf.set(RestOptions.PORT, uiPort);
+        conf.set(PipelineOptions.CLASSPATHS, List.of(clasesDeLaAplicacion().toString()));  // ver abajo
+        conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first");
         var env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
         env.setParallelism(parallelism);
         UltimaPosicionJob.build(env);           // define source → keyBy → process → sink
@@ -238,23 +240,13 @@ public class FlinkJobRunner {
 
 Reglas del código Flink dentro de Quarkus:
 - Los operadores (`KeyedProcessFunction`, serializadores) se **serializan** y corren en hilos de Flink: no inyectar beans CDI dentro de ellos; pasar solo valores simples (bootstrap servers, nombres de topic).
-- Usar los (de)serializadores propios de Flink (`SimpleStringSchema` + Jackson de Flink o un POJO) y no depender del `ObjectMapper` de Quarkus.
+- Usar los (de)serializadores propios de Flink (`DeserializationSchema`/`SerializationSchema` con un `ObjectMapper` propio) y no depender del `ObjectMapper` de Quarkus.
+- El job usa su propio record (`flink/Posicion`), no las clases de `autos/`: el contrato entre ambas features es el JSON del topic.
+- Sin checkpoints, Flink no confirma offsets; el `KafkaSource` activa `enable.auto.commit` para poder medir el lag del grupo `flink-ultima-pos`.
 
-Flags JVM necesarios en Java 17 (los scripts de la distribución de Flink los añaden; embebido hay que pasarlos a mano):
+**Classloaders (imprescindible).** Si el job no declara jars ni classpaths, el JobManager del MiniCluster deserializa el job con `ClassLoader.getSystemClassLoader()`. En Quarkus las dependencias las carga el classloader de Quarkus, así que falla con `ClassNotFoundException` (de clases de Flink en el jar, de clases de la app en `quarkus:dev`). Por eso se declara `pipeline.classpaths` con la ubicación real de las clases de la app (`target/classes` en dev, el jar al empaquetar) y orden `parent-first`. Funciona en `quarkus:dev` (incluida la recarga en caliente, que cancela y relanza el job) y en el jar.
 
-```text
---add-opens=java.base/java.lang=ALL-UNNAMED
---add-opens=java.base/java.lang.reflect=ALL-UNNAMED
---add-opens=java.base/java.util=ALL-UNNAMED
---add-opens=java.base/java.util.concurrent=ALL-UNNAMED
---add-opens=java.base/java.io=ALL-UNNAMED
---add-opens=java.base/java.net=ALL-UNNAMED
---add-opens=java.base/java.nio=ALL-UNNAMED
---add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-```
-
-- Desarrollo: `./mvnw quarkus:dev -Djvm.args="--add-opens=java.base/java.lang=ALL-UNNAMED ..."`
-- Jar: `java --add-opens=... -jar target/quarkus-app/quarkus-run.jar`
+**Flags `--add-opens`.** Los scripts de la distribución de Flink los añaden, pero con JDK 17.0.20 y Flink 2.2.1 no hicieron falta: el job corrió con 10.000 autos sin ellos, tanto en dev como en el jar. Si apareciera `InaccessibleObjectException`, añadir `--add-opens=java.base/java.lang=ALL-UNNAMED`, `java.util`, `java.lang.reflect`, `java.io`, `java.net`, `java.nio`, `sun.nio.ch` y `java.util.concurrent` (`-Djvm.args="..."` en dev, `java --add-opens=... -jar` en el jar).
 
 ## 9. Backend (Quarkus)
 
@@ -539,7 +531,9 @@ Organización **por features** en backend y frontend (ver `knowledge/standards/S
 | Productor Python limitado | No llega a 5.000 ev/s | Ajustar `linger_ms`/`batch_size`; varios procesos |
 | Disco lleno por 43 GB/día | Kafka se detiene | Retención de 1 h en `telemetria` |
 | Flink y Quarkus comparten heap | Backpressure, GC largos | Subir `-Xmx`, paralelismo 2-4, o sacar Flink a Docker (v5) |
-| Flink embebido sin `--add-opens` | `InaccessibleObjectException` al serializar | Pasar los flags JVM de §8 en dev y en el jar |
+| Classloaders de Flink dentro de Quarkus | El job no arranca (`ClassNotFoundException`) | `pipeline.classpaths` con las clases de la app y `parent-first` (§8) |
+| Flink embebido sin `--add-opens` (no observado con JDK 17.0.20) | `InaccessibleObjectException` al serializar | Pasar los flags JVM de §8 en dev y en el jar |
+| `ultima-posicion` sin compactar en desarrollo | Al arrancar, Quarkus relee todo el historial del topic | La compactación solo actúa sobre segmentos cerrados; si molesta, bajar `segment.ms` del topic |
 | Conflictos de classpath Flink/Quarkus | Errores al arrancar (`kafka-clients`, classloader de dev mode) | Excluir `kafka-clients` del conector; si dev mode falla, ejecutar con el jar (`quarkus-run.jar`) |
 | `GET /autos` de 1 MB en cada carga | Arranque lento | Compresión HTTP y filtro `bbox` |
 | Eventos desordenados | Posición vieja | `KeyedProcessFunction` que compara `ts` |
