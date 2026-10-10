@@ -4,14 +4,14 @@
 **Depende de:** 11 · **Spec:** §10
 
 ## Alcance
-- **Incluye:** capa `symbol` con un ícono SDF, rotación por `heading`, color por `engine`, filtros por empresa y zoom, y popup con empresa y flota.
+- **Incluye:** capa `symbol` con íconos de auto dibujados en canvas, rotación por `heading`, color por `engine`, borde por tipo (particular/empresa), filtros por empresa y zoom, y popup con empresa y flota.
 - **No incluye:** animar la interpolación entre posiciones.
 
 ## Tareas
-- [x] SVG propio de auto registrado con `map.addImage(..., { sdf: true })`; se vuelve a registrar si cambia el estilo (tema).
+- [x] Ícono de auto dibujado en canvas a 2x, en 4 variantes (motor ON/OFF × particular/empresa), registrado con `map.addImage`. Se descartó un ícono SDF teñido con `icon-color` porque sus bordes se ven pixelados. Se vuelve a registrar si cambia el estilo (tema).
 - [x] Capa `symbol`:
   - `icon-rotate: ["get","heading"]` y `icon-rotation-alignment: "map"`;
-  - `icon-color` según `engine`;
+  - `icon-image` según `engine` y tipo (verde/rojo; borde blanco o celeste);
   - `icon-allow-overlap: true` y tamaño interpolado por zoom.
 - [x] Filtros sobre la misma fuente:
   - particulares siempre;
