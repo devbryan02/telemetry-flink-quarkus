@@ -1,7 +1,7 @@
-# 04 · Quarkus: WebSocket por lotes
+# 03 · Quarkus: WebSocket por lotes
 
 **Objetivo:** emitir cada 500 ms un único mensaje con los autos que cambiaron.
-**Depende de:** 03 · **Spec:** §9 (RF-Q2, RF-Q3, contrato `WS /ws/autos`)
+**Depende de:** 02 · **Spec:** §9 (RF-Q2, RF-Q3, contrato `WS /ws/autos`)
 
 ## Alcance
 - **Incluye:** endpoint WebSocket, ticker de 500 ms, vaciado atómico del set de sucios.

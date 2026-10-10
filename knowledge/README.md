@@ -14,7 +14,7 @@ Definido en [`ADR-003`](adrs/ADR-003-stack-quarkus-flink-embebido-nextjs.md) y d
 | Procesamiento | Apache Flink 2.2.1 embebido en Quarkus (sin clúster) |
 | Mensajería | Apache Kafka en Docker (KRaft) |
 | Frontend | React 19 + Next.js 16 + shadcn/ui + mapcn (MapLibre), axios + WebSocket |
-| Simulador | Python |
+| Simulación | Quarkus (feature `simulacion`), controlada desde el dashboard |
 
 Donde un standard muestre ejemplos de otro framework, se aplica su equivalente en Quarkus.
 
