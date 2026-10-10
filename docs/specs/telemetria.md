@@ -429,7 +429,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
 
 ### Requisitos funcionales
 - **RF-U1:** mapa a pantalla completa centrado en Lima (`[-77.0428, -12.0464]`), zoom 11. El componente del mapa es `"use client"` y se carga con `dynamic(..., { ssr: false })`, porque MapLibre necesita `window`.
-- **RF-U2:** **no usar un marcador React/DOM por auto** (10.000 nodos DOM no son viables). Usar **una sola fuente GeoJSON** y una **capa `circle`** de MapLibre (WebGL, `circle-radius` 3-4), accediendo a la instancia del mapa que expone mapcn.
+- **RF-U2:** **no usar un marcador React/DOM por auto** (10.000 nodos DOM no son viables). Usar **una sola fuente GeoJSON** y capas WebGL de MapLibre sobre ella, accediendo a la instancia del mapa que expone mapcn.
 - **RF-U3:** instancia axios en `lib/` (`baseURL = NEXT_PUBLIC_API_URL`) usada por `features/autos/api.ts` para `GET /autos`; hook `features/autos/hooks/use-autos-socket.ts` con WebSocket nativo y reconexión con backoff. Cada lote se **fusiona por `carId`** en un `Map<carId, Auto>` guardado en `useRef` (no en estado React, para no re-renderizar 10.000 elementos) y se aplica con un único `source.setData()` por `requestAnimationFrame`.
 - **RF-U4:** color por `engine` con una expresión de estilo: `["match", ["get","engine"], "ON", "#16a34a", "#dc2626"]` (verde `ON`, rojo `OFF`).
 - **RF-U5:** el popup/tooltip se crea solo en `mouseenter` sobre la capa (`map.on('mouseenter', 'autos', ...)`), no para los 10.000.
@@ -439,6 +439,13 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
   - **Al elegir una empresa** (con el `Select` del panel o con clic en su burbuja): se ven sus flotas como burbujas y el mapa se encuadra en la empresa.
   - **Desde zoom 14:** las burbujas de flota dan paso a los autos individuales de esa empresa. Clic en una flota acerca el zoom a ella.
   - **Burbujas solapadas:** si quedarían a menos de 70 px en pantalla, se fusionan ("3 flotas"), con borde punteado y una lista para elegir. Se recalculan al terminar cada movimiento del mapa.
+- **RF-U9 (íconos de vehículo):** todo auto que se ve suelto se dibuja como un vehículo visto desde arriba (capa `symbol` con `icon-allow-overlap`):
+  - orientado según `heading` (`icon-rotate` con `icon-rotation-alignment: map`);
+  - verde con motor ON y rojo con OFF;
+  - borde blanco si es particular y celeste si es de empresa;
+  - tamaño interpolado por zoom.
+
+  Las 4 variantes se dibujan en canvas (`features/autos/vehiculo.ts`) y se vuelven a registrar si cambia el estilo del mapa.
 - **RF-U8:** la agregación por empresa y por flota (`features/autos/agrupar.ts`) son funciones puras O(n) que se ejecutan en el mismo `requestAnimationFrame` del repintado y se publican al estado de React como mucho cada 500 ms.
 
 > Si hiciera falta más rendimiento, la alternativa es deck.gl `ScatterplotLayer` sobre el mismo mapa MapLibre.

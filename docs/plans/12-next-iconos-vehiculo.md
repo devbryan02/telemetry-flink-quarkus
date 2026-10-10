@@ -8,16 +8,16 @@
 - **No incluye:** animar la interpolación entre posiciones.
 
 ## Tareas
-- [ ] SVG propio de auto registrado con `map.addImage(..., { sdf: true })`; se vuelve a registrar si cambia el estilo (tema).
-- [ ] Capa `symbol`:
+- [x] SVG propio de auto registrado con `map.addImage(..., { sdf: true })`; se vuelve a registrar si cambia el estilo (tema).
+- [x] Capa `symbol`:
   - `icon-rotate: ["get","heading"]` y `icon-rotation-alignment: "map"`;
   - `icon-color` según `engine`;
   - `icon-allow-overlap: true` y tamaño interpolado por zoom.
-- [ ] Filtros sobre la misma fuente:
+- [x] Filtros sobre la misma fuente:
   - particulares siempre;
   - autos de la empresa seleccionada solo con `zoom ≥ 14`;
   - el resto nunca individualmente.
-- [ ] Popup: empresa, flota, motor, batería y antigüedad del dato.
+- [x] Popup: empresa, flota, motor, batería y antigüedad del dato.
 
 ## Archivos
 `dashboard-next/features/autos/components/autos-layer.tsx` · `features/autos/vehiculo.ts` (ícono)

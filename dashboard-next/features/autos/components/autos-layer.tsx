@@ -9,6 +9,7 @@ import { useMap } from "@/components/ui/map"
 import { nombreEmpresa, nombreFlota } from "../agrupar"
 import type { AutosGeoJSON, PropiedadesAuto } from "../geojson"
 import type { Auto } from "../types"
+import { nombreIcono, registrarIconos, type Tipo } from "../vehiculo"
 
 const FUENTE = "autos"
 const CAPA_PARTICULARES = "autos-particulares"
@@ -26,11 +27,19 @@ export type AutosLayerHandle = {
   visibles: (autos: Iterable<Auto>) => number
 }
 
-const ESTILO_AUTO: MapLibreGL.CircleLayerSpecification["paint"] = {
-  "circle-radius": 3.5,
-  "circle-color": ["match", ["get", "engine"], "ON", "#16a34a", "#dc2626"],
-  "circle-stroke-width": 0.5,
-  "circle-stroke-color": "#ffffff",
+/**
+ * Cada auto es un ícono de vehículo orientado según su rumbo (spec §10, RF-U9): color por motor y
+ * borde según sea particular o de empresa. Siempre visible (sin colisiones) y más grande al acercarse.
+ */
+function estiloVehiculo(tipo: Tipo): MapLibreGL.SymbolLayerSpecification["layout"] {
+  return {
+    "icon-image": ["match", ["get", "engine"], "ON", nombreIcono("on", tipo), nombreIcono("off", tipo)],
+    "icon-rotate": ["get", "heading"],
+    "icon-rotation-alignment": "map",
+    "icon-allow-overlap": true,
+    "icon-ignore-placement": true,
+    "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.35, 12, 0.55, 15, 0.85, 18, 1.3],
+  }
 }
 
 /** Contenido del popup construido con nodos de texto (sin HTML interpolado). */
@@ -56,7 +65,7 @@ function contenidoPopup(p: PropiedadesAuto): HTMLElement {
 }
 
 /**
- * Una fuente GeoJSON con toda la flota y dos capas filtradas sobre ella (spec §10):
+ * Una fuente GeoJSON con toda la flota y dos capas de íconos filtradas sobre ella (spec §10):
  * los particulares siempre, y los autos de la empresa seleccionada solo desde ZOOM_AUTOS.
  * Los autos de las demás empresas no se dibujan uno a uno: los representan sus burbujas.
  * No crea un nodo React/DOM por auto: los datos se cambian imperativamente con `setData()`.
@@ -93,21 +102,22 @@ export const AutosLayer = forwardRef<AutosLayerHandle, { empresaSeleccionada: st
   useEffect(() => {
     if (!map || !isLoaded || map.getSource(FUENTE)) return
 
+    registrarIconos(map)
     map.addSource(FUENTE, { type: "geojson", data: ultimos.current })
     map.addLayer({
       id: CAPA_PARTICULARES,
-      type: "circle",
+      type: "symbol",
       source: FUENTE,
       filter: ["==", ["get", "companyId"], null],
-      paint: ESTILO_AUTO,
+      layout: estiloVehiculo("p"),
     })
     map.addLayer({
       id: CAPA_EMPRESA,
-      type: "circle",
+      type: "symbol",
       source: FUENTE,
       minzoom: ZOOM_AUTOS,
       filter: ["==", ["get", "companyId"], empresa.current ?? SIN_EMPRESA],
-      paint: ESTILO_AUTO,
+      layout: estiloVehiculo("e"),
     })
 
     return () => {
