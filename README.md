@@ -8,10 +8,11 @@ Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Plane
 ```bash
 docker compose up -d
 ./scripts/crear-topics.sh          # en Windows: .\scripts\crear-topics.ps1
+./scripts/crear-topics.sh --recrear # borra y crea de nuevo (tras un cambio del contrato del evento)
 docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe
 ```
 
-Un solo broker KRaft en `localhost:9092`. Topics: `telemetria` (12 particiones, retención 1 h) y `ultima-posicion` (12 particiones, compact).
+Un solo broker KRaft (Kafka 4.2.1) en `localhost:9092`. Topics: `telemetria` (12 particiones, retención 1 h) y `ultima-posicion` (12 particiones, compact).
 
 ## Simulador
 

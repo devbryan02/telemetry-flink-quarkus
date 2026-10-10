@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class AutosStoreTest {
 
     private static Auto auto(String id, long ts) {
-        return new Auto(id, -12.0, -77.0, "ON", 80, ts);
+        return new Auto(id, null, null, -12.0, -77.0, 0, "ON", 80, ts);
     }
 
     @Test

@@ -8,10 +8,10 @@
 - **No incluye:** endpoints nuevos (el frontend agrega desde el estado completo).
 
 ## Tareas
-- [ ] `Posicion` y `Auto` con `companyId`, `fleetId` y `heading`.
-- [ ] El deserializador de Flink ignora propiedades desconocidas (hoy un campo nuevo descartaría el evento).
-- [ ] Tests: el job conserva los campos; un evento sin ellos se acepta con `null`/0.
-- [ ] Recrear los topics antes de probar: `ultima-posicion` compactado guarda eventos viejos sin empresa.
+- [x] `Posicion` y `Auto` con `companyId`, `fleetId` y `heading`.
+- [x] El deserializador de Flink ignora propiedades desconocidas (hoy un campo nuevo descartaría el evento).
+- [x] Tests: el job conserva los campos; un evento sin ellos se acepta con `null`/0.
+- [x] Recrear los topics antes de probar: `ultima-posicion` compactado guarda eventos viejos sin empresa.
 
 ## Archivos
 `telemetry-api/src/main/java/dev/bryan/{flink/Posicion,flink/PosicionJson,autos/Auto}.java` · tests de ambas features · `scripts/crear-topics.*`

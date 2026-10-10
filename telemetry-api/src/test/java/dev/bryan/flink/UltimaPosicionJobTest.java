@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class UltimaPosicionJobTest {
 
     private static Posicion p(String id, long ts) {
-        return new Posicion(id, -12.0, -77.0, "ON", 80, ts);
+        return new Posicion(id, null, null, -12.0, -77.0, 0, "ON", 80, ts);
     }
 
     private static List<Posicion> ejecutar(Posicion... eventos) throws Exception {
@@ -38,5 +38,12 @@ class UltimaPosicionJobTest {
         List<Posicion> salida = ejecutar(p("a", 1000), p("a", 1));
 
         assertEquals(List.of(p("a", 1000)), salida);
+    }
+
+    @Test
+    void conservaEmpresaFlotaYRumbo() throws Exception {
+        Posicion conEmpresa = new Posicion("a", "emp-01", "emp-01-f3", -12.0, -77.0, 270, "ON", 80, 5);
+
+        assertEquals(List.of(conEmpresa), ejecutar(conEmpresa));
     }
 }

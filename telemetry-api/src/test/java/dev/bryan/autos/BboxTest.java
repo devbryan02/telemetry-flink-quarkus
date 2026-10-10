@@ -17,9 +17,9 @@ class BboxTest {
     void contienePuntosDentroYExcluyeFuera() {
         Bbox bbox = Bbox.parse("-77.1,-12.1,-77.0,-12.0");
 
-        assertTrue(bbox.contiene(new Auto("a", -12.05, -77.05, "ON", 50, 1)));
-        assertFalse(bbox.contiene(new Auto("b", -11.0, -77.05, "ON", 50, 1)));
-        assertFalse(bbox.contiene(new Auto("c", -12.05, -76.0, "ON", 50, 1)));
+        assertTrue(bbox.contiene(new Auto("a", null, null, -12.05, -77.05, 0, "ON", 50, 1)));
+        assertFalse(bbox.contiene(new Auto("b", null, null, -11.0, -77.05, 0, "ON", 50, 1)));
+        assertFalse(bbox.contiene(new Auto("c", null, null, -12.05, -76.0, 0, "ON", 50, 1)));
     }
 
     @ParameterizedTest
