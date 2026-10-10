@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Point } from "geojson"
 
 import type { Auto } from "./types"
 
-export type PropiedadesAuto = Pick<Auto, "carId" | "engine" | "battery" | "ts">
+export type PropiedadesAuto = Pick<Auto, "carId" | "companyId" | "fleetId" | "heading" | "engine" | "battery" | "ts">
 
 export type AutosGeoJSON = FeatureCollection<Point, PropiedadesAuto>
 
@@ -13,7 +13,15 @@ export function aGeoJSON(autos: Iterable<Auto>): AutosGeoJSON {
     features.push({
       type: "Feature",
       geometry: { type: "Point", coordinates: [a.lon, a.lat] },
-      properties: { carId: a.carId, engine: a.engine, battery: a.battery, ts: a.ts },
+      properties: {
+        carId: a.carId,
+        companyId: a.companyId,
+        fleetId: a.fleetId,
+        heading: a.heading,
+        engine: a.engine,
+        battery: a.battery,
+        ts: a.ts,
+      },
     })
   }
   return { type: "FeatureCollection", features }

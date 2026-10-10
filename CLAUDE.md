@@ -31,6 +31,7 @@ Decisiones que no son obvias si no se lee toda la spec:
 - **Classloaders de Flink en Quarkus:** `FlinkJobRunner` declara `pipeline.classpaths` con la ubicación de las clases de la app y `parent-first`. Sin eso, el MiniCluster usa el classloader del sistema y el job falla con `ClassNotFoundException`. No lo quites (spec §8). Los `--add-opens` no hicieron falta con JDK 17.
 - **Los operadores de Flink se serializan.** No inyectes beans CDI dentro de ellos ni uses el `ObjectMapper` de Quarkus en ese código.
 - **El consumidor Kafka de Quarkus (`AutosConsumer`) es por lotes y `@NonBlocking`.** No lo cambies a `void recibir(Auto)`: Quarkus lo ejecuta como bloqueante, con un salto de hilo por mensaje, y no alcanza 5.000 msg/s (medido: ~11 s de atraso).
+- **Vista por empresas:** el evento lleva `companyId`, `fleetId` (ambos `null` en particulares) y `heading`. El mapa no pinta todos los autos de empresa: burbujas por empresa, luego por flota de la empresa elegida, y autos individuales desde zoom 14 (`ZOOM_AUTOS`). Si cambia el contrato, recrear los topics (`scripts/crear-topics.sh --recrear`).
 - **El cuello de botella es el navegador, no Kafka ni Flink.** El backend envía lotes cada 500 ms con solo los autos cambiados. En el frontend:
   - Una sola fuente GeoJSON con capa `circle` en WebGL, nunca un marcador DOM por auto.
   - El estado de los autos vive en `useRef`, fuera del estado de React.

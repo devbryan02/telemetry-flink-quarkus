@@ -13,16 +13,16 @@
 - **No incluye:** íconos de vehículo (12).
 
 ## Tareas
-- [ ] `types.ts` con `companyId`, `fleetId` y `heading`.
-- [ ] `agrupar.ts`: funciones puras que, a partir del `Map<carId, Auto>`, calculan:
+- [x] `types.ts` con `companyId`, `fleetId` y `heading`.
+- [x] `agrupar.ts`: funciones puras que, a partir del `Map<carId, Auto>`, calculan:
   - por empresa: total, % de motor ON, centroide y límites;
   - por flota de la empresa seleccionada: lo mismo.
-- [ ] Burbujas con `MapMarker` (`components/ui/map.tsx`), con nombre y total:
+- [x] Burbujas con `MapMarker` (`components/ui/map.tsx`), con nombre y total:
   - clic en una empresa: la selecciona y aplica `fitBounds`;
   - clic en una flota: zoom a esa flota.
-- [ ] Selector de empresa (`Select` de shadcn) con "Todas las empresas" y la lista con totales, más un botón para quitar la selección.
-- [ ] Panel: empresas, flotas y particulares; con una empresa seleccionada, sus autos y % ON.
-- [ ] Los resúmenes se recalculan en el `requestAnimationFrame` del repintado y se publican al estado a lo sumo 2 veces por segundo; los autos siguen en `useRef`.
+- [x] Selector de empresa (`Select` de shadcn) con "Todas las empresas" y la lista con totales, más un botón para quitar la selección.
+- [x] Panel: empresas, flotas y particulares; con una empresa seleccionada, sus autos y % ON.
+- [x] Los resúmenes se recalculan en el `requestAnimationFrame` del repintado y se publican al estado a lo sumo 2 veces por segundo; los autos siguen en `useRef`.
 
 ## Archivos
 `dashboard-next/features/autos/{types,agrupar}.ts` · `features/autos/components/*` · `components/ui/select.tsx` (shadcn)
