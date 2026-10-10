@@ -21,3 +21,17 @@ uv venv .venv && uv pip install -r requirements.txt --python .venv/Scripts/pytho
 .venv/Scripts/python simulador.py --autos 10000 --intervalo 2     # corre hasta Ctrl+C (o --duracion N)
 .venv/Scripts/python simulador.py --bench --duracion 5            # solo generación, sin Kafka
 ```
+
+## Backend (Quarkus)
+
+Requiere JDK 17 y Kafka arriba (ver sección Kafka).
+
+```bash
+cd telemetry-api
+./mvnw test
+./mvnw quarkus:dev                 # http://localhost:8080
+curl localhost:8080/autos          # estado completo; ?bbox=minLon,minLat,maxLon,maxLat para filtrar
+```
+
+El estado vive en memoria y se reconstruye al arrancar releyendo `ultima-posicion` desde el inicio.
+Si detienes el proceso a la fuerza, el grupo `quarkus-dash` puede tardar hasta ~45 s en reasignar particiones.
