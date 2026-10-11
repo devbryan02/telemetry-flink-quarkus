@@ -43,7 +43,8 @@ const ESTILO_VEHICULO: MapLibreGL.SymbolLayerSpecification["layout"] = {
 /** Contenido del popup construido con nodos de texto (sin HTML interpolado). */
 function contenidoPopup(p: PropiedadesAuto): HTMLElement {
   const raiz = document.createElement("div")
-  raiz.className = "text-xs leading-5 text-neutral-900"
+  // mapcn deja el contenedor del popup transparente: el fondo y el color salen de los tokens del tema
+  raiz.className = "rounded-md border bg-popover px-2.5 py-1.5 text-xs leading-5 text-popover-foreground shadow-md"
   const lineas: [string, string][] = [
     ["Auto", p.carId],
     ["Empresa", p.companyId ? nombreEmpresa(p.companyId) : "Particular"],

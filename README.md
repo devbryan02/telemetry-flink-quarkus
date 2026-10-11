@@ -52,6 +52,7 @@ Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Plane
   - **"Seguir al líder"** centra el mapa en el primero, útil en la ruta de 325 km.
 - **Autos:** íconos de vehículo orientados según su rumbo, con movimiento interpolado entre posiciones.
 - **Filtro empresa → flota:** "Empresa 01" muestra sus 2 autos y "Empresa 02" su único auto.
+- **Tema claro / oscuro / sistema:** se elige en la cabecera del panel y cambia el mapa y toda la interfaz.
 - **Panel:** conexión, edad del último dato y latencia p95. Al pasar el mouse sobre un auto se ven su empresa, flota, motor y batería.
 
 ## API

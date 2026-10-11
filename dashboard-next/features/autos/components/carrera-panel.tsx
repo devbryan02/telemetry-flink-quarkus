@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SelectorTema } from "@/components/selector-tema"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
@@ -111,7 +112,7 @@ function FilaCorredor({
             {auto.fleetId ? ` · ${nombreFlota(auto.fleetId)}` : ""}
           </span>
         </span>
-        <span className={cn("text-xs tabular-nums", llego && "font-semibold text-green-600")}>
+        <span className={cn("text-xs tabular-nums", llego && "font-semibold text-green-600 dark:text-green-400")}>
           {llego ? `🏁 ${cronometro(auto.llegadaMs!)}` : `${km.format(auto.recorridoM / 1000)} km`}
         </span>
       </div>
@@ -187,7 +188,10 @@ export function CarreraPanel({
     <Card size="sm" className="flex max-h-[calc(100dvh-1.5rem)] w-80 flex-col">
       <CardHeader className="flex items-center justify-between gap-2">
         <CardTitle>Carrera</CardTitle>
-        <Badge variant={conexion === "abierta" ? "default" : "destructive"}>{ETIQUETA_CONEXION[conexion]}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={conexion === "abierta" ? "default" : "destructive"}>{ETIQUETA_CONEXION[conexion]}</Badge>
+          <SelectorTema />
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 overflow-y-auto">
         <Selector
@@ -225,7 +229,7 @@ export function CarreraPanel({
           </Button>
         </div>
         {estado === "TERMINADA" && deEstaRuta && (
-          <p className="text-xs font-medium text-green-600">Carrera terminada 🏁</p>
+          <p className="text-xs font-medium text-green-600 dark:text-green-400">Carrera terminada 🏁</p>
         )}
 
         <ol className="flex flex-col gap-2">

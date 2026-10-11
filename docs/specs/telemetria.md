@@ -321,6 +321,7 @@ flowchart TB
 |---|---|
 | Next.js | **16.x** (App Router, React 19, TypeScript, Tailwind CSS v4) |
 | Componentes UI | **shadcn/ui** (`Card`, `Badge`, `Button`, `Select`, `Slider`, `Tooltip`) |
+| Tema | **next-themes** (clase `dark` en `<html>`) |
 | Mapa | **mapcn** (`@mapcn/map`, registro shadcn sobre **MapLibre GL**) |
 | HTTP | **axios** 1.x |
 | Tiempo real | `WebSocket` nativo del navegador |
@@ -358,6 +359,11 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
   Las 4 variantes se dibujan en canvas (`features/autos/vehiculo.ts`).
 - **RF-U9:** movimiento **interpolado** (`features/autos/animacion.ts`): entre dos eventos de un auto se lo desplaza en línea recta y se gira por el camino corto, repintando con `setData()` en cada `requestAnimationFrame`. Un salto de más de 2 km (p. ej. al empezar una carrera en otra ruta) no se anima.
 - **RF-U10:** carga inicial por `GET /autos` (axios) y cambios por WebSocket con reconexión y backoff exponencial. Cada evento se fusiona por `carId` solo si su `ts` es más reciente; el estado vive en `useRef`, fuera de React.
+- **RF-U12 (tema):** toda la interfaz admite **modo claro y oscuro**.
+  - Un selector **Claro / Oscuro / Sistema** en la cabecera del panel; "Sistema" por defecto y la elección se guarda en el navegador.
+  - next-themes pone la clase `dark` en `<html>` antes de pintar, sin parpadeo. Los tokens de shadcn (`:root` / `.dark` en `globals.css`) cambian el panel y sus controles, y mapcn observa esa misma clase para alternar el mapa base claro u oscuro de CARTO.
+  - El popup de los autos y los marcadores de Salida y Meta usan tokens del tema.
+  - La ruta y los íconos se vuelven a crear al cambiar el estilo, así que siguen visibles en plena carrera.
 - **RF-U11:** popup al pasar el mouse sobre un auto y métricas en el panel: estado de conexión, autos mostrados, edad del último dato y latencia p95 (`Date.now() - ts`), refrescadas una vez por segundo sin rerenderizar el mapa.
 
 ## 11. Requisitos no funcionales
