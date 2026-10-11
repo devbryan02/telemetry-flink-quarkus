@@ -1,0 +1,25 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Dashboard api.ts
+  participant R as AutosResource · foco
+  participant B as Bbox
+  participant ST as AutosStore
+  participant E as GlobalExceptionMapper
+  Note over ST: alimentado por AutosConsumer desde ultima-posicion
+  C->>R: GET /autos con bbox opcional · listar
+  alt sin bbox
+    R->>ST: todos()
+    ST-->>R: copia de los autos
+    R-->>C: 200 application/json
+  else con bbox
+    R->>B: parse(minLon,minLat,maxLon,maxLat)
+    alt formato o rango inválido
+      B-->>E: ComsatelException 400 INVALID_BBOX
+      E-->>C: 400 ErrorResponse con requestId
+    else bbox válido
+      R->>ST: enBbox(bbox)
+      ST-->>R: autos dentro de la caja
+      R-->>C: 200 application/json
+    end
+  end
+  C->>C: fusionar por carId si ts es mayor

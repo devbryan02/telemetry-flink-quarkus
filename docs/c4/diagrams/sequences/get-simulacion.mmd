@@ -1,0 +1,24 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Dashboard autos-map
+  participant R as SimulacionResource · foco
+  participant S as Simulador
+  participant CAT as CatalogoRutas
+  participant E as GlobalExceptionMapper
+  loop cada 1 s en curso o cada 5 s en reposo
+    C->>R: GET /simulacion · estado
+    R->>S: estado() synchronized
+    S->>S: ordenar con ordenDeCarrera
+    opt antes de la primera carrera
+      S->>CAT: escenario(carrera)
+      CAT-->>S: autos en la salida con su velocidad
+    end
+    alt sin error
+      S-->>R: Estado con estado, ruta, inicio, longitudM y autos
+      R-->>C: 200 application/json
+      C->>C: setSimulacion y repinta el panel
+    else escenario ilegible
+      S-->>E: excepción no clasificada
+      E-->>C: 500 INTERNAL_ERROR
+    end
+  end

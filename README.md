@@ -2,7 +2,7 @@
 
 **Carreras** de 3 autos simulados en rutas reales del Perú, seguidas en un mapa en tiempo real:
 simulación en Quarkus → Kafka → Flink embebido en Quarkus → WebSocket → Next.js.
-Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Planes: [`docs/plans/`](docs/plans/README.md).
+Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Planes: [`docs/plans/`](docs/plans/README.md) · Arquitectura C4: [`docs/c4/`](docs/c4/README.md).
 
 ## Levantar todo con Docker
 

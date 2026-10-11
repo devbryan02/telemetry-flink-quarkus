@@ -1,0 +1,38 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Dashboard api.ts
+  participant R as SimulacionResource · foco
+  participant S as Simulador
+  participant CAT as CatalogoRutas
+  participant A as AutoCorredor
+  participant V as Vert.x timer
+  participant K as Kafka telemetria
+  participant E as GlobalExceptionMapper
+  C->>R: POST /simulacion/iniciar · iniciar · body ruta
+  alt ruta vacía o ausente
+    R-->>E: ComsatelException 400 RUTA_REQUERIDA
+    E-->>C: 400 ErrorResponse con requestId
+  else ruta indicada
+    R->>S: iniciar(ruta)
+    S->>CAT: ruta(id)
+    alt ruta inexistente
+      CAT-->>E: ComsatelException 404 RUTA_NO_ENCONTRADA
+      E-->>C: 404 ErrorResponse con requestId
+    else ruta encontrada
+      CAT-->>S: Ruta con longitud
+      S->>V: cancelar temporizador previo
+      S->>A: crear uno por auto del escenario
+      S->>K: publicar salida, key carId, JSON de 9 campos
+      S->>V: setPeriodic intervalo-ms
+      S-->>R: Estado EN_CURSO
+      R-->>C: 200 application/json
+      loop cada 1 s hasta que todos lleguen
+        V->>S: avanzar()
+        S->>A: avanzar(segundos, tiempo)
+        S->>K: publicar autos en pista
+        opt todos llegaron
+          S->>V: cancelar temporizador, estado TERMINADA
+        end
+      end
+    end
+  end

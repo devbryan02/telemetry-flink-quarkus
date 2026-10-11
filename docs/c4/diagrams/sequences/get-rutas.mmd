@@ -1,0 +1,22 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Dashboard api.ts
+  participant R as RutasResource · foco
+  participant CAT as CatalogoRutas
+  participant CP as Classpath rutas
+  participant E as GlobalExceptionMapper
+  C->>R: GET /rutas · listar · timeout axios 15 s
+  R->>CAT: listar()
+  CAT->>CP: abrir rutas/indice.json
+  alt recurso presente
+    CP-->>CAT: InputStream
+    CAT->>CAT: ObjectMapper a List de Resumen
+    CAT-->>R: id, nombre, desde, hasta, km
+    R-->>C: 200 application/json
+  else falta el índice
+    CAT-->>E: ComsatelException 404 RUTA_NO_ENCONTRADA
+    E-->>C: 404 ErrorResponse con requestId
+  else JSON ilegible
+    CAT-->>E: UncheckedIOException
+    E-->>C: 500 INTERNAL_ERROR con requestId
+  end

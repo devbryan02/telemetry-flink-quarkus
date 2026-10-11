@@ -1,0 +1,23 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="WS"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as use-autos-socket
+  participant WS as AutosWs · foco
+  participant B as AutosBroadcaster
+  participant ST as AutosStore
+  participant M as autos-map
+  C->>WS: WebSocket /ws/autos
+  WS-->>C: abierta, OnOpen registra la conexión
+  loop cada 500 ms en el event loop de Vert.x
+    B->>ST: drenarSucios()
+    ST-->>B: autos cambiados
+    opt hay autos y conexiones
+      B->>C: sendText arreglo JSON a cada conexión
+      C->>M: alRecibirLote
+      M->>M: Metricas.registrarLote y fusionar si ts es mayor
+      M->>M: Animador interpola y repinta la capa
+    end
+  end
+  alt la conexión se cae
+    C->>C: estado reconectando
+    C->>WS: reintento con backoff de 1 s a 10 s
+  end

@@ -1,0 +1,23 @@
+flowchart TB
+  res["SimulacionResource<br/>estado · iniciar · detener · velocidad"]
+  sim["Simulador<br/>estado · iniciar · detener · velocidad<br/>avanzar · publicar · ordenDeCarrera"]
+  cat["CatalogoRutas<br/>ruta · escenario"]
+  corr["AutoCorredor<br/>avanzar · velocidad · evento · llego"]
+  ruta["Ruta<br/>longitud · posicionEn"]
+  esc["Escenario y AutoInicial"]
+  evt["TelemetriaEvento<br/>record de 9 campos"]
+  dto["Estado y Clasificado<br/>records de respuesta"]
+  err["ComsatelException"]
+  res -->|"delegación"| sim
+  res -.->|"400 RUTA_REQUERIDA o VELOCIDAD_INVALIDA"| err
+  sim --> cat
+  sim -->|"crea uno por auto"| corr
+  sim -->|"devuelve"| dto
+  sim -.->|"400 o 404"| err
+  cat --> esc
+  corr --> ruta
+  corr -->|"evento ts"| evt
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class res,cat,corr,ruta,esc,evt,dto,err other
+  class sim focus
