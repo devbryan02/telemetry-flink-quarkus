@@ -1,7 +1,7 @@
 # Especificación del MVP: Telemetría de Autos en Tiempo Real
 
 **Versión:** 3.1
-**Stack:** Apache Kafka (Docker) · Quarkus 3.40 LTS (Java 17) con Apache Flink 2.2 embebido · React 19 + Next.js 16 + shadcn/ui + MapLibre (mapcn)
+**Stack:** Apache Kafka · Quarkus 3.40 LTS (Java 17) con Apache Flink 2.2 embebido · React 19 + Next.js 16 + shadcn/ui + MapLibre (mapcn) · todo en Docker Compose
 **Escenario:** carreras de 3 autos en rutas establecidas (Av. Brasil, Panamericana Sur, Panamericana Norte y Vía Los Libertadores), seguidas en un mapa en tiempo real.
 
 ---
@@ -282,6 +282,8 @@ flowchart LR
 
 ### Configuración
 
+Cada propiedad se puede sobrescribir con su variable de entorno (`kafka.bootstrap.servers` → `KAFKA_BOOTSTRAP_SERVERS`); así la configura `docker-compose.yml` (§12).
+
 ```properties
 kafka.bootstrap.servers=localhost:9092
 mp.messaging.incoming.ultima-posicion.connector=smallrye-kafka
@@ -297,6 +299,7 @@ quarkus.http.enable-compression=true
 # Flink embebido (propiedades propias leídas por FlinkJobRunner)
 flink.parallelism=4
 flink.ui.port=8081
+flink.ui.bind-address=localhost   # 0.0.0.0 en Docker (FLINK_UI_BIND_ADDRESS)
 flink.kafka.group=flink-ultima-pos
 flink.topic.in=telemetria
 flink.topic.out=ultima-posicion
@@ -378,25 +381,40 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
 
 ## 12. Ejecución
 
+Todo el sistema se levanta con `docker compose up -d --build`:
+
 ```mermaid
 flowchart LR
-    A["1. docker compose up -d"] --> B["2. ./scripts/crear-topics.sh"] --> C["3. ./mvnw quarkus:dev<br/>:8080 + Flink embebido (UI :8081)"] --> E["4. npm run dev<br/>:3000"] --> F["5. Elegir ruta e 'Iniciar carrera'"]
+    K["kafka<br/>healthy"] --> I["kafka-init<br/>crea topics y termina"] --> A["telemetry-api<br/>healthy (GET /rutas)"] --> D["dashboard"]
 ```
 
-| Servicio | Puerto |
-|---|---|
-| Kafka (Docker) | 9092 |
-| Quarkus | 8080 |
-| Flink UI (dentro de Quarkus) | 8081 |
-| Next.js | 3000 |
+| Servicio | Imagen | Puertos | Configuración |
+|---|---|---|---|
+| `kafka` | `apache/kafka:4.2.1` | 9092 | Listeners `INTERNO://kafka:29092` (contenedores) y `EXTERNO://localhost:9092` (host); datos en el volumen `kafka-datos` |
+| `kafka-init` | `apache/kafka:4.2.1` | — | `kafka-topics.sh --create --if-not-exists` de los dos topics (§6) |
+| `telemetry-api` | `telemetry-api/Dockerfile`: Maven 3.9 + JDK 17 → JRE 17, fast-jar, usuario no root | 8080, 8081 (UI de Flink) | `KAFKA_BOOTSTRAP_SERVERS=kafka:29092`, `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:3000`, `FLINK_UI_BIND_ADDRESS=0.0.0.0` |
+| `dashboard` | `dashboard-next/Dockerfile`: Node 24 Alpine, salida `standalone` de Next.js, usuario no root | 3000 | Build args `NEXT_PUBLIC_API_URL=http://localhost:8080` y `NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos` |
+
+- **Arranque ordenado:** `depends_on` con `service_healthy` y `service_completed_successfully`.
+- **Como servicio:** `restart: unless-stopped` en `kafka`, `telemetry-api` y `dashboard`.
+- **URLs del navegador:** las variables `NEXT_PUBLIC_*` se incrustan al construir el dashboard y las usa el navegador del host, por eso apuntan a `localhost:8080` (puerto publicado) y no a `telemetry-api:8080`.
+- **Persistencia:** con `docker compose down` los topics y `ultima-posicion` sobreviven en el volumen, y la API reconstruye su estado al arrancar. `docker compose down -v` borra el volumen.
+
+**Desarrollo local** (recarga en caliente):
+
+```mermaid
+flowchart LR
+    A["1. docker compose up -d kafka"] --> B["2. ./scripts/crear-topics.sh"] --> C["3. ./mvnw quarkus:dev<br/>:8080 + Flink embebido (UI :8081)"] --> E["4. npm run dev<br/>:3000"] --> F["5. Elegir ruta e 'Iniciar carrera'"]
+```
 
 Estructura del repositorio:
 
 ```
 telemetria-flink/
-├── docker-compose.yml
+├── docker-compose.yml            (kafka, kafka-init, telemetry-api, dashboard)
 ├── scripts/crear-topics.{sh,ps1}
 ├── telemetry-api/
+│   ├── Dockerfile                    (multi-stage: Maven → JRE 17)
 │   ├── pom.xml                       (extensiones Quarkus + Flink 2.2.1)
 │   └── src/main/
 │       ├── java/dev/bryan/
@@ -406,6 +424,7 @@ telemetria-flink/
 │       │   └── shared/      (error/)
 │       └── resources/       (application.properties, rutas/{indice.json, *.geojson}, escenarios/carrera.json)
 ├── dashboard-next/
+│   ├── Dockerfile                    (multi-stage: npm ci → next build → standalone)
 │   ├── app/page.tsx
 │   ├── features/autos/      (components/{autos-map, autos-layer, ruta-layer, salida-meta, carrera-panel}, hooks/, api.ts, filtros.ts, animacion.ts, vehiculo.ts, types.ts)
 │   ├── components/ui/       (shadcn + mapcn)
