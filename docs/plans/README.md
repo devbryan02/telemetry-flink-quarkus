@@ -16,6 +16,7 @@ Cada plan es un incremento pequeño, verificable y completable en una sesión. L
 | 10 | [Botón de simulación, filtro empresa → flota y ruta](10-next-filtro-ruta.md) | 08, 09 | Demo completa en el dashboard |
 | 11 | [Rutas establecidas y modo carrera (backend)](11-rutas-carrera.md) | 09 | Carreras en 4 rutas, velocidad por auto |
 | 12 | [Dashboard de carrera](12-next-carrera.md) | 10, 11 | Selector de ruta, clasificación y sliders |
+| 13 | [Modo claro y oscuro](13-tema-claro-oscuro.md) | 12 | Tema claro / oscuro / sistema en toda la interfaz |
 
 ## Orden
 
@@ -26,7 +27,7 @@ flowchart LR
     P2 --> P5[05] --> P6 --> P8[08] --> P10
     P7 --> P8
     P9 --> P11[11] --> P12[12]
-    P10 --> P12
+    P10 --> P12 --> P13[13]
 ```
 
 Los incrementos 02 y 05 no necesitan Flink: se prueban publicando directo en `ultima-posicion`.

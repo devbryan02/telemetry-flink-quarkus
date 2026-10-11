@@ -47,6 +47,7 @@ Decisiones que no son obvias si no se lee toda la spec:
   - una fuente GeoJSON con una capa `symbol` de íconos (`vehiculo.ts`), filtrada con `setFilter` según empresa/flota;
   - estado fuera de React (`useRef`);
   - movimiento interpolado entre eventos (`animacion.ts`);
+  - tema claro/oscuro con next-themes (clase `dark` en `<html>`); mapcn observa esa clase para cambiar el mapa base. Usa tokens de shadcn (`bg-popover`, `text-foreground`…) en vez de colores fijos;
   - el mapa es `"use client"` cargado con `dynamic(..., { ssr: false })`.
 - **Si cambia el contrato del evento,** recrear los topics (`./scripts/crear-topics.sh --recrear`).
 

@@ -6,7 +6,7 @@ import { MapMarker, MarkerContent } from "@/components/ui/map"
 
 function Etiqueta({ texto, color }: { texto: string; color: string }) {
   return (
-    <div className={`rounded-md border-2 border-white px-1.5 py-0.5 text-[11px] font-semibold text-white shadow ${color}`}>
+    <div className={`rounded-md border-2 border-background px-1.5 py-0.5 text-[11px] font-semibold shadow ${color}`}>
       {texto}
     </div>
   )
@@ -21,12 +21,12 @@ export function SalidaMeta({ ruta }: { ruta: FeatureCollection<LineString> | nul
     <>
       <MapMarker longitude={salida[0]} latitude={salida[1]} anchor="bottom">
         <MarkerContent>
-          <Etiqueta texto="Salida" color="bg-sky-600" />
+          <Etiqueta texto="Salida" color="bg-sky-600 text-white" />
         </MarkerContent>
       </MapMarker>
       <MapMarker longitude={meta[0]} latitude={meta[1]} anchor="bottom">
         <MarkerContent>
-          <Etiqueta texto="🏁 Meta" color="bg-neutral-900" />
+          <Etiqueta texto="🏁 Meta" color="bg-foreground text-background" />
         </MarkerContent>
       </MapMarker>
     </>
