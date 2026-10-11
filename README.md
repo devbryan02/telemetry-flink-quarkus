@@ -4,17 +4,38 @@
 simulación en Quarkus → Kafka → Flink embebido en Quarkus → WebSocket → Next.js.
 Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Planes: [`docs/plans/`](docs/plans/README.md).
 
-## Puesta en marcha
+## Levantar todo con Docker
+
+```bash
+docker compose up -d --build       # Kafka, topics, API y dashboard → http://localhost:3000
+docker compose ps                  # kafka y telemetry-api "healthy", kafka-init "Exited (0)"
+docker compose logs -f telemetry-api
+docker compose down                # detiene; los datos de Kafka quedan en el volumen kafka-datos
+docker compose down -v             # además borra el volumen
+```
+
+| Servicio | Qué hace | Puerto |
+|---|---|---|
+| `kafka` | Broker KRaft (Kafka 4.2.1) | 9092 (host) · `kafka:29092` (entre contenedores) |
+| `kafka-init` | Crea `telemetria` (12 particiones, retención 1 h) y `ultima-posicion` (12 particiones, compact) y termina | — |
+| `telemetry-api` | Quarkus + Flink embebido | 8080 (REST y WebSocket) · 8081 (UI de Flink) |
+| `dashboard` | Next.js (salida standalone) | 3000 |
+
+Los servicios tienen `restart: unless-stopped`: vuelven a levantarse solos al reiniciar Docker. El primer build tarda unos minutos (descarga dependencias de Maven y npm); los siguientes reutilizan la caché de BuildKit.
+
+En el dashboard, elige una ruta y pulsa **"Iniciar carrera"**.
+
+## Desarrollo local
+
+Solo Kafka en Docker; la API y el dashboard corren en el host con recarga en caliente.
 
 1. **Kafka**
 
    ```bash
-   docker compose up -d
+   docker compose up -d kafka
    ./scripts/crear-topics.sh            # en Windows: .\scripts\crear-topics.ps1
    ./scripts/crear-topics.sh --recrear  # borra y crea de nuevo (tras un cambio del contrato del evento)
    ```
-
-   Un solo broker KRaft (Kafka 4.2.1) en `localhost:9092`. Topics: `telemetria` (12 particiones, retención 1 h) y `ultima-posicion` (12 particiones, compact).
 
 2. **Backend (Quarkus + Flink).** Requiere JDK 17.
 
@@ -32,8 +53,6 @@ Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Plane
    npm install
    npm run dev                        # http://localhost:3000
    ```
-
-4. En el dashboard, elige una ruta y pulsa **"Iniciar carrera"**.
 
 ## Qué se ve
 
@@ -67,6 +86,7 @@ Especificación: [`docs/specs/telemetria.md`](docs/specs/telemetria.md) · Plane
 
 ## Notas
 
+- **Imágenes:** `NEXT_PUBLIC_API_URL` y `NEXT_PUBLIC_WS_URL` se fijan al construir el dashboard (build args en `docker-compose.yml`), porque las usa el navegador. La API se configura por variables de entorno (`KAFKA_BOOTSTRAP_SERVERS`, `QUARKUS_HTTP_CORS_ORIGINS`, `FLINK_UI_BIND_ADDRESS`).
 - **Estado del backend:** vive en memoria y se reconstruye al arrancar releyendo `ultima-posicion` desde el inicio. Si detienes el proceso a la fuerza, el grupo `quarkus-dash` puede tardar hasta ~45 s en reasignar particiones.
 - **Autos y rutas:** los autos (empresa, flota, velocidad inicial) están en `telemetry-api/src/main/resources/escenarios/carrera.json`; las rutas, en `resources/rutas/` (`indice.json` y un GeoJSON por ruta).
 - **Código generado:** `dashboard-next/components/ui/` lo generan las CLIs de shadcn/mapcn y no pasa por el lint.

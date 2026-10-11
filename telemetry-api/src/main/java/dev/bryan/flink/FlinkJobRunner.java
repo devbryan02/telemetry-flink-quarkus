@@ -40,6 +40,10 @@ class FlinkJobRunner {
     @ConfigProperty(name = "flink.ui.port", defaultValue = "8081")
     int puertoUi;
 
+    /** `0.0.0.0` en Docker para publicar la UI fuera del contenedor. */
+    @ConfigProperty(name = "flink.ui.bind-address", defaultValue = "localhost")
+    String direccionUi;
+
     @ConfigProperty(name = "kafka.bootstrap.servers")
     String bootstrapServers;
 
@@ -61,6 +65,7 @@ class FlinkJobRunner {
         }
         Configuration conf = new Configuration();
         conf.set(RestOptions.PORT, puertoUi);
+        conf.set(RestOptions.BIND_ADDRESS, direccionUi);
         // Classloaders de Flink dentro de Quarkus:
         // - Sin jars ni classpaths declarados, el JobManager del MiniCluster deserializa el job con
         //   ClassLoader.getSystemClassLoader(), que no ve las dependencias que carga Quarkus.

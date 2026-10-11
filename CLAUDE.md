@@ -49,12 +49,14 @@ Decisiones que no son obvias si no se lee toda la spec:
   - movimiento interpolado entre eventos (`animacion.ts`);
   - tema claro/oscuro con next-themes (clase `dark` en `<html>`); mapcn observa esa clase para cambiar el mapa base. Usa tokens de shadcn (`bg-popover`, `text-foreground`…) en vez de colores fijos;
   - el mapa es `"use client"` cargado con `dynamic(..., { ssr: false })`.
+- **Docker Compose:** los contenedores llegan a Kafka por `kafka:29092` (listener `INTERNO`) y el host por `localhost:9092` (`EXTERNO`). La API se configura por variables de entorno; las `NEXT_PUBLIC_*` del dashboard son build args (se incrustan al construir, las usa el navegador del host). Tras cambiar código: `docker compose up -d --build <servicio>`.
 - **Si cambia el contrato del evento,** recrear los topics (`./scripts/crear-topics.sh --recrear`).
 
 ## Comandos
 
 ```bash
-docker compose up -d && ./scripts/crear-topics.sh       # Kafka 4.2.1 :9092 y topics
+docker compose up -d --build                             # todo en Docker: Kafka, topics, API y dashboard :3000
+docker compose up -d kafka && ./scripts/crear-topics.sh  # solo Kafka, para desarrollo local
 cd telemetry-api && ./mvnw test                          # JDK 17
 cd telemetry-api && ./mvnw quarkus:dev                   # :8080 + Flink UI :8081
 cd telemetry-api && ./mvnw test -Dtest=RutaTest          # un solo test
