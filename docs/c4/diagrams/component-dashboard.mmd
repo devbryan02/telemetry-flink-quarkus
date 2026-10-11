@@ -1,0 +1,23 @@
+flowchart TB
+  page["app/page.tsx<br/>AutosDashboard con ssr false"]
+  mapa["autos-map.tsx<br/>estado fuera de React"]
+  panel["carrera-panel.tsx<br/>ruta, carrera, sliders y filtros"]
+  capas["autos-layer · ruta-layer · salida-meta<br/>capas MapLibre"]
+  api["api.ts y lib/http.ts<br/>axios"]
+  socket["use-autos-socket.ts<br/>WebSocket con reconexión"]
+  anim["animacion.ts y metricas.ts"]
+  filtros["filtros.ts y geojson.ts"]
+  backend["telemetry-api"]
+  page --> mapa
+  mapa --> panel
+  mapa --> capas
+  mapa --> api
+  mapa --> socket
+  mapa --> anim
+  mapa --> filtros
+  api -->|"REST"| backend
+  socket -->|"WS /ws/autos"| backend
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class page,panel,capas,api,socket,anim,filtros,backend other
+  class mapa focus

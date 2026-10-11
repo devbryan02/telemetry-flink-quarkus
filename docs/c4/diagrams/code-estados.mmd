@@ -1,0 +1,9 @@
+stateDiagram-v2
+  [*] --> LISTA
+  LISTA --> EN_CURSO: iniciar ruta
+  EN_CURSO --> EN_CURSO: iniciar otra ruta
+  EN_CURSO --> LISTA: detener
+  EN_CURSO --> TERMINADA: todos llegaron a la meta
+  TERMINADA --> EN_CURSO: nueva carrera
+  LISTA --> LISTA: velocidad
+  EN_CURSO --> EN_CURSO: velocidad o avanzar

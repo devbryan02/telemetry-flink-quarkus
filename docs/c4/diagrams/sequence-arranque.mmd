@@ -1,0 +1,28 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="FR"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant O as Operador
+  participant DC as docker compose
+  participant KI as kafka-init
+  participant Q as Quarkus
+  participant FR as FlinkJobRunner · foco
+  participant L as ReconstruirEstadoListener
+  participant AC as AutosConsumer
+  participant K as Kafka
+  O->>DC: docker compose up -d
+  DC->>K: arranca kafka y espera healthy
+  DC->>KI: crea topics con if-not-exists
+  KI-->>DC: Exited 0
+  DC->>Q: arranca telemetry-api
+  Q->>FR: StartupEvent
+  FR->>FR: MiniCluster, classpaths, parent-first, restart exponential-delay
+  FR->>K: KafkaSource telemetria desde latest
+  Q->>AC: suscripción a ultima-posicion
+  K->>L: particiones asignadas
+  L->>K: seekToBeginning
+  K-->>AC: última posición de cada auto
+  AC->>AC: AutosStore reconstruido
+  DC->>Q: healthcheck GET /rutas
+  Q-->>DC: 200, healthy
+  alt el job Flink falla
+    FR->>FR: reinicio con espera de 1 s a 30 s
+  end

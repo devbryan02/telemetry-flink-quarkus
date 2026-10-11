@@ -1,0 +1,22 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Dashboard api.ts
+  participant R as SimulacionResource · foco
+  participant S as Simulador
+  participant V as Vert.x timer
+  participant E as GlobalExceptionMapper
+  C->>R: POST /simulacion/detener · detener
+  R->>S: detener()
+  alt carrera EN_CURSO
+    S->>V: cancelTimer
+    S->>S: estado LISTA, autos quedan donde están
+  else LISTA o TERMINADA
+    S->>S: sin cambios
+  end
+  alt sin error
+    S-->>R: Estado
+    R-->>C: 200 application/json
+  else error inesperado
+    S-->>E: excepción
+    E-->>C: 500 INTERNAL_ERROR
+  end

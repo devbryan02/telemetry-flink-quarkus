@@ -1,0 +1,30 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Dashboard api.ts
+  participant R as SimulacionResource · foco
+  participant S as Simulador
+  participant CAT as CatalogoRutas
+  participant A as AutoCorredor
+  participant E as GlobalExceptionMapper
+  C->>R: PUT /simulacion/autos/auto-2/velocidad · velocidad · body kmh
+  alt kmh ausente
+    R-->>E: ComsatelException 400 VELOCIDAD_INVALIDA
+    E-->>C: 400 ErrorResponse
+  else kmh presente
+    R->>S: velocidad(carId, kmh)
+    alt fuera de 10 a 500 km/h
+      S-->>E: ComsatelException 400 VELOCIDAD_INVALIDA
+      E-->>C: 400 ErrorResponse
+    else rango válido
+      S->>CAT: escenario(carrera)
+      alt carId no está en el escenario
+        S-->>E: ComsatelException 404 AUTO_NO_ENCONTRADO
+        E-->>C: 404 ErrorResponse
+      else auto existente
+        S->>S: guardar velocidad para próximas carreras
+        S->>A: velocidad(kmh) si está en pista
+        S-->>R: Estado
+        R-->>C: 200 application/json
+      end
+    end
+  end

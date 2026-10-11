@@ -1,0 +1,42 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="S"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant D as Dashboard
+  participant R as SimulacionResource
+  participant S as Simulador · foco
+  participant K1 as Kafka telemetria
+  participant F as Job Flink
+  participant K2 as Kafka ultima-posicion
+  participant AC as AutosConsumer
+  participant ST as AutosStore
+  participant B as AutosBroadcaster
+  U->>D: elige ruta y pulsa Iniciar carrera
+  D->>R: POST /simulacion/iniciar con ruta
+  R->>S: iniciar(ruta)
+  S->>K1: posición de salida de cada auto, key carId
+  S-->>R: Estado EN_CURSO
+  R-->>D: 200 Estado
+  loop cada 1 s
+    S->>K1: TelemetriaEvento por auto en pista
+    K1->>F: KafkaSource, grupo flink-ultima-pos
+    F->>F: keyBy carId y emitir solo si ts es mayor
+    F->>K2: KafkaSink, key carId
+    K2->>AC: lote de Auto
+    AC->>ST: actualizar y marcar sucio
+  end
+  loop cada 500 ms
+    B->>ST: drenarSucios()
+    B->>D: WS /ws/autos lote JSON
+    D->>U: autos interpolados en el mapa
+  end
+  loop cada 1 s
+    D->>R: GET /simulacion
+    R-->>D: clasificación
+  end
+  U->>D: mueve el slider de un auto
+  D->>R: PUT /simulacion/autos/carId/velocidad
+  R->>S: velocidad(carId, kmh)
+  alt API caída o error
+    R-->>D: ErrorResponse o timeout de 15 s
+    D->>U: mensaje de error en el panel
+  end

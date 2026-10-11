@@ -1,0 +1,18 @@
+flowchart TB
+  navegador["Navegador del usuario<br/>ejecuta el bundle del dashboard"]
+  dashboard["dashboard<br/>Next.js 16 · React 19 · Node 24<br/>:3000"]
+  api["telemetry-api<br/>Quarkus 3.40 · Java 17 · Flink 2.2.1 embebido<br/>:8080 REST y WS · :8081 UI Flink"]
+  kafka["kafka<br/>Apache Kafka 4.2.1 KRaft<br/>topics telemetria y ultima-posicion"]
+  init["kafka-init<br/>crea los topics y termina"]
+  volumen["volumen kafka-datos"]
+  carto["CARTO Basemaps"]
+  navegador -->|"HTTP · HTML y JS"| dashboard
+  navegador -->|"REST JSON con axios<br/>WebSocket /ws/autos"| api
+  navegador -->|"HTTPS estilos y teselas"| carto
+  api -->|"produce telemetria<br/>Flink lee telemetria y escribe ultima-posicion<br/>consume ultima-posicion · kafka:29092"| kafka
+  init -->|"kafka-topics.sh --create --if-not-exists"| kafka
+  kafka -->|"datos"| volumen
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class navegador,dashboard,kafka,init,volumen,carto other
+  class api focus

@@ -1,0 +1,23 @@
+flowchart TB
+  topic["topic ultima-posicion"]
+  listener["ReconstruirEstadoListener<br/>seekToBeginning"]
+  cons["AutosConsumer<br/>Incoming batch · NonBlocking"]
+  store["AutosStore<br/>ConcurrentHashMap y set de sucios"]
+  res["AutosResource<br/>GET /autos"]
+  bbox["Bbox<br/>parse y contiene"]
+  bc["AutosBroadcaster<br/>Vert.x cada 500 ms"]
+  ws["AutosWs<br/>/ws/autos"]
+  web["dashboard"]
+  topic --> cons
+  listener -.->|"al asignar particiones"| cons
+  cons -->|"actualizar si ts mayor"| store
+  res --> store
+  res --> bbox
+  bc -->|"drenarSucios"| store
+  bc -->|"sendText a OpenConnections"| ws
+  ws -->|"lote JSON"| web
+  web -->|"GET /autos"| res
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class topic,listener,cons,res,bbox,bc,ws,web other
+  class store focus
