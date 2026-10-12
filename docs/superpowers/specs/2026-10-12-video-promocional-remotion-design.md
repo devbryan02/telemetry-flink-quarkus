@@ -81,6 +81,11 @@ Las escenas se encadenan con transiciones suaves dentro de `Promo.tsx`. Todos lo
 
 ## Audio
 
+> **Estado (acta de implementación):** por decisión del usuario, el video se entrega **sin audio**.
+> edge-tts devolvía `403` desde este equipo y se optó por no bloquear; los scripts `gen-locucion.mjs`
+> y `gen-musica.mjs` quedan en el repo, documentados como opcionales, para reactivar la pista cuando
+> haya una voz (TTS o MP3 aportado) disponible. `Promo.tsx` no monta `<Audio>`.
+
 ### Locución (TTS)
 
 - Motor: `edge-tts` (Python). Voz: **`es-PE-CamilaNeural`**.
