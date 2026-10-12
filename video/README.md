@@ -15,3 +15,8 @@ npm run render     # out/promo.mp4 (sin audio)
 npm run lint
 npm run studio     # previsualización
 ```
+
+## Salida
+
+- `out/promo.mp4` — 15 s, 1920×1080, H.264 (sin audio).
+- Entrega copiada a `docs/presentacion/promo-remotion.mp4`.
