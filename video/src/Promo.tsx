@@ -1,4 +1,5 @@
 import { AbsoluteFill, Sequence } from 'remotion';
+import { Cierre } from './escenas/Cierre';
 import { Clasificacion } from './escenas/Clasificacion';
 import { Logo } from './escenas/Logo';
 import { Mapa } from './escenas/Mapa';
@@ -15,6 +16,9 @@ export const Promo: React.FC = () => {
       </Sequence>
       <Sequence from={270} durationInFrames={120}>
         <Clasificacion />
+      </Sequence>
+      <Sequence from={390} durationInFrames={60}>
+        <Cierre />
       </Sequence>
     </AbsoluteFill>
   );

@@ -7,7 +7,10 @@ import {
 } from 'remotion';
 import { COLORES, FONT_FAMILY } from '../theme';
 
-export const Logo: React.FC<{ tagline?: boolean }> = ({ tagline = true }) => {
+export const Logo: React.FC<{ tagline?: boolean; conFondo?: boolean }> = ({
+  tagline = true,
+  conFondo = true,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -28,6 +31,50 @@ export const Logo: React.FC<{ tagline?: boolean }> = ({ tagline = true }) => {
     extrapolateRight: 'clamp',
   });
 
+  const contenido = (
+    <div style={{ opacity: opacidad, transform: `scale(${escala})`, textAlign: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 28, justifyContent: 'center' }}>
+        <IconoAuto />
+        <span
+          style={{
+            color: COLORES.fg,
+            fontSize: 132,
+            fontWeight: 800,
+            letterSpacing: 6,
+          }}
+        >
+          TELEMETRÍA
+        </span>
+      </div>
+      <div
+        style={{
+          height: 4,
+          width: linea,
+          backgroundColor: COLORES.celeste,
+          margin: '26px auto 0',
+          borderRadius: 2,
+        }}
+      />
+      {tagline ? (
+        <div
+          style={{
+            opacity: tagO,
+            marginTop: 24,
+            color: COLORES.apagado,
+            fontSize: 40,
+            letterSpacing: 3,
+          }}
+        >
+          Tiempo real · Kafka + Flink
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (!conFondo) {
+    return <div style={{ fontFamily: FONT_FAMILY }}>{contenido}</div>;
+  }
+
   return (
     <AbsoluteFill
       style={{
@@ -37,45 +84,7 @@ export const Logo: React.FC<{ tagline?: boolean }> = ({ tagline = true }) => {
         fontFamily: FONT_FAMILY,
       }}
     >
-      <div style={{ opacity: opacidad, transform: `scale(${escala})`, textAlign: 'center' }}>
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: 28, justifyContent: 'center' }}
-        >
-          <IconoAuto />
-          <span
-            style={{
-              color: COLORES.fg,
-              fontSize: 132,
-              fontWeight: 800,
-              letterSpacing: 6,
-            }}
-          >
-            TELEMETRÍA
-          </span>
-        </div>
-        <div
-          style={{
-            height: 4,
-            width: linea,
-            backgroundColor: COLORES.celeste,
-            margin: '26px auto 0',
-            borderRadius: 2,
-          }}
-        />
-        {tagline ? (
-          <div
-            style={{
-              opacity: tagO,
-              marginTop: 24,
-              color: COLORES.apagado,
-              fontSize: 40,
-              letterSpacing: 3,
-            }}
-          >
-            Tiempo real · Kafka + Flink
-          </div>
-        ) : null}
-      </div>
+      {contenido}
     </AbsoluteFill>
   );
 };
