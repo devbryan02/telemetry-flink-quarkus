@@ -11,7 +11,7 @@ public class InMemoryKafkaResource implements QuarkusTestResourceLifecycleManage
     @Override
     public Map<String, String> start() {
         Map<String, String> config = new HashMap<>();
-        config.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("ultima-posicion"));
+        config.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("ultima-posicion", "historial-telemetria"));
         config.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory("telemetria-out"));
         return config;
     }
