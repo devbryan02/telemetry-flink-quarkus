@@ -17,17 +17,22 @@ class AutosStore {
             try {
                 List<Auto> cambios=new ArrayList<>();
                 try(var s=c.prepareStatement("""
-                    INSERT INTO tb_ultima_posicion(car_id,company_id,fleet_id,lat,lon,heading,engine,battery,ts)
-                    VALUES(?,?,?,?,?,?,?,?,?)
+                    INSERT INTO tb_ultima_posicion(car_id,company_id,fleet_id,lat,lon,heading,engine,battery,ts,schema_version,event_id,carrera_id,viaje_id,ruta_id,inicio_viaje_ts,tipo_evento,motivo_fin)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     ON CONFLICT(car_id) DO UPDATE SET
                     company_id=excluded.company_id,fleet_id=excluded.fleet_id,lat=excluded.lat,lon=excluded.lon,
-                    heading=excluded.heading,engine=excluded.engine,battery=excluded.battery,ts=excluded.ts
+                    heading=excluded.heading,engine=excluded.engine,battery=excluded.battery,ts=excluded.ts,
+                    schema_version=excluded.schema_version,event_id=excluded.event_id,carrera_id=excluded.carrera_id,
+                    viaje_id=excluded.viaje_id,ruta_id=excluded.ruta_id,inicio_viaje_ts=excluded.inicio_viaje_ts,
+                    tipo_evento=excluded.tipo_evento,motivo_fin=excluded.motivo_fin
                     WHERE excluded.ts > tb_ultima_posicion.ts RETURNING *
                     """)) {
                     for(var e:ultimos.values()) {
                         s.setString(1,e.carId());s.setString(2,e.companyId());s.setString(3,e.fleetId());
                         s.setDouble(4,e.lat());s.setDouble(5,e.lon());s.setInt(6,e.heading());
                         s.setString(7,e.engine());s.setInt(8,e.battery());s.setLong(9,e.ts());
+                        s.setObject(10,e.schemaVersion());s.setObject(11,e.eventId());s.setObject(12,e.carreraId());s.setObject(13,e.viajeId());
+                        s.setString(14,e.rutaId());s.setObject(15,e.inicioViajeTs());s.setString(16,e.tipoEvento());s.setString(17,e.motivoFin());
                         try(var rs=s.executeQuery()) { if(rs.next()) cambios.add(auto(rs)); }
                     }
                 }

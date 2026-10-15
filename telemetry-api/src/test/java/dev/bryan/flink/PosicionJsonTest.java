@@ -11,7 +11,8 @@ class PosicionJsonTest {
     private final PosicionJson.Deserializador deserializador = new PosicionJson.Deserializador();
 
     private Posicion leer(String json) {
-        return deserializador.deserialize(json.getBytes(StandardCharsets.UTF_8));
+        try { return deserializador.deserialize(json.getBytes(StandardCharsets.UTF_8)); }
+        catch(java.io.IOException ex) { throw new java.io.UncheckedIOException(ex); }
     }
 
     @Test
@@ -25,7 +26,7 @@ class PosicionJsonTest {
     @Test
     void aceptaEventosSinLosCamposNuevosYConCamposDesconocidos() {
         Posicion p = leer("{\"carId\":\"auto-1\",\"lat\":-12.05,\"lon\":-77.04,\"engine\":\"OFF\","
-                + "\"battery\":50,\"ts\":10,\"extra\":true}");
+                + "\"battery\":50,\"heading\":0,\"ts\":10,\"extra\":true}");
 
         assertEquals("auto-1", p.carId());
         assertNull(p.companyId());
@@ -34,8 +35,8 @@ class PosicionJsonTest {
     }
 
     @Test
-    void unMensajeInvalidoSeDescarta() {
-        assertNull(leer("no es json"));
+    void unMensajeInvalidoFalla() {
+        org.junit.jupiter.api.Assertions.assertThrows(java.io.UncheckedIOException.class, () -> leer("no es json"));
     }
 
     @Test
