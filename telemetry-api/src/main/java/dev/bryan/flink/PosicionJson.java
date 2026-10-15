@@ -19,16 +19,8 @@ final class PosicionJson {
         private transient ObjectMapper mapper;
 
         @Override
-        public Posicion deserialize(byte[] mensaje) {
-            if (mapper == null) {
-                // Tolerante a cambios del contrato: campos extra se ignoran y los que faltan quedan en null/0
-                mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            }
-            try {
-                return mapper.readValue(mensaje, Posicion.class);
-            } catch (IOException e) {
-                return null;
-            }
+        public Posicion deserialize(byte[] mensaje) throws IOException {
+            return EventoJson.leer(mensaje,Posicion.class);
         }
 
         @Override

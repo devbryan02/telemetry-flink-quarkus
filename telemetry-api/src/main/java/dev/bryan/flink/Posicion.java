@@ -1,10 +1,10 @@
 package dev.bryan.flink;
+import java.util.UUID;
+public record Posicion(String carId,String companyId,String fleetId,double lat,double lon,int heading,
+    String engine,int battery,long ts,Integer schemaVersion,UUID eventId,UUID carreraId,UUID viajeId,
+    String rutaId,Long inicioViajeTs,String tipoEvento,String motivoFin) {
+    public Posicion(String carId,String companyId,String fleetId,double lat,double lon,int heading,String engine,int battery,long ts) {
+        this(carId,companyId,fleetId,lat,lon,heading,engine,battery,ts,null,null,null,null,null,null,null,null);
+    }
 
-/**
- * Evento de telemetría tal como lo ve el job (spec §4). Es una copia propia del esquema:
- * la feature {@code flink} no depende de las clases de {@code autos}, solo del contrato JSON.
- * Debe ser un record público para que Flink lo serialice sin Kryo.
- */
-public record Posicion(String carId, String companyId, String fleetId, double lat, double lon, int heading,
-                       String engine, int battery, long ts) {
 }
