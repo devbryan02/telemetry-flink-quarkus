@@ -34,19 +34,19 @@ class ViajesStore {
                             comprobarContexto(r,e);
                             var previo=buscarEvento(c,e.eventId());
                             if(previo!=null){
-                                if(!previo.equals(e))throw conflicto();
+                                if(!previo.equals(e))throw conflicto(e);
                                 duplicados++;continue;
                             }
                             Long fin=r.getObject("fin_ts",Long.class);
-                            if(fin!=null&&e.ts()>fin)throw conflicto();
+                            if(fin!=null&&e.ts()>fin)throw conflicto(e);
                             if("FIN".equals(e.tipoEvento())){
-                                if(e.ts()<r.getLong("ultimo_ts"))throw conflicto();
-                                if(fin!=null&&(fin!=e.ts()||!Objects.equals(r.getString("motivo_fin"),e.motivoFin())))throw conflicto();
+                                if(e.ts()<r.getLong("ultimo_ts"))throw conflicto(e);
+                                if(fin!=null&&(fin!=e.ts()||!Objects.equals(r.getString("motivo_fin"),e.motivoFin())))throw conflicto(e);
                             }
                         }
                     }
                     if(!insertarEvento(c,e)){
-                        if(!e.equals(buscarEvento(c,e.eventId())))throw conflicto();
+                        if(!e.equals(buscarEvento(c,e.eventId())))throw conflicto(e);
                         duplicados++;continue;
                     }
                     boolean cierre="FIN".equals(e.tipoEvento());
@@ -84,7 +84,7 @@ class ViajesStore {
         if(!Objects.equals(r.getObject("carrera_id",UUID.class),e.carreraId())
             ||!Objects.equals(r.getString("car_id"),e.carId())||!Objects.equals(r.getString("ruta_id"),e.rutaId())
             ||!Objects.equals(r.getString("company_id"),e.companyId())||!Objects.equals(r.getString("fleet_id"),e.fleetId())
-            ||r.getLong("inicio_viaje_ts")!=e.inicioViajeTs())throw conflicto();
+            ||r.getLong("inicio_viaje_ts")!=e.inicioViajeTs())throw conflicto(e);
     }
     private EventoViaje buscarEvento(Connection c,UUID id)throws SQLException{
         try(var s=c.prepareStatement("SELECT * FROM tb_posicion_historial WHERE event_id=?")){
@@ -111,5 +111,13 @@ class ViajesStore {
             r.getObject("event_id",UUID.class),r.getObject("carrera_id",UUID.class),r.getObject("viaje_id",UUID.class),
             r.getString("ruta_id"),r.getLong("inicio_viaje_ts"),r.getString("tipo_evento"),r.getString("motivo_fin"));
     }
-    private static IllegalStateException conflicto(){return new IllegalStateException("Conflicto de integridad en historial");}
+    long sinCierre(){
+        try(var c=ds.getConnection();var s=c.createStatement();var r=s.executeQuery("SELECT count(*) FROM tb_viaje WHERE estado='SIN_CIERRE'")){
+            r.next();return r.getLong(1);
+        }catch(SQLException ex){throw new IllegalStateException("No se pudieron contar viajes sin cierre",ex);}
+    }
+    /** Solo identificadores: el payload y los datos de conexión no van al mensaje ni a los logs. */
+    private static IllegalStateException conflicto(EventoViaje e){
+        return new IllegalStateException("Conflicto de integridad en historial eventId="+e.eventId()+" viajeId="+e.viajeId());
+    }
 }
