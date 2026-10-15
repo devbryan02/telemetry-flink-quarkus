@@ -1,6 +1,5 @@
 package dev.bryan.flink;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -13,10 +12,8 @@ final class PosicionJson {
     private PosicionJson() {
     }
 
-    /** Un mensaje inválido se descarta (devuelve {@code null}) en lugar de tumbar el job. */
+    /** Un mensaje inválido lanza {@link IOException}: el job falla y se reinicia, no aparenta éxito. */
     static class Deserializador implements DeserializationSchema<Posicion> {
-
-        private transient ObjectMapper mapper;
 
         @Override
         public Posicion deserialize(byte[] mensaje) throws IOException {
