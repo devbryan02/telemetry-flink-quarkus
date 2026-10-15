@@ -8,6 +8,37 @@ import java.util.*;
 @ApplicationScoped
 class ViajesConsulta {
     @Inject DataSource ds;
+    ViajeDetalle detalle(UUID id){
+        try(var c=ds.getConnection()){
+            c.setReadOnly(true);c.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);c.setAutoCommit(false);
+            try{
+                var viaje=obtener(c,id);
+                ResumenViaje resumen;
+                try(var s=c.prepareStatement("SELECT * FROM tb_posicion_historial WHERE viaje_id=? ORDER BY ts,event_id")){
+                    s.setObject(1,id);s.setFetchSize(1000);
+                    try(var r=s.executeQuery()){
+                        Iterator<PosicionVista> iterador=new Iterator<>(){
+                            boolean cargado,hay;
+                            public boolean hasNext(){
+                                try{if(!cargado){hay=r.next();cargado=true;}return hay;}
+                                catch(SQLException ex){throw new IllegalStateException("No se pudieron leer muestras",ex);}
+                            }
+                            public PosicionVista next(){
+                                if(!hasNext())throw new NoSuchElementException();
+                                try{var p=posicion(r);cargado=false;return p;}
+                                catch(SQLException ex){throw new IllegalStateException("No se pudo leer muestra",ex);}
+                            }
+                        };
+                        resumen=ResumenViajeCalculador.calcular(viaje,iterador);
+                    }
+                }
+                c.commit();return new ViajeDetalle(viaje,resumen);
+            }catch(SQLException|RuntimeException ex){
+                try{c.rollback();}catch(SQLException rollback){ex.addSuppressed(rollback);}
+                throw ex;
+            }
+        }catch(SQLException ex){throw new IllegalStateException("No se pudo consultar detalle",ex);}
+    }
     Pagina<ViajeVista> listar(FiltroViajes f,ConsultaPagina p){
         rango(f.desde(),f.hasta());
         var clave=CursorViajes.decodificar(p.cursor(),"viajes",f,null,p.limit());

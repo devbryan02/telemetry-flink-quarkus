@@ -9,6 +9,8 @@ import java.util.UUID;
 @Blocking
 public class ViajesResource {
     @Inject ViajesConsulta consulta;
+    @GET @Path("/{viajeId}")
+    public ViajeDetalle detalle(@PathParam("viajeId")String viaje){return consulta.detalle(uuid(viaje));}
     @GET public Pagina<ViajeVista> listar(@QueryParam("carId")String carId,@QueryParam("carreraId")String carrera,
         @QueryParam("desde")String desde,@QueryParam("hasta")String hasta,@QueryParam("limit")String limit,@QueryParam("cursor")String cursor){
         return consulta.listar(new FiltroViajes(carId==null||carId.isBlank()?null:carId,uuid(carrera),numero(desde),numero(hasta)),pagina(limit,cursor));
