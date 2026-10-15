@@ -11,6 +11,11 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
+import java.time.Clock;
+import java.util.UUID;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,25 +39,22 @@ class Simulador {
 
     /** Un auto en la clasificación. `llegadaMs` es el tiempo de carrera al cruzar la meta. */
     record Clasificado(int posicion, String carId, String companyId, String fleetId, double velocidadKmh,
-                       double recorridoM, Long llegadaMs) {
+                       double recorridoM, Long llegadaMs, UUID viajeId) {
     }
 
     /** Estado público de la carrera. */
-    record Estado(EstadoCarrera estado, String ruta, Instant inicio, double longitudM, List<Clasificado> autos) {
+    record Estado(EstadoCarrera estado, String ruta, Instant inicio, double longitudM, List<Clasificado> autos, UUID carreraId) {
     }
 
     @Inject
     CatalogoRutas catalogo;
 
     @Inject
-    ObjectMapper mapper;
+    PublicadorTelemetria publicador;
 
     @Inject
     Vertx vertx;
 
-    @Inject
-    @Channel("telemetria-out")
-    Emitter<Record<String, String>> telemetria;
 
     @ConfigProperty(name = "simulacion.escenario", defaultValue = "carrera")
     String nombreEscenario;
@@ -65,6 +67,10 @@ class Simulador {
     private String ruta;
     private double longitudM;
     private Instant inicio;
+    private UUID carreraId;
+    private final RelojEventos reloj=new RelojEventos(Clock.systemUTC());
+    private final Map<String,Long> inicios=new HashMap<>();
+    private final Set<String> cerrados=new HashSet<>();
     private long tiempoCarreraMs;
     private List<AutoCorredor> autos = List.of();
     /** Velocidad elegida por auto; se conserva entre carreras. */
@@ -76,21 +82,22 @@ class Simulador {
         for (int i = 0; i < orden.size(); i++) {
             AutoCorredor a = orden.get(i);
             clasificacion.add(new Clasificado(i + 1, a.carId(), a.companyId(), a.fleetId(), a.velocidadKmh(),
-                    Math.round(a.recorrido() * 10) / 10.0, a.llegadaMs()));
+                    Math.round(a.recorrido() * 10) / 10.0, a.llegadaMs(), a.viajeId()));
         }
         if (clasificacion.isEmpty()) {   // antes de la primera carrera: los autos del escenario en la salida
             int i = 0;
             for (Escenario.AutoInicial a : escenario().autos()) {
                 clasificacion.add(new Clasificado(++i, a.carId(), a.companyId(), a.fleetId(),
-                        velocidades.getOrDefault(a.carId(), a.velocidadKmh()), 0, null));
+                        velocidades.getOrDefault(a.carId(), a.velocidadKmh()), 0, null, null));
             }
         }
-        return new Estado(estado, ruta, inicio, Math.round(longitudM * 10) / 10.0, clasificacion);
+        return new Estado(estado, ruta, inicio, Math.round(longitudM * 10) / 10.0, clasificacion, carreraId);
     }
 
     /** Nueva carrera en la ruta indicada: todos salen del inicio. Si había una en curso, la reemplaza. */
     synchronized Estado iniciar(String idRuta) {
         Ruta trazado = catalogo.ruta(idRuta);   // 404 si no existe
+        cerrarAbiertos("REEMPLAZADO");
         cancelarTemporizador();
         ruta = idRuta;
         longitudM = trazado.longitud();
@@ -98,9 +105,14 @@ class Simulador {
                 .map(a -> new AutoCorredor(a, trazado, velocidades.getOrDefault(a.carId(), a.velocidadKmh())))
                 .toList();
         inicio = Instant.now();
+        carreraId=UUID.randomUUID();
+        inicios.clear();cerrados.clear();
         tiempoCarreraMs = 0;
         estado = EstadoCarrera.EN_CURSO;
-        publicar(autos);   // todos en la salida, sin esperar al primer intervalo
+        for(var auto:autos){
+            long ts=reloj.siguiente(auto.carId());inicios.put(auto.carId(),ts);
+            publicar(auto,"INICIO",null,ts);
+        }
         temporizador = vertx.setPeriodic(intervaloMs, id -> avanzar());
         LOG.infof("Carrera iniciada en %s (%.1f km) con %d autos", idRuta, longitudM / 1000, autos.size());
         return estado();
@@ -109,6 +121,7 @@ class Simulador {
     /** Detiene la carrera; los autos quedan donde están. */
     synchronized Estado detener() {
         if (estado == EstadoCarrera.EN_CURSO) {
+            cerrarAbiertos("DETENIDO");
             cancelarTemporizador();
             estado = EstadoCarrera.LISTA;
             LOG.info("Carrera detenida");
@@ -134,15 +147,18 @@ class Simulador {
 
     void alApagar(@Observes ShutdownEvent ev) {
         detener();
+        try{publicador.pendientes().toCompletableFuture().get(5,java.util.concurrent.TimeUnit.SECONDS);}
+        catch(Exception ex){LOG.warn("No se confirmaron todas las publicaciones al apagar");}
     }
 
-    private synchronized void avanzar() {
+    synchronized void avanzar() {
+        if(estado!=EstadoCarrera.EN_CURSO)return;
         tiempoCarreraMs += intervaloMs;
         List<AutoCorredor> enPista = autos.stream().filter(a -> !a.llego()).toList();
         for (AutoCorredor auto : enPista) {
             auto.avanzar(intervaloMs / 1000.0, tiempoCarreraMs);
         }
-        publicar(enPista);   // incluye el evento final (motor OFF) de quien acaba de llegar
+        for(var auto:enPista)publicar(auto,auto.llego()?"FIN":"POSICION",auto.llego()?"META":null,reloj.siguiente(auto.carId()));
         if (autos.stream().allMatch(AutoCorredor::llego)) {
             cancelarTemporizador();
             estado = EstadoCarrera.TERMINADA;
@@ -150,15 +166,17 @@ class Simulador {
         }
     }
 
-    private void publicar(List<AutoCorredor> lista) {
-        long ahora = System.currentTimeMillis();
-        for (AutoCorredor auto : lista) {
-            try {
-                telemetria.send(Record.of(auto.carId(), mapper.writeValueAsString(auto.evento(ahora))));
-            } catch (JsonProcessingException e) {
-                LOG.errorf(e, "No se pudo serializar el evento de %s", auto.carId());
-            }
-        }
+    private void cerrarAbiertos(String motivo){
+        for(var auto:autos)if(!cerrados.contains(auto.carId()))
+            publicar(auto,"FIN",motivo,reloj.siguiente(auto.carId()));
+    }
+    private void publicar(AutoCorredor auto,String tipo,String motivo,long ts){
+        var p=auto.evento(ts);
+        var evento=new TelemetriaEvento(p.carId(),p.companyId(),p.fleetId(),p.lat(),p.lon(),p.heading(),
+            p.engine(),p.battery(),ts,2,UUID.randomUUID(),carreraId,auto.viajeId(),ruta,
+            inicios.get(auto.carId()),tipo,motivo);
+        if("FIN".equals(tipo))cerrados.add(auto.carId());
+        publicador.publicar(evento);
     }
 
     private void cancelarTemporizador() {

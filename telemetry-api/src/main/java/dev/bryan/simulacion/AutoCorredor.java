@@ -9,6 +9,8 @@ final class AutoCorredor {
     static final double VELOCIDAD_MINIMA_KMH = 10;
     static final double VELOCIDAD_MAXIMA_KMH = 500;
 
+    private final java.util.UUID viajeId=java.util.UUID.randomUUID();
+    java.util.UUID viajeId(){return viajeId;}
     private final String carId;
     private final String companyId;
     private final String fleetId;
