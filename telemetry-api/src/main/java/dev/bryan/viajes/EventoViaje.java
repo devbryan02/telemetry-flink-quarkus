@@ -6,5 +6,5 @@ record EventoViaje(String carId,String companyId,String fleetId,double lat,doubl
     EventoViaje(String carId,String companyId,String fleetId,double lat,double lon,int heading,String engine,int battery,long ts) {
         this(carId,companyId,fleetId,lat,lon,heading,engine,battery,ts,null,null,null,null,null,null,null,null);
     }
-    
+
 }

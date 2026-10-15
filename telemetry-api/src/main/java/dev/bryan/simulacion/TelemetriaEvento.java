@@ -1,9 +1,9 @@
 package dev.bryan.simulacion;
-
-/**
- * Evento que la simulación publica en {@code telemetria} (spec §4). Es una copia propia del contrato:
- * la feature no depende de las clases de {@code autos} ni de {@code flink}.
- */
-record TelemetriaEvento(String carId, String companyId, String fleetId, double lat, double lon, int heading,
-                        String engine, int battery, long ts) {
+import java.util.UUID;
+record TelemetriaEvento(String carId,String companyId,String fleetId,double lat,double lon,int heading,
+    String engine,int battery,long ts,Integer schemaVersion,UUID eventId,UUID carreraId,UUID viajeId,
+    String rutaId,Long inicioViajeTs,String tipoEvento,String motivoFin) {
+    TelemetriaEvento(String carId,String companyId,String fleetId,double lat,double lon,int heading,String engine,int battery,long ts) {
+        this(carId,companyId,fleetId,lat,lon,heading,engine,battery,ts,null,null,null,null,null,null,null,null);
+    }
 }
