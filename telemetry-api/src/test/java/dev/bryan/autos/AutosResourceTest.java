@@ -30,8 +30,8 @@ class AutosResourceTest {
     AutosStore store;
 
     private void publicar(Auto auto) {
-        InMemorySource<List<Auto>> fuente = connector.source("ultima-posicion");
-        fuente.send(List.of(auto));  // el canal consume por lotes
+        InMemorySource<List<AutoEvento>> fuente = connector.source("ultima-posicion");
+        fuente.send(List.of(new AutoEvento(auto.carId(), auto.companyId(), auto.fleetId(), auto.lat(), auto.lon(), auto.heading(), auto.engine(), auto.battery(), auto.ts())));  // el canal consume por lotes
     }
 
     @Test

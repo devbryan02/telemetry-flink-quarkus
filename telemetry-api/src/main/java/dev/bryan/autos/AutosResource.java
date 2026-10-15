@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 @Path("/autos")
+@io.smallrye.common.annotation.Blocking
 @Produces(MediaType.APPLICATION_JSON)
 public class AutosResource {
 
