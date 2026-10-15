@@ -1,4 +1,6 @@
 # graphify (ADR-001)
+.env
+*.log
 graphify-out/
 
 # Java / Quarkus
