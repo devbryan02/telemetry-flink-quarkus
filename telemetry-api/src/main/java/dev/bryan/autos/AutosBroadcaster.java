@@ -24,7 +24,7 @@ class AutosBroadcaster {
     private static final Logger LOG = Logger.getLogger(AutosBroadcaster.class);
 
     @Inject
-    AutosStore store;
+    AutosCambios cambios;
 
     @Inject
     OpenConnections conexiones;
@@ -47,7 +47,7 @@ class AutosBroadcaster {
 
     void emitir() {
         try {
-            List<Auto> lote = store.drenarSucios();
+            List<Auto> lote = cambios.drenar();
             if (lote.isEmpty() || conexiones.listAll().isEmpty()) {
                 return;
             }

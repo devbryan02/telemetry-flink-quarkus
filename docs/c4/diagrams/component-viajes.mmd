@@ -1,0 +1,26 @@
+flowchart TB
+  topic["topic telemetria<br/>grupo quarkus-viajes-postgres"]
+  des["EventoViajeDeserializer<br/>EventoJson valida v1 y v2"]
+  fh["EventoViajeFailureHandler<br/>historial-invalido · cuenta y falla"]
+  cons["ViajesConsumer<br/>Incoming batch · Blocking · POST_PROCESSING"]
+  store["ViajesStore<br/>ingesta idempotente por eventId"]
+  met["ViajesMetricas<br/>contadores y gauge sin cierre"]
+  pg["PostgreSQL<br/>tb_viaje · tb_posicion_historial"]
+  res["ViajesResource<br/>GET /viajes · Blocking"]
+  cons2["ViajesConsulta<br/>páginas, detalle y CursorViajes"]
+  calc["ResumenViajeCalculador<br/>Haversine sobre las muestras"]
+  web["cliente REST"]
+  topic --> des
+  des -.->|"deserialización fallida"| fh
+  des -->|"List EventoViaje"| cons
+  cons -->|"guardarLote en una transacción"| store
+  cons -->|"ResultadoIngesta o fallo"| met
+  store --> pg
+  web --> res
+  res --> cons2
+  cons2 -->|"SELECT por cursor"| pg
+  cons2 -->|"detalle"| calc
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class topic,des,fh,cons,met,pg,res,cons2,calc,web other
+  class store focus

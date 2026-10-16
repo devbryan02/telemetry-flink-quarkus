@@ -1,0 +1,40 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="VS"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant S as Simulador
+  participant K as Kafka telemetria
+  participant VC as ViajesConsumer
+  participant VS as ViajesStore · foco
+  participant PG as PostgreSQL
+  participant M as ViajesMetricas
+  participant C as Cliente REST
+  participant VR as ViajesResource
+  S->>K: INICIO, POSICION y FIN con eventId, carreraId y viajeId
+  K->>VC: lote de EventoViaje, grupo quarkus-viajes-postgres
+  VC->>VS: guardarLote en un hilo worker
+  VS->>VS: validar y separar legados v1
+  VS->>PG: BEGIN
+  loop por evento v2, ordenado por viajeId
+    VS->>PG: crear tb_viaje si falta y SELECT FOR UPDATE
+    alt eventId nuevo
+      VS->>PG: INSERT tb_posicion_historial y UPDATE ultimo_ts, fin_ts, estado
+    else eventId repetido con el mismo contenido
+      VS->>VS: cuenta como duplicado
+    end
+  end
+  alt lote coherente
+    VS->>PG: COMMIT
+    VS-->>VC: ResultadoIngesta
+    VC->>M: insertados, duplicados y legados
+    VC-->>K: ack y commit de offsets
+  else contenido, identidad, intervalo o cierre contradictorios
+    VS->>PG: ROLLBACK del lote
+    VS-->>VC: conflicto con eventId y viajeId
+    VC->>M: viajes_persistencia_fallos_total
+    VC-->>K: sin ack, canal detenido y readiness DOWN
+  end
+  C->>VR: GET /viajes?carreraId=...
+  VR-->>C: página de viajes con nextCursor
+  C->>VR: GET /viajes/viajeId
+  VR-->>C: viaje, estado y resumen
+  C->>VR: GET /viajes/viajeId/posiciones
+  VR-->>C: muestras en orden ts, eventId

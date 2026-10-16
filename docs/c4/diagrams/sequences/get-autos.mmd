@@ -4,12 +4,15 @@ sequenceDiagram
   participant R as AutosResource · foco
   participant B as Bbox
   participant ST as AutosStore
+  participant PG as PostgreSQL
   participant E as GlobalExceptionMapper
-  Note over ST: alimentado por AutosConsumer desde ultima-posicion
-  C->>R: GET /autos con bbox opcional · listar
+  Note over ST,PG: tb_ultima_posicion la alimenta AutosConsumer desde ultima-posicion
+  C->>R: GET /autos con bbox opcional · listar, en un hilo worker
   alt sin bbox
     R->>ST: todos()
-    ST-->>R: copia de los autos
+    ST->>PG: SELECT * FROM tb_ultima_posicion ORDER BY car_id
+    PG-->>ST: filas
+    ST-->>R: lista de Auto
     R-->>C: 200 application/json
   else con bbox
     R->>B: parse(minLon,minLat,maxLon,maxLat)
@@ -18,8 +21,14 @@ sequenceDiagram
       E-->>C: 400 ErrorResponse con requestId
     else bbox válido
       R->>ST: enBbox(bbox)
-      ST-->>R: autos dentro de la caja
+      ST->>PG: SELECT con límites inclusivos de lon y lat
+      PG-->>ST: filas dentro de la caja
+      ST-->>R: lista de Auto
       R-->>C: 200 application/json
     end
+  end
+  alt PostgreSQL no responde
+    ST-->>E: IllegalStateException
+    E-->>C: 500 INTERNAL_ERROR con requestId
   end
   C->>C: fusionar por carId si ts es mayor
