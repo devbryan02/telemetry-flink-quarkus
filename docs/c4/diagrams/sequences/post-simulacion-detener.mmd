@@ -4,14 +4,16 @@ sequenceDiagram
   participant R as SimulacionResource · foco
   participant S as Simulador
   participant V as Vert.x timer
+  participant P as PublicadorTelemetria
   participant E as GlobalExceptionMapper
   C->>R: POST /simulacion/detener · detener
   R->>S: detener()
   alt carrera EN_CURSO
+    S->>P: FIN motivo DETENIDO de cada viaje abierto, con su posición final
     S->>V: cancelTimer
     S->>S: estado LISTA, autos quedan donde están
   else LISTA o TERMINADA
-    S->>S: sin cambios
+    S->>S: sin cambios ni eventos
   end
   alt sin error
     S-->>R: Estado

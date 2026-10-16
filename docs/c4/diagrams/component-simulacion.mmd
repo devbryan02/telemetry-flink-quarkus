@@ -2,11 +2,13 @@ flowchart TB
   web["dashboard"]
   sres["SimulacionResource<br/>/simulacion"]
   rres["RutasResource<br/>/rutas"]
-  sim["Simulador<br/>estado de la carrera"]
+  sim["Simulador<br/>estado de la carrera, carreraId<br/>e INICIO, POSICION y FIN"]
   cat["CatalogoRutas<br/>índice, GeoJSON y escenario"]
-  corr["AutoCorredor x3<br/>avance y llegada"]
+  corr["AutoCorredor x3<br/>avance, llegada y viajeId"]
   ruta["Ruta<br/>polilínea y distancias"]
+  reloj["RelojEventos<br/>ts estrictamente creciente por auto"]
   timer["Vert.x setPeriodic<br/>simulacion.intervalo-ms"]
+  pub["PublicadorTelemetria<br/>orden por auto y confirmación"]
   emit["Emitter telemetria-out<br/>topic telemetria"]
   web --> sres
   web --> rres
@@ -14,10 +16,12 @@ flowchart TB
   rres --> cat
   sim --> cat
   sim --> corr
+  sim -->|"siguiente(carId)"| reloj
   corr --> ruta
   timer -->|"avanzar"| sim
-  sim -->|"TelemetriaEvento JSON"| emit
+  sim -->|"TelemetriaEvento v2"| pub
+  pub -->|"Record key carId, JSON"| emit
   classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
   classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
-  class web,sres,rres,cat,corr,ruta,timer,emit other
+  class web,sres,rres,cat,corr,ruta,reloj,timer,pub,emit other
   class sim focus

@@ -1,0 +1,5 @@
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY target/quarkus-app/ /app/
+EXPOSE 8080 8081
+ENTRYPOINT ["java","-Xmx1024m","-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-jar","/app/quarkus-run.jar"]

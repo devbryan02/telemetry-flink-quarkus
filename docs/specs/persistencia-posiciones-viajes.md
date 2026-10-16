@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-14
 
-**Estado:** propuesta para revisión; no implementada.
+**Estado:** implementada (incrementos 01–08, ver [planes](../plans/persistencia-posiciones-viajes/README.md) y [casos de prueba](../test-cases/persistencia-posiciones-viajes.md)).
 
 **Base:** [Telemetría de autos en tiempo real](telemetria.md).
 **Alcance acordado:** persistencia y API de consulta; una pantalla de historial queda para una evolución posterior.
@@ -17,7 +17,7 @@ Un **viaje** corresponde a un auto en una ejecución de carrera. Una **carrera**
 
 Quedan incluidos el almacenamiento, la consulta REST, los metadatos mínimos para identificar viajes, la continuidad del WebSocket actual y PostgreSQL en Docker Compose. Quedan fuera una interfaz de historial, reproducción animada, detección automática de viajes por motor o movimiento, alertas, autenticación, Redis, PostGIS y reanudación de carreras tras un reinicio.
 
-## 2. Situación actual verificada
+## 2. Situación verificada antes de implementar (2026-10-14)
 
 La revisión empleó `graphify update .`, consultas del grafo y lectura de los componentes relacionados. El índice inicial contiene 1.012 nodos y 1.650 relaciones.
 

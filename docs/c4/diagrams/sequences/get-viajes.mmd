@@ -1,0 +1,33 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant R as ViajesResource · foco
+  participant Q as ViajesConsulta
+  participant CU as CursorViajes
+  participant PG as PostgreSQL
+  participant E as GlobalExceptionMapper
+  C->>R: GET /viajes con filtros, limit y cursor · listar
+  alt carreraId no es UUID, desde o hasta no son números, o limit fuera de 1 a 1000
+    R-->>E: ConsultaViajesInvalidaException
+    E-->>C: 400 CONSULTA_VIAJES_INVALIDA con requestId
+  else parámetros válidos, limit 100 por defecto
+    R->>Q: listar(FiltroViajes, ConsultaPagina)
+    Q->>Q: rango desde menor o igual que hasta
+    Q->>CU: decodificar(cursor, viajes, filtro, limit)
+    alt rango invertido o cursor de otra consulta
+      CU-->>E: ConsultaViajesInvalidaException
+      E-->>C: 400 CONSULTA_VIAJES_INVALIDA
+    else válido
+      Q->>PG: SELECT tb_viaje con filtros, inicio en desde hasta, después del cursor, ORDER BY inicio_viaje_ts DESC, viaje_id DESC LIMIT limit+1
+      PG-->>Q: hasta limit+1 filas
+      opt sobra una fila
+        Q->>CU: codificar con el último viaje de la página
+      end
+      Q-->>R: Pagina items y nextCursor
+      R-->>C: 200 application/json
+    end
+  end
+  alt PostgreSQL no responde
+    Q-->>E: IllegalStateException
+    E-->>C: 500 INTERNAL_ERROR sin detalles de BD
+  end

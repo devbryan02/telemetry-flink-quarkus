@@ -1,8 +1,10 @@
 # Especificación del MVP: Telemetría de Autos en Tiempo Real
 
-**Versión:** 3.1
+**Versión:** 3.2
 **Stack:** Apache Kafka · Quarkus 3.40 LTS (Java 17) con Apache Flink 2.2 embebido · React 19 + Next.js 16 + shadcn/ui + MapLibre (mapcn) · todo en Docker Compose
 **Escenario:** carreras de 3 autos en rutas establecidas (Av. Brasil, Panamericana Sur, Panamericana Norte y Vía Los Libertadores), seguidas en un mapa en tiempo real.
+
+> **Persistencia (v3.2):** la [especificación de persistencia](persistencia-posiciones-viajes.md) reemplaza el store en memoria y la reconstrucción al arrancar por PostgreSQL, y agrega el historial de viajes (feature `viajes`) y el contrato de eventos v2. Las secciones de esta especificación que la contradicen se marcan con **[v3.2]**.
 
 ---
 
@@ -24,7 +26,7 @@ El backend corre **carreras** de 3 autos en rutas reales y publica su telemetrí
 - API REST y WebSocket con actualizaciones por lotes;
 - dashboard con mapa, ruta con salida y meta, clasificación en vivo, filtro empresa → flota e íconos de vehículo.
 
-**Fuera de alcance:** autenticación, base de datos, ventanas de tiempo, alertas, clúster Flink (Flink corre **embebido dentro del proceso Quarkus**), Avro/Protobuf, alta disponibilidad y pruebas de carga.
+**Fuera de alcance:** autenticación, base de datos (incorporada en v3.2 por la [especificación de persistencia](persistencia-posiciones-viajes.md)), ventanas de tiempo, alertas, clúster Flink (Flink corre **embebido dentro del proceso Quarkus**), Avro/Protobuf, alta disponibilidad y pruebas de carga.
 
 ## 3. Arquitectura
 
@@ -35,7 +37,7 @@ flowchart LR
     subgraph JVM["Quarkus 3.40 · Java 17 (una sola JVM)"]
         SIM["Carrera<br/>3 autos · ruta elegida"]
         FL["Flink 2.2 embebido<br/>MiniCluster local<br/>última posición por auto"]
-        QK["Store en memoria<br/>REST + WebSocket"]
+        QK["autos y viajes<br/>REST + WebSocket"]
     end
     NX["Next.js 16 + shadcn/ui<br/>mapa MapLibre (WebGL)"]
 
@@ -48,7 +50,7 @@ flowchart LR
     QK -- "WS: lotes cada 500 ms" --> NX
 ```
 
-> Simulación, Flink y store comparten proceso, pero se comunican **solo por los topics** (`telemetria` y `ultima-posicion`). `ultima-posicion` está compactado y permite reconstruir el estado de Quarkus al reiniciar.
+> Simulación, Flink y store comparten proceso, pero se comunican **solo por los topics** (`telemetria` y `ultima-posicion`). `ultima-posicion` está compactado. **[v3.2]** El estado ya no se reconstruye desde el topic: vive en PostgreSQL. La feature `viajes` lee `telemetria` directamente para guardar el historial.
 
 ### Responsabilidades
 
@@ -141,7 +143,7 @@ flowchart TB
     P["Simulación"] --> T1
     T1 -- "grupo: flink-ultima-pos" --> F["Flink"]
     F --> T2
-    T2 -- "grupo: quarkus-dash" --> Q["Quarkus"]
+    T2 -- "grupo: quarkus-dash-postgres" --> Q["Quarkus"]
 ```
 
 Creación de topics: `./scripts/crear-topics.sh` (en Windows, `.\scripts\crear-topics.ps1`).
@@ -273,11 +275,11 @@ flowchart LR
 **Dependencias Maven de Flink:** `flink-streaming-java`, `flink-clients`, `flink-runtime-web` (UI :8081) y `flink-connector-base` en `2.2.1`, más `flink-connector-kafka:5.0.0-2.2`. El BOM de Quarkus gobierna la versión de `kafka-clients`. Flink trae sus dependencias sombreadas (`flink-shaded-*`) y no compite con el Jackson ni el Netty de Quarkus.
 
 ### Requisitos funcionales
-- **RF-Q1:** consumir `ultima-posicion` y actualizar el store en memoria. El consumidor recibe **lotes** (`batch=true`, `List<Auto>`) y es `@NonBlocking`. Un `void recibir(Auto)` se ejecuta como bloqueante, con un salto de hilo por mensaje.
-- **RF-Q2:** el store solo reemplaza un auto si su `ts` es mayor, y marca el auto como "sucio".
-- **RF-Q3:** cada 500 ms, emitir por WebSocket un único mensaje JSON con el arreglo de autos sucios y limpiar el set; nada si no hay cambios.
+- **RF-Q1 [v3.2]:** consumir `ultima-posicion` por **lotes** (`batch=true`, `List<AutoEvento>`) y guardarlos en `tb_ultima_posicion`. El consumidor es `@Blocking`, porque JDBC no puede ir en el event loop, y confirma offsets después del commit.
+- **RF-Q2 [v3.2]:** el upsert solo reemplaza un auto si su `ts` es mayor. Los cambios confirmados pasan al búfer temporal `AutosCambios`.
+- **RF-Q3:** cada 500 ms, emitir por WebSocket un único mensaje JSON con el arreglo de autos cambiados (solo los confirmados en BD) y vaciar el búfer; nada si no hay cambios.
 - **RF-Q4:** `GET /autos` devuelve el estado completo; `?bbox=minLon,minLat,maxLon,maxLat` filtra (bbox inválido → 400).
-- **RF-Q5:** al arrancar, el consumidor relee `ultima-posicion` desde el inicio (`ConsumerRebalanceListener` con `seekToBeginning`) para reconstruir el estado, y sigue confirmando offsets para medir el lag.
+- **RF-Q5 [v3.2]:** sin reconstrucción al arrancar. `GET /autos` consulta PostgreSQL, y el grupo `quarkus-dash-postgres` retoma sus offsets confirmados (`earliest` solo en su primera ejecución).
 - **RF-Q6:** errores HTTP según `STD-ERR-001` (`requestId`, sin stack traces).
 
 ### Configuración
@@ -287,11 +289,13 @@ Cada propiedad se puede sobrescribir con su variable de entorno (`kafka.bootstra
 ```properties
 kafka.bootstrap.servers=localhost:9092
 mp.messaging.incoming.ultima-posicion.connector=smallrye-kafka
-mp.messaging.incoming.ultima-posicion.group.id=quarkus-dash
+mp.messaging.incoming.ultima-posicion.group.id=quarkus-dash-postgres
 mp.messaging.incoming.ultima-posicion.auto.offset.reset=earliest
 mp.messaging.incoming.ultima-posicion.batch=true
-mp.messaging.incoming.ultima-posicion.auto.commit.interval.ms=200
-mp.messaging.incoming.ultima-posicion.consumer-rebalance-listener.name=reconstruir-estado
+mp.messaging.incoming.ultima-posicion.enable.auto.commit=false
+mp.messaging.incoming.ultima-posicion.commit-strategy=throttled
+mp.messaging.incoming.ultima-posicion.failure-strategy=fail
+# [v3.2] historial-telemetria (grupo quarkus-viajes-postgres) y el datasource: ver application.properties
 quarkus.http.cors.enabled=true
 quarkus.http.cors.origins=http://localhost:3000
 quarkus.http.enable-compression=true
@@ -385,34 +389,37 @@ Todo el sistema se levanta con `docker compose up -d --build`:
 
 ```mermaid
 flowchart LR
-    K["kafka<br/>healthy"] --> I["kafka-init<br/>crea topics y termina"] --> A["telemetry-api<br/>healthy (GET /rutas)"] --> D["dashboard"]
+    P["postgres<br/>healthy"] --> A
+    K["kafka<br/>healthy"] --> I["kafka-init<br/>crea topics y termina"] --> A["telemetry-api<br/>healthy (/q/health/ready)"] --> D["dashboard"]
 ```
 
 | Servicio | Imagen | Puertos | Configuración |
 |---|---|---|---|
+| `postgres` **[v3.2]** | `postgres:17` | 5432 | Credenciales `POSTGRES_DB`, `POSTGRES_USER` y `POSTGRES_PASSWORD` desde `.env`; datos en el volumen `postgres-datos`; healthcheck `pg_isready` |
 | `kafka` | `apache/kafka:4.2.1` | 9092 | Listeners `INTERNO://kafka:29092` (contenedores) y `EXTERNO://localhost:9092` (host); datos en el volumen `kafka-datos` |
 | `kafka-init` | `apache/kafka:4.2.1` | — | `kafka-topics.sh --create --if-not-exists` de los dos topics (§6) |
-| `telemetry-api` | `telemetry-api/Dockerfile`: Maven 3.9 + JDK 17 → JRE 17, fast-jar, usuario no root | 8080, 8081 (UI de Flink) | `KAFKA_BOOTSTRAP_SERVERS=kafka:29092`, `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:3000`, `FLINK_UI_BIND_ADDRESS=0.0.0.0` |
+| `telemetry-api` | `telemetry-api/Dockerfile`: Maven 3.9 + JDK 17 → JRE 17, fast-jar, usuario no root | 8080, 8081 (UI de Flink) | `QUARKUS_DATASOURCE_JDBC_URL`, `QUARKUS_DATASOURCE_USERNAME`, `QUARKUS_DATASOURCE_PASSWORD`, `KAFKA_BOOTSTRAP_SERVERS=kafka:29092`, `QUARKUS_HTTP_CORS_ORIGINS=http://localhost:3000`, `FLINK_UI_BIND_ADDRESS=0.0.0.0` |
 | `dashboard` | `dashboard-next/Dockerfile`: Node 24 Alpine, salida `standalone` de Next.js, usuario no root | 3000 | Build args `NEXT_PUBLIC_API_URL=http://localhost:8080` y `NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos` |
 
 - **Arranque ordenado:** `depends_on` con `service_healthy` y `service_completed_successfully`.
 - **Como servicio:** `restart: unless-stopped` en `kafka`, `telemetry-api` y `dashboard`.
 - **URLs del navegador:** las variables `NEXT_PUBLIC_*` se incrustan al construir el dashboard y las usa el navegador del host, por eso apuntan a `localhost:8080` (puerto publicado) y no a `telemetry-api:8080`.
-- **Persistencia:** con `docker compose down` los topics y `ultima-posicion` sobreviven en el volumen, y la API reconstruye su estado al arrancar. `docker compose down -v` borra el volumen.
+- **Persistencia [v3.2]:** con `docker compose down`, los topics (volumen `kafka-datos`) y las posiciones y viajes (volumen `postgres-datos`) sobreviven, y la API lee su estado de PostgreSQL al arrancar. `docker compose down -v` borra ambos volúmenes.
 
 **Desarrollo local** (recarga en caliente):
 
 ```mermaid
 flowchart LR
-    A["1. docker compose up -d kafka"] --> B["2. ./scripts/crear-topics.sh"] --> C["3. ./mvnw quarkus:dev<br/>:8080 + Flink embebido (UI :8081)"] --> E["4. npm run dev<br/>:3000"] --> F["5. Elegir ruta e 'Iniciar carrera'"]
+    A["1. docker compose up -d postgres kafka"] --> B["2. ./scripts/crear-topics.sh"] --> C["3. ./mvnw quarkus:dev<br/>:8080 + Flink embebido (UI :8081)"] --> E["4. npm run dev<br/>:3000"] --> F["5. Elegir ruta e 'Iniciar carrera'"]
 ```
 
 Estructura del repositorio:
 
 ```
 telemetria-flink/
-├── docker-compose.yml            (kafka, kafka-init, telemetry-api, dashboard)
-├── scripts/crear-topics.{sh,ps1}
+├── docker-compose.yml            (postgres, kafka, kafka-init, telemetry-api, dashboard)
+├── .env.example                  (credenciales de PostgreSQL para desarrollo)
+├── scripts/crear-topics.{sh,ps1}, probar-persistencia.ps1
 ├── telemetry-api/
 │   ├── Dockerfile                    (multi-stage: Maven → JRE 17)
 │   ├── pom.xml                       (extensiones Quarkus + Flink 2.2.1)
@@ -420,9 +427,10 @@ telemetria-flink/
 │       ├── java/dev/bryan/
 │       │   ├── simulacion/  (Simulador, AutoCorredor, Ruta, CatalogoRutas, Escenario, SimulacionResource, RutasResource)
 │       │   ├── flink/       (FlinkJobRunner, UltimaPosicionJob, UltimaPosicionFunction, Posicion)
-│       │   ├── autos/       (Auto, AutosStore, AutosConsumer, AutosResource, AutosWs, AutosBroadcaster)
+│       │   ├── autos/       (Auto, AutoEvento, AutosStore, AutosCambios, AutosConsumer, AutosResource, AutosWs, AutosBroadcaster)
+│       │   ├── viajes/      (ViajesConsumer, ViajesStore, ViajesConsulta, ViajesResource, ResumenViajeCalculador, ViajesMetricas)
 │       │   └── shared/      (error/)
-│       └── resources/       (application.properties, rutas/{indice.json, *.geojson}, escenarios/carrera.json)
+│       └── resources/       (application.properties, db/migration/, rutas/{indice.json, *.geojson}, escenarios/carrera.json)
 ├── dashboard-next/
 │   ├── Dockerfile                    (multi-stage: npm ci → next build → standalone)
 │   ├── app/page.tsx
@@ -443,7 +451,7 @@ Organización **por features** en backend y frontend (ver `knowledge/standards/S
 - [x] El filtro muestra solo los autos de la empresa o flota elegida (Empresa 01: 2; Empresa 02: 1; todas: 3).
 - [x] Latencia extremo a extremo p95 < 2 s.
 - [x] Un evento con `ts` antiguo no reemplaza a uno más reciente.
-- [x] Al reiniciar Quarkus, el estado se reconstruye desde `ultima-posicion`. El job Flink se inicia solo y se reinicia solo ante fallos transitorios.
+- [x] Al reiniciar Quarkus, el estado se conserva: **[v3.2]** se lee de PostgreSQL, ya no se reconstruye desde `ultima-posicion`. El job Flink se inicia solo y se reinicia solo ante fallos transitorios.
 
 ## 14. Riesgos
 
@@ -452,7 +460,7 @@ Organización **por features** en backend y frontend (ver `knowledge/standards/S
 | Classloaders de Flink dentro de Quarkus | El job no arranca (`ClassNotFoundException`) | `pipeline.classpaths` con las clases de la app y `parent-first` (§8) |
 | Flink embebido sin `--add-opens` (no observado con JDK 17.0.20) | `InaccessibleObjectException` al serializar | Pasar los flags JVM de §8 en dev y en el jar |
 | Coordinador de grupos de Kafka 4.0.x con el reloj de la VM retrocediendo (KAFKA-19888) | Consumidores sin unirse ni confirmar offsets | Kafka 4.2.1 (§6) |
-| Datos con otro formato en `ultima-posicion` | Autos fantasma o sin empresa en el mapa | `./scripts/crear-topics.sh --recrear` |
+| Datos con otro formato en `ultima-posicion` | Autos fantasma o sin empresa en el mapa | **[v3.2]** Contrato compatible hacia atrás y validación en cada feature. Recrear topics ya no es la mitigación, porque borra el historial pendiente. |
 | Flink y Quarkus comparten heap | GC largos | Subir `-Xmx` o sacar Flink a Docker (§15) |
 | Pausa larga de la JVM (heartbeat vencido) | El job Flink falla y no llegan posiciones | Estrategia de reinicio `exponential-delay` y heartbeat de 3 min (§8) |
 | Eventos desordenados | Posición vieja | `KeyedProcessFunction` que compara `ts` y store que solo acepta `ts` mayor |
@@ -465,5 +473,5 @@ flowchart LR
     V4 --> V5["v5<br/>Alertas y OFFLINE<br/>timers + estado"]
     V5 --> V6["v6<br/>Ventanas<br/>velocidad promedio"]
     V6 --> V7["v7<br/>Checkpoints<br/>Flink fuera de Quarkus (Docker)"]
-    V7 --> V8["v8<br/>Historial en PostgreSQL<br/>Kafka Connect"]
+    V7 --> V8["v8<br/>Kafka Connect<br/>(el historial en PostgreSQL ya existe desde v3.2)"]
 ```

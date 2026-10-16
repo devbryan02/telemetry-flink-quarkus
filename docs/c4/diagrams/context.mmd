@@ -1,11 +1,11 @@
 flowchart TB
   usuario["Usuario<br/>sigue la carrera en el navegador"]
-  operador["Desarrollador u operador<br/>levanta el sistema y observa Flink"]
-  sistema["Sistema de telemetría de carreras<br/>simulación, Kafka, Flink embebido y dashboard"]
+  operador["Desarrollador u operador<br/>levanta el sistema, observa Flink<br/>y consulta salud, métricas e historial"]
+  sistema["Sistema de telemetría de carreras<br/>simulación, Kafka, Flink embebido,<br/>PostgreSQL y dashboard"]
   carto["CARTO Basemaps<br/>estilos y teselas del mapa base"]
   osm["OpenStreetMap y OSRM<br/>origen de la geometría de las rutas"]
   usuario -->|"elige ruta, inicia la carrera,<br/>ajusta velocidades y filtra"| sistema
-  operador -->|"docker compose y UI de Flink :8081"| sistema
+  operador -->|"docker compose, UI de Flink :8081,<br/>/q/health, /q/metrics y GET /viajes"| sistema
   sistema -->|"HTTPS estilos y teselas<br/>desde el navegador"| carto
   osm -.->|"extracción previa, no en runtime"| sistema
   classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000

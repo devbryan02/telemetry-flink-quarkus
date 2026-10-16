@@ -2,27 +2,33 @@
 sequenceDiagram
   participant O as Operador
   participant DC as docker compose
+  participant PG as PostgreSQL
   participant KI as kafka-init
   participant Q as Quarkus
   participant FR as FlinkJobRunner · foco
-  participant L as ReconstruirEstadoListener
   participant AC as AutosConsumer
+  participant VC as ViajesConsumer
   participant K as Kafka
-  O->>DC: docker compose up -d
+  O->>DC: docker compose up -d con .env
+  DC->>PG: arranca postgres y espera healthy, pg_isready
   DC->>K: arranca kafka y espera healthy
   DC->>KI: crea topics con if-not-exists
   KI-->>DC: Exited 0
   DC->>Q: arranca telemetry-api
+  Q->>PG: Flyway migrate-at-start, V1 si falta
   Q->>FR: StartupEvent
   FR->>FR: MiniCluster, classpaths, parent-first, restart exponential-delay
-  FR->>K: KafkaSource telemetria desde latest
-  Q->>AC: suscripción a ultima-posicion
-  K->>L: particiones asignadas
-  L->>K: seekToBeginning
-  K-->>AC: última posición de cada auto
-  AC->>AC: AutosStore reconstruido
-  DC->>Q: healthcheck GET /rutas
-  Q-->>DC: 200, healthy
+  FR->>K: KafkaSource telemetria desde latest, sin checkpoints
+  Q->>AC: suscripción a ultima-posicion, grupo quarkus-dash-postgres
+  K-->>AC: desde el último offset confirmado
+  Q->>VC: suscripción a telemetria, grupo quarkus-viajes-postgres
+  K-->>VC: desde el último offset confirmado
+  DC->>Q: healthcheck GET /q/health/ready
+  Q-->>DC: 200 UP si el datasource y los canales están bien
+  Note over Q,PG: GET /autos y GET /viajes responden desde PostgreSQL sin iniciar otra carrera
   alt el job Flink falla
     FR->>FR: reinicio con espera de 1 s a 30 s
+  end
+  alt un canal falla por BD o evento inválido
+    Q-->>DC: readiness DOWN hasta corregir la causa y reiniciar la API
   end

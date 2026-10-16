@@ -9,24 +9,30 @@ sequenceDiagram
   participant K2 as Kafka ultima-posicion
   participant AC as AutosConsumer
   participant ST as AutosStore
+  participant PG as PostgreSQL
+  participant CB as AutosCambios
   participant B as AutosBroadcaster
   U->>D: elige ruta y pulsa Iniciar carrera
   D->>R: POST /simulacion/iniciar con ruta
   R->>S: iniciar(ruta)
-  S->>K1: posición de salida de cada auto, key carId
-  S-->>R: Estado EN_CURSO
+  S->>K1: INICIO v2 de cada auto, key carId
+  S-->>R: Estado EN_CURSO con carreraId y viajeId
   R-->>D: 200 Estado
   loop cada 1 s
-    S->>K1: TelemetriaEvento por auto en pista
+    S->>K1: POSICION por auto en pista, o FIN META al llegar
     K1->>F: KafkaSource, grupo flink-ultima-pos
     F->>F: keyBy carId y emitir solo si ts es mayor
-    F->>K2: KafkaSink, key carId
-    K2->>AC: lote de Auto
-    AC->>ST: actualizar y marcar sucio
+    F->>K2: KafkaSink, key carId, contexto v2
+    K2->>AC: lote de AutoEvento, grupo quarkus-dash-postgres
+    AC->>ST: guardarLote en un hilo worker
+    ST->>PG: upsert si ts es mayor, RETURNING
+    PG-->>ST: filas cambiadas, commit
+    AC->>CB: registrar cambios confirmados
+    AC-->>K2: ack y commit de offsets
   end
   loop cada 500 ms
-    B->>ST: drenarSucios()
-    B->>D: WS /ws/autos lote JSON
+    B->>CB: drenar()
+    B->>D: WS /ws/autos lote JSON de 9 campos
     D->>U: autos interpolados en el mapa
   end
   loop cada 1 s
@@ -39,4 +45,8 @@ sequenceDiagram
   alt API caída o error
     R-->>D: ErrorResponse o timeout de 15 s
     D->>U: mensaje de error en el panel
+  end
+  alt falla PostgreSQL al guardar el lote
+    ST-->>AC: rollback, sin cambios para el WebSocket
+    AC-->>K2: sin ack, canal detenido y readiness DOWN
   end

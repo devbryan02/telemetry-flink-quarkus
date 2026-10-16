@@ -3,13 +3,15 @@ sequenceDiagram
   participant C as use-autos-socket
   participant WS as AutosWs · foco
   participant B as AutosBroadcaster
-  participant ST as AutosStore
+  participant CB as AutosCambios
+  participant AC as AutosConsumer
   participant M as autos-map
   C->>WS: WebSocket /ws/autos
   WS-->>C: abierta, OnOpen registra la conexión
+  AC->>CB: registrar filas cambiadas tras el commit en PostgreSQL
   loop cada 500 ms en el event loop de Vert.x
-    B->>ST: drenarSucios()
-    ST-->>B: autos cambiados
+    B->>CB: drenar()
+    CB-->>B: autos cambiados, uno por carId con el ts mayor
     opt hay autos y conexiones
       B->>C: sendText arreglo JSON a cada conexión
       C->>M: alRecibirLote

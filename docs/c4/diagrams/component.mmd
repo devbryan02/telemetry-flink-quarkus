@@ -1,22 +1,28 @@
 flowchart TB
   web["dashboard en el navegador"]
-  sim["simulacion<br/>SimulacionResource · RutasResource<br/>Simulador · CatalogoRutas"]
+  sim["simulacion<br/>SimulacionResource · RutasResource<br/>Simulador · PublicadorTelemetria"]
   rec["recursos del classpath<br/>rutas/*.geojson · escenarios/carrera.json"]
   tel["topic telemetria"]
   flink["flink<br/>FlinkJobRunner · UltimaPosicionJob<br/>MiniCluster"]
   up["topic ultima-posicion"]
-  autos["autos<br/>AutosResource · AutosWs · AutosBroadcaster<br/>AutosConsumer · AutosStore"]
+  autos["autos<br/>AutosResource · AutosWs · AutosBroadcaster<br/>AutosConsumer · AutosStore · AutosCambios"]
+  viajes["viajes<br/>ViajesResource · ViajesConsulta<br/>ViajesConsumer · ViajesStore"]
+  pg["PostgreSQL<br/>tablas de cada feature"]
   err["shared/error<br/>GlobalExceptionMapper"]
   web -->|"REST /simulacion y /rutas"| sim
   web -->|"REST /autos y WS /ws/autos"| autos
   sim -->|"lee"| rec
-  sim -->|"publica key carId"| tel
+  sim -->|"publica v2 key carId"| tel
   tel -->|"KafkaSource"| flink
   flink -->|"KafkaSink key carId"| up
-  up -->|"Incoming por lotes"| autos
+  up -->|"Incoming por lotes<br/>quarkus-dash-postgres"| autos
+  tel -->|"Incoming por lotes<br/>quarkus-viajes-postgres"| viajes
+  autos -->|"JDBC tb_ultima_posicion"| pg
+  viajes -->|"JDBC tb_viaje y tb_posicion_historial"| pg
   sim -.->|"ComsatelException"| err
   autos -.->|"ComsatelException"| err
+  viajes -.->|"ComsatelException"| err
   classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
   classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
-  class web,rec,tel,flink,up,autos,err other
+  class web,rec,tel,flink,up,autos,viajes,pg,err other
   class sim focus
