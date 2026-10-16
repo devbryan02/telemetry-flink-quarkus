@@ -1,6 +1,6 @@
 ---
 okf_version: 0.2
-generated: 2026-10-10
+generated: 2026-10-15
 verified: false
 human-reviewed: false
 status: REQUIRES_REVIEW
@@ -30,7 +30,7 @@ provenance_endpoint: INFERRED
 | Respuestas | 200 Estado · 500 INTERNAL_ERROR |
 | Seguridad | Ninguna (RNF-5). CORS solo para `http://localhost:3000`. |
 | Correlación | `requestId` generado en la respuesta de error; no se propaga un correlation ID en las respuestas 2xx ni por Kafka. |
-| Criterios | Criterio 3 (clasificación en vivo), RF-S6, RF-U4 |
+| Criterios | Criterio 3 (clasificación en vivo), RF-S6, RF-U4; spec de persistencia §4.2 (`carreraId` y `viajeId` en la respuesta) |
 | Foco | Participante `R` (borde dark red 700) |
 
 ```mermaid
@@ -50,7 +50,7 @@ sequenceDiagram
       CAT-->>S: autos en la salida con su velocidad
     end
     alt sin error
-      S-->>R: Estado con estado, ruta, inicio, longitudM y autos
+      S-->>R: Estado con estado, ruta, inicio, longitudM, autos con viajeId y carreraId
       R-->>C: 200 application/json
       C->>C: setSimulacion y repinta el panel
     else escenario ilegible

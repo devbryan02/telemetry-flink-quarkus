@@ -14,7 +14,7 @@ sequenceDiagram
       CAT-->>S: autos en la salida con su velocidad
     end
     alt sin error
-      S-->>R: Estado con estado, ruta, inicio, longitudM y autos
+      S-->>R: Estado con estado, ruta, inicio, longitudM, autos con viajeId y carreraId
       R-->>C: 200 application/json
       C->>C: setSimulacion y repinta el panel
     else escenario ilegible

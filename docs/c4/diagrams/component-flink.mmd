@@ -2,10 +2,10 @@ flowchart TB
   start["StartupEvent de Quarkus"]
   runner["FlinkJobRunner<br/>MiniCluster con UI :8081"]
   job["UltimaPosicionJob<br/>definición del pipeline"]
-  src["KafkaSource<br/>telemetria · grupo flink-ultima-pos"]
-  des["PosicionJson.Deserializador"]
+  src["KafkaSource<br/>telemetria · grupo flink-ultima-pos · latest"]
+  des["PosicionJson.Deserializador<br/>valida con EventoJson · IOException si es inválido"]
   fn["UltimaPosicionFunction<br/>keyBy carId · ValueState ts"]
-  ser["PosicionJson.Serializador<br/>y SerializadorClave"]
+  ser["PosicionJson.Serializador<br/>y SerializadorClave · conserva contexto v2"]
   sink["KafkaSink<br/>ultima-posicion · at-least-once"]
   start --> runner
   runner -->|"construir y executeAsync"| job

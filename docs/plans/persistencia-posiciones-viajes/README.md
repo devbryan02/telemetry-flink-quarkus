@@ -1,6 +1,6 @@
 # Persistencia de posiciones y viajes: incrementos
 
-**Spec:** [últimas posiciones e historial de viajes](../../specs/persistencia-posiciones-viajes.md). Este índice y la especificación deben leerse antes del incremento elegido. Los planes están pendientes de implementación.
+**Spec:** [últimas posiciones e historial de viajes](../../specs/persistencia-posiciones-viajes.md). Este índice y la especificación deben leerse antes del incremento elegido. Los ocho incrementos están implementados; la evidencia está en [casos de prueba y operación](../../test-cases/persistencia-posiciones-viajes.md).
 
 ## Secuencia y entregables
 
