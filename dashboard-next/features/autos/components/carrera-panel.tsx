@@ -1,19 +1,16 @@
 "use client"
 
 import { Flag, LocateFixed, Play, RotateCcw, Square } from "lucide-react"
-import { useId, useState } from "react"
+import { useId } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
-import { type Filtro, nombreEmpresa, nombreFlota, type Opcion } from "../filtros"
-import { cronometro, km, segundos } from "../formato"
-import type { Clasificado, EstadoSimulacion, ResumenRuta } from "../types"
-
-export const VELOCIDAD_MIN = 10
-export const VELOCIDAD_MAX = 500
+import type { Filtro, Opcion } from "../filtros"
+import { cronometro, km, segundos, tiempoCarrera } from "../formato"
+import type { EstadoSimulacion, ResumenRuta } from "../types"
+import { FilaCorredor } from "./fila-corredor"
 
 export type ResumenMetricas = {
   total: number
@@ -76,62 +73,6 @@ function Selector({
   )
 }
 
-/** Fila de la clasificación: posición, progreso, llegada y slider de velocidad del auto. */
-function FilaCorredor({
-  auto,
-  longitudM,
-  onVelocidad,
-}: {
-  auto: Clasificado
-  longitudM: number
-  onVelocidad: (carId: string, kmh: number) => void
-}) {
-  // mientras se arrastra se muestra el borrador; al soltar se envía y vuelve a mandar el valor del servidor
-  const [borrador, setBorrador] = useState<number | null>(null)
-  const kmh = borrador ?? auto.velocidadKmh
-
-  const progreso = longitudM > 0 ? Math.min(100, (auto.recorridoM / longitudM) * 100) : 0
-  const llego = auto.llegadaMs !== null
-
-  return (
-    <li className="flex flex-col gap-1.5 rounded-lg border p-2" data-auto={auto.carId}>
-      <div className="flex items-baseline justify-between gap-2 text-sm">
-        <span className="font-semibold tabular-nums">{auto.posicion}º</span>
-        <span className="flex-1 truncate">
-          <span className="font-medium">{auto.carId}</span>
-          <span className="text-xs text-muted-foreground">
-            {" "}
-            · {auto.companyId ? nombreEmpresa(auto.companyId) : "Particular"}
-            {auto.fleetId ? ` · ${nombreFlota(auto.fleetId)}` : ""}
-          </span>
-        </span>
-        <span className={cn("text-xs tabular-nums", llego && "font-semibold text-green-600 dark:text-green-400")}>
-          {llego ? `🏁 ${cronometro(auto.llegadaMs!)}` : `${km.format(auto.recorridoM / 1000)} km`}
-        </span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full", llego ? "bg-green-500" : "bg-sky-500")} style={{ width: `${progreso}%` }} />
-      </div>
-      <div className="flex items-center gap-2">
-        <Slider
-          aria-label={`Velocidad de ${auto.carId}`}
-          min={VELOCIDAD_MIN}
-          max={VELOCIDAD_MAX}
-          step={5}
-          value={[kmh]}
-          disabled={llego}
-          onValueChange={(v) => setBorrador(Array.isArray(v) ? v[0] : v)}
-          onValueCommitted={(v) => {
-            setBorrador(null)
-            onVelocidad(auto.carId, Array.isArray(v) ? v[0] : v)
-          }}
-        />
-        <span className="w-16 text-right text-xs tabular-nums">{kmh} km/h</span>
-      </div>
-    </li>
-  )
-}
-
 /** Panel: ruta, control de la carrera, clasificación con velocidad por auto, filtro y métricas (spec §10). */
 export function CarreraPanel({
   rutas,
@@ -149,6 +90,7 @@ export function CarreraPanel({
   filtro,
   onCambiarFiltro,
   metricas,
+  ahoraMs,
   error,
 }: {
   rutas: ResumenRuta[]
@@ -166,6 +108,8 @@ export function CarreraPanel({
   filtro: Filtro
   onCambiarFiltro: (filtro: Filtro) => void
   metricas: ResumenMetricas
+  /** Hora del último refresco de PanelVivo (1 s): avanza el cronómetro sin leer el reloj al renderizar */
+  ahoraMs: number
   error: string | null
 }) {
   const estado = simulacion?.estado ?? "LISTA"
@@ -235,8 +179,18 @@ export function CarreraPanel({
         )}
       </section>
 
-      <div className="flex flex-col gap-3 p-4">
-        <ol className="flex flex-col gap-2">
+      <section aria-labelledby="titulo-clasificacion" className="border-b pt-4">
+        <div className="flex items-baseline justify-between px-4 pb-2">
+          <h2 id="titulo-clasificacion" className="text-sm font-semibold">
+            Clasificación
+          </h2>
+          {enCurso && deEstaRuta && (
+            <span className="font-mono text-sm tabular-nums">
+              {cronometro(tiempoCarrera(simulacion!.inicio, ahoraMs) ?? 0)}
+            </span>
+          )}
+        </div>
+        <ol>
           {clasificacion.map((a) => (
             <FilaCorredor
               key={a.carId}
@@ -246,6 +200,9 @@ export function CarreraPanel({
             />
           ))}
         </ol>
+      </section>
+
+      <div className="flex flex-col gap-3 p-4">
 
         <div className="flex flex-col gap-2">
           <Selector

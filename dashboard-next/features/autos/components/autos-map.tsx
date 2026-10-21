@@ -257,7 +257,7 @@ export default function AutosMap() {
   )
 }
 
-type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "metricas" | "empresas" | "flotas"> & {
+type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "metricas" | "empresas" | "flotas" | "ahoraMs"> & {
   resumir: () => ResumenMetricas
   opciones: () => { empresas: Opcion[]; flotas: Opcion[] }
 }
@@ -271,16 +271,18 @@ function PanelVivo({ resumir, opciones, ...resto }: PropsPanel) {
     latenciaP95Ms: null,
   })
   const [listas, setListas] = useState<{ empresas: Opcion[]; flotas: Opcion[] }>({ empresas: [], flotas: [] })
+  const [ahoraMs, setAhoraMs] = useState(0)
 
   useEffect(() => {
     const refrescar = () => {
       setMetricas(resumir())
       setListas(opciones())
+      setAhoraMs(Date.now())
     }
     refrescar()
     const id = setInterval(refrescar, 1_000)
     return () => clearInterval(id)
   }, [resumir, opciones, resto.filtro])
 
-  return <CarreraPanel metricas={metricas} empresas={listas.empresas} flotas={listas.flotas} {...resto} />
+  return <CarreraPanel metricas={metricas} ahoraMs={ahoraMs} empresas={listas.empresas} flotas={listas.flotas} {...resto} />
 }
