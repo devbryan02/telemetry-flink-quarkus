@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils"
 
 import type { Filtro, Opcion } from "../filtros"
-import { cronometro, km, segundos, tiempoCarrera } from "../formato"
+import { cronometro, km, tiempoCarrera } from "../formato"
 import type { EstadoSimulacion, ResumenRuta } from "../types"
 import { FilaCorredor } from "./fila-corredor"
+import { MetricasTiles } from "./metricas-tiles"
 
 export type ResumenMetricas = {
   total: number
@@ -202,14 +203,17 @@ export function CarreraPanel({
         </ol>
       </section>
 
-      <div className="flex flex-col gap-3 p-4">
-
-        <div className="flex flex-col gap-2">
+      <section aria-labelledby="titulo-filtro" className="flex flex-col gap-3 border-b p-4">
+        <h2 id="titulo-filtro" className="text-sm font-semibold">
+          Filtrar autos
+        </h2>
+        <div className="flex flex-wrap gap-2">
           <Selector
             etiqueta="Empresa"
             todas="Todas las empresas"
             opciones={empresas.map((o) => ({ value: o.id, label: `${o.nombre} · ${o.autos}` }))}
             valor={filtro.empresa}
+            className="flex-[1_1_180px]"
             onCambiar={(empresa) => onCambiarFiltro({ empresa, flota: null })}
           />
           <Selector
@@ -218,22 +222,18 @@ export function CarreraPanel({
             opciones={flotas.map((o) => ({ value: o.id, label: `${o.nombre} · ${o.autos}` }))}
             valor={filtro.flota}
             deshabilitado={!filtro.empresa}
+            className="flex-[1_1_180px]"
             onCambiar={(flota) => onCambiarFiltro({ ...filtro, flota })}
           />
         </div>
+      </section>
 
-        <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-xs tabular-nums">
-          <dt className="text-muted-foreground">Autos mostrados</dt>
-          <dd className="text-right">
-            {metricas.mostrados} / {metricas.total}
-          </dd>
-          <dt className="text-muted-foreground">Edad último dato</dt>
-          <dd className="text-right">{segundos(metricas.edadUltimoDatoMs)}</dd>
-          <dt className="text-muted-foreground">Latencia p95</dt>
-          <dd className="text-right">{segundos(metricas.latenciaP95Ms)}</dd>
-        </dl>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
+      <MetricasTiles metricas={metricas} />
+      {error && (
+        <p role="alert" className="px-4 py-2 text-xs text-error-text">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
