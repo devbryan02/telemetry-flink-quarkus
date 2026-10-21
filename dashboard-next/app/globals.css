@@ -7,8 +7,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+  --color-header-border: var(--header-border);
+  --color-field: var(--field);
+  --color-success: var(--success);
+  --color-error-text: var(--error-text);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -49,30 +55,30 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: #f4f4f4;
+  --foreground: #161616;
+  --card: #ffffff;
+  --card-foreground: #161616;
+  --popover: #ffffff;
+  --popover-foreground: #161616;
+  --primary: #0f62fe;
+  --primary-foreground: #ffffff;
+  --secondary: #edf5ff;
+  --secondary-foreground: #0f62fe;
+  --muted: #e0e0e0;
+  --muted-foreground: #525252;
+  --accent: #e8e8e8;
+  --accent-foreground: #161616;
+  --destructive: #da1e28;
+  --border: #e0e0e0;
+  --input: #8d8d8d;
+  --ring: #0f62fe;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -81,27 +87,41 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Carbon G10: cabecera G100, campos, estados, ruta y autos (MapLibre los lee con leerToken) */
+  --header: #161616;
+  --header-foreground: #f4f4f4;
+  --header-border: #393939;
+  --field: #f4f4f4;
+  --success: #198038;
+  --error-text: #da1e28;
+  --ruta-recorrido: #0f62fe;
+  --ruta-pendiente: #a6c8ff;
+  --ruta-borde: #ffffff;
+  --auto-1: #6929c4;
+  --auto-2: #1192e8;
+  --auto-3: #b28600;
+  --auto-off: #8d8d8d;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #161616;
+  --foreground: #f4f4f4;
+  --card: #262626;
+  --card-foreground: #f4f4f4;
+  --popover: #262626;
+  --popover-foreground: #f4f4f4;
+  --primary: #0f62fe;
+  --primary-foreground: #ffffff;
+  --secondary: #393939;
+  --secondary-foreground: #f4f4f4;
+  --muted: #393939;
+  --muted-foreground: #c6c6c6;
+  --accent: #333333;
+  --accent-foreground: #f4f4f4;
+  --destructive: #da1e28;
+  --border: #393939;
+  --input: #6f6f6f;
+  --ring: #ffffff;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -115,6 +135,20 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Carbon G100 */
+  --header: #161616;
+  --header-foreground: #f4f4f4;
+  --header-border: #393939;
+  --field: #393939;
+  --success: #42be65;
+  --error-text: #ff8389;
+  --ruta-recorrido: #78a9ff;
+  --ruta-pendiente: #002d9c;
+  --ruta-borde: #161616;
+  --auto-1: #a56eff;
+  --auto-2: #33b1ff;
+  --auto-3: #f1c21b;
+  --auto-off: #6f6f6f;
 }
 
 @layer base {
