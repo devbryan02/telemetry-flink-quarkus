@@ -4,6 +4,7 @@ import type { FeatureCollection, LineString } from "geojson"
 import type { LngLatBoundsLike } from "maplibre-gl"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { Encabezado } from "@/components/encabezado"
 import { Map, type MapRef } from "@/components/ui/map"
 
 import { Animador } from "../animacion"
@@ -18,7 +19,7 @@ import {
 } from "../api"
 import { cumpleFiltro, empresasDisponibles, type Filtro, flotasDisponibles, type Opcion, SIN_FILTRO } from "../filtros"
 import { aGeoJSON } from "../geojson"
-import { useAutosSocket, type EstadoConexion } from "../hooks/use-autos-socket"
+import { useAutosSocket } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
 import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
 import { AutosLayer, type AutosLayerHandle } from "./autos-layer"
@@ -137,7 +138,7 @@ export default function AutosMap() {
     obtenerRuta(rutaSeleccionada, control.signal)
       .then((g) => {
         setGeometria(g)
-        mapa.current?.fitBounds(limitesDe(g), { padding: { top: 60, bottom: 60, left: 360, right: 60 }, duration: 600 })
+        mapa.current?.fitBounds(limitesDe(g), { padding: 60, duration: 600 })
       })
       .catch((e: unknown) => {
         if (!control.signal.aborted) setError(`No se pudo cargar la ruta: ${mensaje(e)}`)
@@ -219,31 +220,38 @@ export default function AutosMap() {
   )
 
   return (
-    <div className="relative h-full w-full">
-      <Map ref={mapa} center={LIMA} zoom={11}>
-        <RutaLayer ruta={geometria} />
-        <SalidaMeta ruta={geometria} />
-        <AutosLayer ref={capa} filtro={filtro} />
-      </Map>
-      <div className="absolute top-3 left-3 z-10">
-        <PanelVivo
-          resumir={resumir}
-          opciones={opciones}
-          filtro={filtro}
-          rutas={rutas}
-          rutaSeleccionada={rutaSeleccionada}
-          onElegirRuta={setRutaSeleccionada}
-          simulacion={simulacion}
-          ocupado={ocupado}
-          onIniciar={iniciar}
-          onDetener={detener}
-          onVelocidad={velocidad}
-          seguirLider={seguirLider}
-          onSeguirLider={setSeguirLider}
-          onCambiarFiltro={cambiarFiltro}
-          conexion={conexion}
-          error={error}
-        />
+    <div className="flex h-full flex-col">
+      <Encabezado conexion={conexion} />
+      <div className="flex min-h-0 flex-1 flex-wrap">
+        <aside
+          aria-label="Control de la carrera"
+          className="flex max-h-full min-w-0 flex-[1_1_340px] flex-col overflow-y-auto border-r bg-card sm:max-w-[400px]"
+        >
+          <PanelVivo
+            resumir={resumir}
+            opciones={opciones}
+            filtro={filtro}
+            rutas={rutas}
+            rutaSeleccionada={rutaSeleccionada}
+            onElegirRuta={setRutaSeleccionada}
+            simulacion={simulacion}
+            ocupado={ocupado}
+            onIniciar={iniciar}
+            onDetener={detener}
+            onVelocidad={velocidad}
+            seguirLider={seguirLider}
+            onSeguirLider={setSeguirLider}
+            onCambiarFiltro={cambiarFiltro}
+            error={error}
+          />
+        </aside>
+        <div className="relative min-h-[60dvh] min-w-0 flex-[999_1_560px]">
+          <Map ref={mapa} center={LIMA} zoom={11}>
+            <RutaLayer ruta={geometria} />
+            <SalidaMeta ruta={geometria} />
+            <AutosLayer ref={capa} filtro={filtro} />
+          </Map>
+        </div>
       </div>
     </div>
   )
@@ -252,7 +260,6 @@ export default function AutosMap() {
 type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "metricas" | "empresas" | "flotas"> & {
   resumir: () => ResumenMetricas
   opciones: () => { empresas: Opcion[]; flotas: Opcion[] }
-  conexion: EstadoConexion
 }
 
 /** Refresca métricas y opciones del filtro una vez por segundo sin rerenderizar el mapa. */

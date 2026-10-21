@@ -2,17 +2,13 @@
 
 import { useState } from "react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SelectorTema } from "@/components/selector-tema"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
 import { type Filtro, nombreEmpresa, nombreFlota, type Opcion } from "../filtros"
 import { cronometro, km, segundos } from "../formato"
-import type { EstadoConexion } from "../hooks/use-autos-socket"
 import type { Clasificado, EstadoSimulacion, ResumenRuta } from "../types"
 
 export const VELOCIDAD_MIN = 10
@@ -23,12 +19,6 @@ export type ResumenMetricas = {
   mostrados: number
   edadUltimoDatoMs: number | null
   latenciaP95Ms: number | null
-}
-
-const ETIQUETA_CONEXION: Record<EstadoConexion, string> = {
-  conectando: "Conectando",
-  abierta: "En vivo",
-  reconectando: "Reconectando",
 }
 
 const TODAS = "todas"
@@ -143,7 +133,6 @@ export function CarreraPanel({
   filtro,
   onCambiarFiltro,
   metricas,
-  conexion,
   error,
 }: {
   rutas: ResumenRuta[]
@@ -161,7 +150,6 @@ export function CarreraPanel({
   filtro: Filtro
   onCambiarFiltro: (filtro: Filtro) => void
   metricas: ResumenMetricas
-  conexion: EstadoConexion
   error: string | null
 }) {
   const estado = simulacion?.estado ?? "LISTA"
@@ -172,15 +160,7 @@ export function CarreraPanel({
   const clasificacion = simulacion?.autos ?? []
 
   return (
-    <Card size="sm" className="flex max-h-[calc(100dvh-1.5rem)] w-80 flex-col">
-      <CardHeader className="flex items-center justify-between gap-2">
-        <CardTitle>Carrera</CardTitle>
-        <div className="flex items-center gap-2">
-          <Badge variant={conexion === "abierta" ? "default" : "destructive"}>{ETIQUETA_CONEXION[conexion]}</Badge>
-          <SelectorTema />
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 overflow-y-auto">
+    <div className="flex flex-col gap-3 p-4">
         <Selector
           etiqueta="Ruta"
           opciones={rutas.map((r) => ({ value: r.id, label: `${r.nombre} · ${km.format(r.km)} km` }))}
@@ -259,7 +239,6 @@ export function CarreraPanel({
           <dd className="text-right">{segundos(metricas.latenciaP95Ms)}</dd>
         </dl>
         {error && <p className="text-xs text-destructive">{error}</p>}
-      </CardContent>
-    </Card>
+    </div>
   )
 }
