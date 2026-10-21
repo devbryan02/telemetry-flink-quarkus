@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
 import { type Filtro, nombreEmpresa, nombreFlota, type Opcion } from "../filtros"
+import { cronometro, km, segundos } from "../formato"
 import type { EstadoConexion } from "../hooks/use-autos-socket"
 import type { Clasificado, EstadoSimulacion, ResumenRuta } from "../types"
 
@@ -31,20 +32,6 @@ const ETIQUETA_CONEXION: Record<EstadoConexion, string> = {
 }
 
 const TODAS = "todas"
-const km = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-
-function segundos(ms: number | null): string {
-  return ms === null ? "—" : `${(ms / 1000).toFixed(1)} s`
-}
-
-/** 37612 → "0:37,6"; 3723400 → "1:02:03,4" */
-function cronometro(ms: number): string {
-  const total = ms / 1000
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = (total % 60).toFixed(1).replace(".", ",").padStart(4, "0")
-  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`
-}
 
 function Selector({
   etiqueta,
