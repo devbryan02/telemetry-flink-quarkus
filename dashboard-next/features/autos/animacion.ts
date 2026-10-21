@@ -1,3 +1,4 @@
+import { metros } from "./distancia"
 import type { Auto } from "./types"
 
 /** Si dos eventos de un auto llegan más separados que esto, no se interpola (salta a la posición nueva). */
@@ -5,12 +6,6 @@ const DURACION_MAXIMA_MS = 3_000
 const DURACION_MINIMA_MS = 200
 /** Un salto mayor (p. ej. al empezar una carrera en otra ruta) no se anima: el auto aparece en su sitio. */
 const SALTO_MAXIMO_M = 2_000
-
-function metros(a: Pick<Auto, "lat" | "lon">, b: Pick<Auto, "lat" | "lon">): number {
-  const dy = (b.lat - a.lat) * 111_320
-  const dx = (b.lon - a.lon) * 111_320 * Math.cos((a.lat * Math.PI) / 180)
-  return Math.hypot(dx, dy)
-}
 
 type Tramo = {
   desde: Pick<Auto, "lat" | "lon" | "heading">

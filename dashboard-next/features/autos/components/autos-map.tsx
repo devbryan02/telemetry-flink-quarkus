@@ -21,6 +21,7 @@ import { cumpleFiltro, empresasDisponibles, type Filtro, flotasDisponibles, type
 import { aGeoJSON } from "../geojson"
 import { useAutosSocket } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
+import { fraccionLider } from "../ruta-progreso"
 import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
 import { AutosLayer, type AutosLayerHandle } from "./autos-layer"
 import { CarreraPanel, type ResumenMetricas } from "./carrera-panel"
@@ -247,7 +248,7 @@ export default function AutosMap() {
         </aside>
         <div className="relative min-h-[60dvh] min-w-0 flex-[999_1_560px]">
           <Map ref={mapa} center={LIMA} zoom={11}>
-            <RutaLayer ruta={geometria} />
+            <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
             <SalidaMeta ruta={geometria} />
             <AutosLayer ref={capa} filtro={filtro} />
           </Map>
