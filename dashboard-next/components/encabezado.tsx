@@ -1,3 +1,5 @@
+import { Wifi, WifiOff } from "lucide-react"
+
 import { SelectorTema } from "@/components/selector-tema"
 import { cn } from "@/lib/utils"
 
@@ -53,7 +55,8 @@ export function Encabezado({ conexion }: { conexion: Conexion }) {
             enVivo ? "bg-[#044317] text-[#a7f0ba]" : "bg-[#750e13] text-[#ffd7d9]",
           )}
         >
-          <span className={cn("size-2 rounded-full", enVivo ? "bg-[#42be65]" : "bg-[#fa4d56]")} />
+          {/* el ícono cambia de forma con el estado: en el celular el texto queda solo para lectores de pantalla */}
+          {enVivo ? <Wifi aria-hidden className="size-3.5" /> : <WifiOff aria-hidden className="size-3.5" />}
           <span className="sr-only sm:not-sr-only">{ETIQUETA[conexion]}</span>
         </span>
         <SelectorTema />

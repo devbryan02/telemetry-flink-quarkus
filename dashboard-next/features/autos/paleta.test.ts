@@ -9,6 +9,11 @@ describe("indiceColor", () => {
     expect(indiceColor("auto-3")).toBe(3)
   })
   it("vuelve a empezar después del 3", () => expect(indiceColor("auto-4")).toBe(1))
+  it("ids que terminan en -0 o con un número enorme también tienen color", () => {
+    expect([1, 2, 3]).toContain(indiceColor("auto-0"))
+    expect([1, 2, 3]).toContain(indiceColor("car-00"))
+    expect([1, 2, 3]).toContain(indiceColor(`auto-${"9".repeat(400)}`))
+  })
   it("ids sin número dan un índice estable entre 1 y 3", () => {
     const i = indiceColor("car-xyz")
     expect([1, 2, 3]).toContain(i)

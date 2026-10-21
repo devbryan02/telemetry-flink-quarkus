@@ -238,7 +238,7 @@ ${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
       <div className="flex min-h-0 flex-1 flex-wrap">
         <aside
           aria-label="Control de la carrera"
-          className="flex max-h-full min-w-0 flex-[1_1_340px] flex-col overflow-y-auto border-r bg-card sm:max-w-[400px]"
+          className="flex max-h-full min-w-0 flex-[1_1_340px] flex-col overflow-y-auto border-r bg-card min-[900px]:max-w-[400px]"
         >
           <PanelVivo
             resumir={resumir}

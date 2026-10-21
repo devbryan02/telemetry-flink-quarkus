@@ -56,7 +56,8 @@ export function ControlesMapa({ ruta }: { ruta: FeatureCollection<LineString> | 
     map.on("moveend", alMover)
     return () => {
       map.off("moveend", alMover)
-      map.removeControl(escala)
+      // si el mapa ya se destruyó (desmontaje), MapLibre quitó el control y quitarlo otra vez falla
+      if (map.hasControl(escala)) map.removeControl(escala)
     }
   }, [map])
 
