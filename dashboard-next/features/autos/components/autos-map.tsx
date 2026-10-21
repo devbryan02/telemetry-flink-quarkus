@@ -220,6 +220,8 @@ export default function AutosMap() {
     [],
   )
 
+  const resumenRuta = rutas.find((r) => r.id === rutaSeleccionada)
+
   return (
     <div className="flex h-full flex-col">
       <Encabezado conexion={conexion} />
@@ -249,7 +251,7 @@ export default function AutosMap() {
         <div className="relative min-h-[60dvh] min-w-0 flex-[999_1_560px]">
           <Map ref={mapa} center={LIMA} zoom={11}>
             <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
-            <SalidaMeta ruta={geometria} />
+            <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
             <AutosLayer ref={capa} filtro={filtro} />
           </Map>
         </div>
