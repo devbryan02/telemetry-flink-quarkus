@@ -52,7 +52,9 @@ Decisiones que no son obvias si no se lee toda la spec:
   El dashboard los pide a `GET /rutas` y `GET /rutas/{id}`. La velocidad por auto (10–500 km/h) se cambia con `PUT /simulacion/autos/{carId}/velocidad`.
 - **Flink se reinicia solo:** estrategia `exponential-delay` y heartbeat de 3 min en `FlinkJobRunner`. Sin checkpoints, el job no tiene reinicio por defecto y una pausa larga de la JVM lo dejaba caído.
 - **Frontend:**
-  - una fuente GeoJSON con una capa `symbol` de íconos (`vehiculo.ts`), filtrada con `setFilter` según empresa/flota;
+  - interfaz basada en Carbon: tokens G10/G100 en `globals.css` (con los de la ruta y los autos) e IBM Plex; MapLibre lee esos colores con `leerToken` al crear cada capa;
+  - una fuente GeoJSON con una capa `symbol` de círculos por color de auto (`vehiculo.ts`, `paleta.ts`), filtrada con `setFilter` según empresa/flota; la ruta se divide en tramo recorrido/pendiente (`ruta-progreso.ts`);
+  - funciones puras con tests de Vitest (`features/**/*.test.ts`);
   - estado fuera de React (`useRef`);
   - movimiento interpolado entre eventos (`animacion.ts`);
   - tema claro/oscuro con next-themes (clase `dark` en `<html>`); mapcn observa esa clase para cambiar el mapa base. Usa tokens de shadcn (`bg-popover`, `text-foreground`…) en vez de colores fijos;
@@ -68,7 +70,7 @@ docker compose up -d postgres kafka && ./scripts/crear-topics.sh  # solo infraes
 cd telemetry-api && ./mvnw test                          # JDK 17; PostgreSQL de Dev Services (necesita Docker)
 cd telemetry-api && ./mvnw quarkus:dev                   # :8080 + Flink UI :8081
 cd telemetry-api && ./mvnw test -Dtest=RutaTest          # un solo test
-cd dashboard-next && npm run lint && npm run build && npm run dev   # :3000
+cd dashboard-next && npm test && npm run lint && npm run build && npm run dev   # :3000 (Vitest para funciones puras)
 curl -H 'Content-Type: application/json' -d '{"ruta":"av-brasil"}' localhost:8080/simulacion/iniciar   # o el dashboard
 powershell -NoProfile -File scripts/probar-persistencia.ps1   # E2E con Kafka y PostgreSQL reales y desechables
 ```

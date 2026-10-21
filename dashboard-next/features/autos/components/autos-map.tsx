@@ -1,9 +1,9 @@
 "use client"
 
 import type { FeatureCollection, LineString } from "geojson"
-import type { LngLatBoundsLike } from "maplibre-gl"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+import { Encabezado } from "@/components/encabezado"
 import { Map, type MapRef } from "@/components/ui/map"
 
 import { Animador } from "../animacion"
@@ -16,12 +16,24 @@ import {
   obtenerRuta,
   obtenerSimulacion,
 } from "../api"
-import { cumpleFiltro, empresasDisponibles, type Filtro, flotasDisponibles, type Opcion, SIN_FILTRO } from "../filtros"
+import {
+  cumpleFiltro,
+  empresasDisponibles,
+  type Filtro,
+  flotasDisponibles,
+  nombreEmpresa,
+  type Opcion,
+  SIN_FILTRO,
+} from "../filtros"
+import { km } from "../formato"
 import { aGeoJSON } from "../geojson"
-import { useAutosSocket, type EstadoConexion } from "../hooks/use-autos-socket"
+import { useAutosSocket } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
+import { fraccionLider, limitesDe } from "../ruta-progreso"
 import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
-import { AutosLayer, type AutosLayerHandle } from "./autos-layer"
+import { AutosLayer, type AutosLayerHandle, type Lider } from "./autos-layer"
+import { ControlesMapa } from "./controles-mapa"
+import { Leyenda } from "./leyenda"
 import { CarreraPanel, type ResumenMetricas } from "./carrera-panel"
 import { RutaLayer } from "./ruta-layer"
 import { SalidaMeta } from "./salida-meta"
@@ -31,22 +43,6 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL
 /** Durante la carrera el estado se consulta cada segundo; el resto del tiempo, cada 5 s. */
 const SONDEO_EN_CURSO_MS = 1_000
 const SONDEO_EN_REPOSO_MS = 5_000
-
-function limitesDe(ruta: FeatureCollection<LineString>): LngLatBoundsLike {
-  let [minLon, minLat, maxLon, maxLat] = [180, 90, -180, -90]
-  for (const f of ruta.features) {
-    for (const [lon, lat] of f.geometry.coordinates) {
-      minLon = Math.min(minLon, lon)
-      minLat = Math.min(minLat, lat)
-      maxLon = Math.max(maxLon, lon)
-      maxLat = Math.max(maxLat, lat)
-    }
-  }
-  return [
-    [minLon, minLat],
-    [maxLon, maxLat],
-  ]
-}
 
 function mensaje(e: unknown): string {
   return e instanceof Error ? e.message : "Error desconocido"
@@ -137,7 +133,7 @@ export default function AutosMap() {
     obtenerRuta(rutaSeleccionada, control.signal)
       .then((g) => {
         setGeometria(g)
-        mapa.current?.fitBounds(limitesDe(g), { padding: { top: 60, bottom: 60, left: 360, right: 60 }, duration: 600 })
+        mapa.current?.fitBounds(limitesDe(g), { padding: 60, duration: 600 })
       })
       .catch((e: unknown) => {
         if (!control.signal.aborted) setError(`No se pudo cargar la ruta: ${mensaje(e)}`)
@@ -218,41 +214,67 @@ export default function AutosMap() {
     [],
   )
 
+  const resumenRuta = rutas.find((r) => r.id === rutaSeleccionada)
+  // la etiqueta acompaña al primero que sigue corriendo: los que llegaron ya muestran su tiempo en el panel
+  const primero =
+    enCurso && simulacion?.ruta === rutaSeleccionada ? simulacion.autos.find((a) => a.llegadaMs === null) : undefined
+  const etiquetaLider = primero
+    ? `${primero.posicion}º ${primero.carId}
+${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
+    : null
+  // objeto estable mientras no cambie el texto, para no reaplicar la capa en cada render
+  const idLider = primero?.carId
+  const leyenda = [...(simulacion?.autos ?? [])]
+    .sort((a, b) => a.carId.localeCompare(b.carId, "es", { numeric: true }))
+    .map((a) => ({ carId: a.carId, empresa: a.companyId ? nombreEmpresa(a.companyId) : "Particular" }))
+  const etiquetaMapa = useMemo<Lider | null>(
+    () => (idLider && etiquetaLider ? { carId: idLider, texto: etiquetaLider } : null),
+    [idLider, etiquetaLider],
+  )
+
   return (
-    <div className="relative h-full w-full">
-      <Map ref={mapa} center={LIMA} zoom={11}>
-        <RutaLayer ruta={geometria} />
-        <SalidaMeta ruta={geometria} />
-        <AutosLayer ref={capa} filtro={filtro} />
-      </Map>
-      <div className="absolute top-3 left-3 z-10">
-        <PanelVivo
-          resumir={resumir}
-          opciones={opciones}
-          filtro={filtro}
-          rutas={rutas}
-          rutaSeleccionada={rutaSeleccionada}
-          onElegirRuta={setRutaSeleccionada}
-          simulacion={simulacion}
-          ocupado={ocupado}
-          onIniciar={iniciar}
-          onDetener={detener}
-          onVelocidad={velocidad}
-          seguirLider={seguirLider}
-          onSeguirLider={setSeguirLider}
-          onCambiarFiltro={cambiarFiltro}
-          conexion={conexion}
-          error={error}
-        />
+    <div className="flex h-full flex-col">
+      <Encabezado conexion={conexion} />
+      <div className="flex min-h-0 flex-1 flex-wrap">
+        <aside
+          aria-label="Control de la carrera"
+          className="flex max-h-full min-w-0 flex-[1_1_340px] flex-col overflow-y-auto border-r bg-card min-[900px]:max-w-[400px]"
+        >
+          <PanelVivo
+            resumir={resumir}
+            opciones={opciones}
+            filtro={filtro}
+            rutas={rutas}
+            rutaSeleccionada={rutaSeleccionada}
+            onElegirRuta={setRutaSeleccionada}
+            simulacion={simulacion}
+            ocupado={ocupado}
+            onIniciar={iniciar}
+            onDetener={detener}
+            onVelocidad={velocidad}
+            seguirLider={seguirLider}
+            onSeguirLider={setSeguirLider}
+            onCambiarFiltro={cambiarFiltro}
+            error={error}
+          />
+        </aside>
+        <div className="relative min-h-[60dvh] min-w-0 flex-[999_1_560px]">
+          <Map ref={mapa} center={LIMA} zoom={11}>
+            <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
+            <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
+            <AutosLayer ref={capa} filtro={filtro} lider={etiquetaMapa} />
+            <ControlesMapa ruta={geometria} />
+          </Map>
+          {leyenda.length > 0 && <Leyenda autos={leyenda} />}
+        </div>
       </div>
     </div>
   )
 }
 
-type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "metricas" | "empresas" | "flotas"> & {
+type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "metricas" | "empresas" | "flotas" | "ahoraMs"> & {
   resumir: () => ResumenMetricas
   opciones: () => { empresas: Opcion[]; flotas: Opcion[] }
-  conexion: EstadoConexion
 }
 
 /** Refresca métricas y opciones del filtro una vez por segundo sin rerenderizar el mapa. */
@@ -264,16 +286,18 @@ function PanelVivo({ resumir, opciones, ...resto }: PropsPanel) {
     latenciaP95Ms: null,
   })
   const [listas, setListas] = useState<{ empresas: Opcion[]; flotas: Opcion[] }>({ empresas: [], flotas: [] })
+  const [ahoraMs, setAhoraMs] = useState(0)
 
   useEffect(() => {
     const refrescar = () => {
       setMetricas(resumir())
       setListas(opciones())
+      setAhoraMs(Date.now())
     }
     refrescar()
     const id = setInterval(refrescar, 1_000)
     return () => clearInterval(id)
   }, [resumir, opciones, resto.filtro])
 
-  return <CarreraPanel metricas={metricas} empresas={listas.empresas} flotas={listas.flotas} {...resto} />
+  return <CarreraPanel metricas={metricas} ahoraMs={ahoraMs} empresas={listas.empresas} flotas={listas.flotas} {...resto} />
 }

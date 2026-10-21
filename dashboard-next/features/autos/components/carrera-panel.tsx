@@ -1,21 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { Flag, LocateFixed, Play, RotateCcw, Square } from "lucide-react"
+import { useId } from "react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SelectorTema } from "@/components/selector-tema"
-import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
-import { type Filtro, nombreEmpresa, nombreFlota, type Opcion } from "../filtros"
-import type { EstadoConexion } from "../hooks/use-autos-socket"
-import type { Clasificado, EstadoSimulacion, ResumenRuta } from "../types"
-
-export const VELOCIDAD_MIN = 10
-export const VELOCIDAD_MAX = 500
+import type { Filtro, Opcion } from "../filtros"
+import { cronometro, km, tiempoCarrera } from "../formato"
+import type { EstadoSimulacion, ResumenRuta } from "../types"
+import { FilaCorredor } from "./fila-corredor"
+import { MetricasTiles } from "./metricas-tiles"
 
 export type ResumenMetricas = {
   total: number
@@ -24,34 +20,17 @@ export type ResumenMetricas = {
   latenciaP95Ms: number | null
 }
 
-const ETIQUETA_CONEXION: Record<EstadoConexion, string> = {
-  conectando: "Conectando",
-  abierta: "En vivo",
-  reconectando: "Reconectando",
-}
-
 const TODAS = "todas"
-const km = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
-function segundos(ms: number | null): string {
-  return ms === null ? "—" : `${(ms / 1000).toFixed(1)} s`
-}
-
-/** 37612 → "0:37,6"; 3723400 → "1:02:03,4" */
-function cronometro(ms: number): string {
-  const total = ms / 1000
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = (total % 60).toFixed(1).replace(".", ",").padStart(4, "0")
-  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`
-}
-
+/** Desplegable de Carbon: etiqueta visible arriba, campo con línea inferior y texto de ayuda opcional. */
 function Selector({
   etiqueta,
   todas,
   opciones,
   valor,
   deshabilitado,
+  ayuda,
+  className,
   onCambiar,
 }: {
   etiqueta: string
@@ -59,83 +38,39 @@ function Selector({
   opciones: { value: string; label: string }[]
   valor: string | null
   deshabilitado?: boolean
+  ayuda?: string
+  className?: string
   onCambiar: (valor: string | null) => void
 }) {
+  const id = useId()
   const items = todas ? [{ value: TODAS, label: todas }, ...opciones] : opciones
   return (
-    <Select
-      items={items}
-      value={valor ?? (todas ? TODAS : null)}
-      disabled={deshabilitado}
-      onValueChange={(v) => onCambiar(!v || v === TODAS ? null : String(v))}
-    >
-      <SelectTrigger size="sm" className="w-full" aria-label={etiqueta}>
-        <SelectValue placeholder={etiqueta} />
-      </SelectTrigger>
-      <SelectContent>
-        {items.map((i) => (
-          <SelectItem key={i.value} value={i.value}>
-            {i.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
-
-/** Fila de la clasificación: posición, progreso, llegada y slider de velocidad del auto. */
-function FilaCorredor({
-  auto,
-  longitudM,
-  onVelocidad,
-}: {
-  auto: Clasificado
-  longitudM: number
-  onVelocidad: (carId: string, kmh: number) => void
-}) {
-  // mientras se arrastra se muestra el borrador; al soltar se envía y vuelve a mandar el valor del servidor
-  const [borrador, setBorrador] = useState<number | null>(null)
-  const kmh = borrador ?? auto.velocidadKmh
-
-  const progreso = longitudM > 0 ? Math.min(100, (auto.recorridoM / longitudM) * 100) : 0
-  const llego = auto.llegadaMs !== null
-
-  return (
-    <li className="flex flex-col gap-1.5 rounded-lg border p-2" data-auto={auto.carId}>
-      <div className="flex items-baseline justify-between gap-2 text-sm">
-        <span className="font-semibold tabular-nums">{auto.posicion}º</span>
-        <span className="flex-1 truncate">
-          <span className="font-medium">{auto.carId}</span>
-          <span className="text-xs text-muted-foreground">
-            {" "}
-            · {auto.companyId ? nombreEmpresa(auto.companyId) : "Particular"}
-            {auto.fleetId ? ` · ${nombreFlota(auto.fleetId)}` : ""}
-          </span>
-        </span>
-        <span className={cn("text-xs tabular-nums", llego && "font-semibold text-green-600 dark:text-green-400")}>
-          {llego ? `🏁 ${cronometro(auto.llegadaMs!)}` : `${km.format(auto.recorridoM / 1000)} km`}
-        </span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full", llego ? "bg-green-500" : "bg-sky-500")} style={{ width: `${progreso}%` }} />
-      </div>
-      <div className="flex items-center gap-2">
-        <Slider
-          aria-label={`Velocidad de ${auto.carId}`}
-          min={VELOCIDAD_MIN}
-          max={VELOCIDAD_MAX}
-          step={5}
-          value={[kmh]}
-          disabled={llego}
-          onValueChange={(v) => setBorrador(Array.isArray(v) ? v[0] : v)}
-          onValueCommitted={(v) => {
-            setBorrador(null)
-            onVelocidad(auto.carId, Array.isArray(v) ? v[0] : v)
-          }}
-        />
-        <span className="w-16 text-right text-xs tabular-nums">{kmh} km/h</span>
-      </div>
-    </li>
+    <div className={cn("flex min-w-0 flex-col gap-2", className)}>
+      <span id={id} className="text-xs text-muted-foreground">
+        {etiqueta}
+      </span>
+      <Select
+        items={items}
+        value={valor ?? (todas ? TODAS : null)}
+        disabled={deshabilitado}
+        onValueChange={(v) => onCambiar(!v || v === TODAS ? null : String(v))}
+      >
+        <SelectTrigger
+          aria-labelledby={id}
+          className="h-10! w-full rounded-none border-0 border-b border-input bg-field px-4 dark:bg-field"
+        >
+          <SelectValue placeholder={etiqueta} />
+        </SelectTrigger>
+        <SelectContent>
+          {items.map((i) => (
+            <SelectItem key={i.value} value={i.value}>
+              {i.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {ayuda && <span className="text-xs text-muted-foreground">{ayuda}</span>}
+    </div>
   )
 }
 
@@ -156,7 +91,7 @@ export function CarreraPanel({
   filtro,
   onCambiarFiltro,
   metricas,
-  conexion,
+  ahoraMs,
   error,
 }: {
   rutas: ResumenRuta[]
@@ -174,7 +109,8 @@ export function CarreraPanel({
   filtro: Filtro
   onCambiarFiltro: (filtro: Filtro) => void
   metricas: ResumenMetricas
-  conexion: EstadoConexion
+  /** Hora del último refresco de PanelVivo (1 s): avanza el cronómetro sin leer el reloj al renderizar */
+  ahoraMs: number
   error: string | null
 }) {
   const estado = simulacion?.estado ?? "LISTA"
@@ -184,55 +120,78 @@ export function CarreraPanel({
   const deEstaRuta = simulacion?.ruta === rutaSeleccionada
   const clasificacion = simulacion?.autos ?? []
 
+  const nueva = estado === "TERMINADA" || (deEstaRuta && clasificacion.some((a) => a.recorridoM > 0))
+
   return (
-    <Card size="sm" className="flex max-h-[calc(100dvh-1.5rem)] w-80 flex-col">
-      <CardHeader className="flex items-center justify-between gap-2">
-        <CardTitle>Carrera</CardTitle>
-        <div className="flex items-center gap-2">
-          <Badge variant={conexion === "abierta" ? "default" : "destructive"}>{ETIQUETA_CONEXION[conexion]}</Badge>
-          <SelectorTema />
+    <div className="flex flex-col">
+      <section className="flex flex-col gap-4 border-b p-4 pt-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl leading-7 font-normal">Carrera en {ruta?.nombre ?? "—"}</h1>
+          {ruta && (
+            <p className="text-xs text-muted-foreground">
+              {ruta.desde} → {ruta.hasta} · {km.format(ruta.km)} km
+            </p>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 overflow-y-auto">
         <Selector
           etiqueta="Ruta"
           opciones={rutas.map((r) => ({ value: r.id, label: `${r.nombre} · ${km.format(r.km)} km` }))}
           valor={rutaSeleccionada}
           deshabilitado={enCurso}
+          ayuda={enCurso ? "No se puede cambiar con la carrera en curso" : undefined}
           onCambiar={(id) => id && onElegirRuta(id)}
         />
-        {ruta && (
-          <p className="-mt-1.5 text-xs text-muted-foreground">
-            {ruta.desde} → {ruta.hasta}
-          </p>
-        )}
-
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-px">
           {enCurso ? (
-            <Button size="sm" variant="destructive" className="flex-1" disabled={ocupado} onClick={onDetener}>
-              Detener
+            <Button
+              variant="destructive"
+              className="h-12 flex-1 justify-between rounded-none bg-destructive px-4 text-white hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90"
+              disabled={ocupado}
+              onClick={onDetener}
+            >
+              Detener carrera
+              <Square className="fill-current" />
             </Button>
           ) : (
-            <Button size="sm" className="flex-1" disabled={ocupado || !rutaSeleccionada} onClick={onIniciar}>
-              {estado === "TERMINADA" || (deEstaRuta && clasificacion.some((a) => a.recorridoM > 0))
-                ? "Nueva carrera"
-                : "Iniciar carrera"}
+            <Button
+              className="h-12 flex-1 justify-between rounded-none px-4"
+              disabled={ocupado || !rutaSeleccionada}
+              onClick={onIniciar}
+            >
+              {nueva ? "Nueva carrera" : "Iniciar carrera"}
+              {nueva ? <RotateCcw /> : <Play className="fill-current" />}
             </Button>
           )}
           <Button
-            size="sm"
             variant={seguirLider ? "secondary" : "outline"}
+            className="h-12 rounded-none px-4"
             aria-pressed={seguirLider}
             onClick={() => onSeguirLider(!seguirLider)}
           >
-            Seguir al líder
+            <LocateFixed />
+            Seguir líder
           </Button>
         </div>
         {estado === "TERMINADA" && deEstaRuta && (
-          <p className="text-xs font-medium text-green-600 dark:text-green-400">Carrera terminada 🏁</p>
+          <p className="flex items-center gap-1.5 text-xs font-medium text-success">
+            <Flag className="size-3.5" />
+            Carrera terminada
+          </p>
         )}
+      </section>
 
-        <ol className="flex flex-col gap-2">
+      <section aria-labelledby="titulo-clasificacion" className="border-b pt-4">
+        <div className="flex items-baseline justify-between px-4 pb-2">
+          <h2 id="titulo-clasificacion" className="text-sm font-semibold">
+            Clasificación
+          </h2>
+          {enCurso && deEstaRuta && (
+            <span className="font-mono text-sm tabular-nums">
+              {cronometro(tiempoCarrera(simulacion!.inicio, ahoraMs) ?? 0)}
+            </span>
+          )}
+        </div>
+        <ol>
           {clasificacion.map((a) => (
             <FilaCorredor
               key={a.carId}
@@ -242,13 +201,19 @@ export function CarreraPanel({
             />
           ))}
         </ol>
+      </section>
 
-        <div className="flex flex-col gap-2">
+      <section aria-labelledby="titulo-filtro" className="flex flex-col gap-3 border-b p-4">
+        <h2 id="titulo-filtro" className="text-sm font-semibold">
+          Filtrar autos
+        </h2>
+        <div className="flex flex-wrap gap-2">
           <Selector
             etiqueta="Empresa"
             todas="Todas las empresas"
             opciones={empresas.map((o) => ({ value: o.id, label: `${o.nombre} · ${o.autos}` }))}
             valor={filtro.empresa}
+            className="flex-[1_1_180px]"
             onCambiar={(empresa) => onCambiarFiltro({ empresa, flota: null })}
           />
           <Selector
@@ -257,22 +222,18 @@ export function CarreraPanel({
             opciones={flotas.map((o) => ({ value: o.id, label: `${o.nombre} · ${o.autos}` }))}
             valor={filtro.flota}
             deshabilitado={!filtro.empresa}
+            className="flex-[1_1_180px]"
             onCambiar={(flota) => onCambiarFiltro({ ...filtro, flota })}
           />
         </div>
+      </section>
 
-        <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-xs tabular-nums">
-          <dt className="text-muted-foreground">Autos mostrados</dt>
-          <dd className="text-right">
-            {metricas.mostrados} / {metricas.total}
-          </dd>
-          <dt className="text-muted-foreground">Edad último dato</dt>
-          <dd className="text-right">{segundos(metricas.edadUltimoDatoMs)}</dd>
-          <dt className="text-muted-foreground">Latencia p95</dt>
-          <dd className="text-right">{segundos(metricas.latenciaP95Ms)}</dd>
-        </dl>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </CardContent>
-    </Card>
+      <MetricasTiles metricas={metricas} />
+      {error && (
+        <p role="alert" className="px-4 py-2 text-xs text-error-text">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
