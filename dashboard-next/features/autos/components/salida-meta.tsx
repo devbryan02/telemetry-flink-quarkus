@@ -35,10 +35,11 @@ export function SalidaMeta({
   const linea = ruta?.features[0]?.geometry.coordinates
   if (!linea || linea.length < 2) return null
   const [salida, meta] = [linea[0], linea[linea.length - 1]]
-  // anchor "left": el círculo queda sobre el extremo de la línea y la etiqueta a su derecha
+  // anchor "left" con un pequeño margen: el marcador queda a la derecha del extremo y no tapa a los
+  // autos detenidos en la salida o en la meta
   return (
     <>
-      <MapMarker longitude={salida[0]} latitude={salida[1]} anchor="left" offset={[-12, 0]}>
+      <MapMarker longitude={salida[0]} latitude={salida[1]} anchor="left" offset={[14, 0]}>
         <MarkerContent>
           <Extremo
             icono={<Play className="size-3 fill-current" />}
@@ -48,7 +49,7 @@ export function SalidaMeta({
           />
         </MarkerContent>
       </MapMarker>
-      <MapMarker longitude={meta[0]} latitude={meta[1]} anchor="left" offset={[-12, 0]}>
+      <MapMarker longitude={meta[0]} latitude={meta[1]} anchor="left" offset={[14, 0]}>
         <MarkerContent>
           <Extremo
             icono={<Flag className="size-3" />}

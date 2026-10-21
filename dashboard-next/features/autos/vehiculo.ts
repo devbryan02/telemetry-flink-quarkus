@@ -1,58 +1,65 @@
 import type { Map as MapaLibre } from "maplibre-gl"
 
-/** Ícono de auto visto desde arriba, apuntando al norte (0°); el mapa lo rota según `heading`. */
-const ANCHO = 20
-const ALTO = 32
+import type { IndiceColor } from "./paleta"
+import { leerToken } from "./tokens"
+
+/**
+ * Marcador de auto: círculo con el color del auto y un triángulo de rumbo que apunta al norte (0°);
+ * el mapa lo rota según `heading`. El número va aparte, como texto de la capa, para que no gire.
+ */
+const LADO = 32
+const RADIO = 10
 const ESCALA = 2 // se dibuja al doble de resolución para pantallas de alta densidad
 
-const COLOR_MOTOR = { on: "#16a34a", off: "#dc2626" } as const
-/** Borde blanco para particulares y celeste para autos de empresa. */
-const COLOR_BORDE = { p: "#ffffff", e: "#38bdf8" } as const
+export type VarianteIcono = IndiceColor | "off"
 
-export type Motor = keyof typeof COLOR_MOTOR
-export type Tipo = keyof typeof COLOR_BORDE
+const VARIANTES: VarianteIcono[] = [1, 2, 3, "off"]
 
-export const nombreIcono = (motor: Motor, tipo: Tipo) => `vehiculo-${motor}-${tipo}`
+/** Respaldo si el token aún no está en el documento (valores de Carbon G10). */
+const POR_DEFECTO: Record<string, string> = { 1: "#6929c4", 2: "#1192e8", 3: "#b28600", off: "#8d8d8d" }
 
-function redondeado(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath()
-  ctx.roundRect(x, y, w, h, r)
-}
+export const nombreIcono = (v: VarianteIcono) => `auto-${v}`
 
-function dibujar(motor: Motor, tipo: Tipo): ImageData {
+function dibujar(color: string): ImageData {
   const lienzo = document.createElement("canvas")
-  lienzo.width = ANCHO * ESCALA
-  lienzo.height = ALTO * ESCALA
+  lienzo.width = LADO * ESCALA
+  lienzo.height = LADO * ESCALA
   const ctx = lienzo.getContext("2d")!
   ctx.scale(ESCALA, ESCALA)
+  const centro = LADO / 2
 
-  // carrocería
-  redondeado(ctx, 3, 2, 14, 28, 5)
-  ctx.fillStyle = COLOR_MOTOR[motor]
+  // triángulo de rumbo, arriba del círculo
+  ctx.beginPath()
+  ctx.moveTo(centro, 0.5)
+  ctx.lineTo(centro + 5, centro - RADIO + 1.5)
+  ctx.lineTo(centro - 5, centro - RADIO + 1.5)
+  ctx.closePath()
+  ctx.fillStyle = color
   ctx.fill()
-  ctx.lineWidth = 2
-  ctx.strokeStyle = COLOR_BORDE[tipo]
+  ctx.lineWidth = 1.5
+  ctx.strokeStyle = "#ffffff"
   ctx.stroke()
-  // parabrisas (adelante, arriba) y luneta
-  ctx.fillStyle = "rgba(15, 23, 42, 0.75)"
-  redondeado(ctx, 5.5, 8, 9, 5, 1.5)
+
+  // círculo con borde blanco
+  ctx.beginPath()
+  ctx.arc(centro, centro, RADIO, 0, Math.PI * 2)
+  ctx.fillStyle = color
   ctx.fill()
-  redondeado(ctx, 5.5, 22, 9, 3.5, 1.5)
-  ctx.fill()
-  // faros, para que se lea hacia dónde avanza
-  ctx.fillStyle = "#fef08a"
-  ctx.fillRect(5, 2.5, 3, 2)
-  ctx.fillRect(12, 2.5, 3, 2)
+  ctx.lineWidth = 2.5
+  ctx.stroke()
 
   return ctx.getImageData(0, 0, lienzo.width, lienzo.height)
 }
 
-/** Registra las 4 variantes del ícono si el estilo actual no las tiene (un cambio de tema las borra). */
+/**
+ * Registra las 4 variantes si el estilo actual no las tiene. Un cambio de tema recarga el estilo y las
+ * borra; al volver a registrarlas toman los colores del tema nuevo.
+ */
 export function registrarIconos(mapa: MapaLibre) {
-  for (const motor of ["on", "off"] as Motor[]) {
-    for (const tipo of ["p", "e"] as Tipo[]) {
-      const nombre = nombreIcono(motor, tipo)
-      if (!mapa.hasImage(nombre)) mapa.addImage(nombre, dibujar(motor, tipo), { pixelRatio: ESCALA })
+  for (const v of VARIANTES) {
+    const nombre = nombreIcono(v)
+    if (!mapa.hasImage(nombre)) {
+      mapa.addImage(nombre, dibujar(leerToken(`--auto-${v}`, POR_DEFECTO[v])), { pixelRatio: ESCALA })
     }
   }
 }

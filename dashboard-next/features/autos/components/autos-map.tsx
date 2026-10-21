@@ -2,7 +2,7 @@
 
 import type { FeatureCollection, LineString } from "geojson"
 import type { LngLatBoundsLike } from "maplibre-gl"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Encabezado } from "@/components/encabezado"
 import { Map, type MapRef } from "@/components/ui/map"
@@ -18,12 +18,13 @@ import {
   obtenerSimulacion,
 } from "../api"
 import { cumpleFiltro, empresasDisponibles, type Filtro, flotasDisponibles, type Opcion, SIN_FILTRO } from "../filtros"
+import { km } from "../formato"
 import { aGeoJSON } from "../geojson"
 import { useAutosSocket } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
 import { fraccionLider } from "../ruta-progreso"
 import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
-import { AutosLayer, type AutosLayerHandle } from "./autos-layer"
+import { AutosLayer, type AutosLayerHandle, type Lider } from "./autos-layer"
 import { CarreraPanel, type ResumenMetricas } from "./carrera-panel"
 import { RutaLayer } from "./ruta-layer"
 import { SalidaMeta } from "./salida-meta"
@@ -221,6 +222,19 @@ export default function AutosMap() {
   )
 
   const resumenRuta = rutas.find((r) => r.id === rutaSeleccionada)
+  // la etiqueta acompaña al primero que sigue corriendo: los que llegaron ya muestran su tiempo en el panel
+  const primero =
+    enCurso && simulacion?.ruta === rutaSeleccionada ? simulacion.autos.find((a) => a.llegadaMs === null) : undefined
+  const etiquetaLider = primero
+    ? `${primero.posicion}º ${primero.carId}
+${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
+    : null
+  // objeto estable mientras no cambie el texto, para no reaplicar la capa en cada render
+  const idLider = primero?.carId
+  const etiquetaMapa = useMemo<Lider | null>(
+    () => (idLider && etiquetaLider ? { carId: idLider, texto: etiquetaLider } : null),
+    [idLider, etiquetaLider],
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -252,7 +266,7 @@ export default function AutosMap() {
           <Map ref={mapa} center={LIMA} zoom={11}>
             <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
             <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
-            <AutosLayer ref={capa} filtro={filtro} />
+            <AutosLayer ref={capa} filtro={filtro} lider={etiquetaMapa} />
           </Map>
         </div>
       </div>
