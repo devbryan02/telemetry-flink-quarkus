@@ -8,7 +8,7 @@ import { leerToken } from "./tokens"
  * el mapa lo rota según `heading`. El número va aparte, como texto de la capa, para que no gire.
  */
 const LADO = 32
-const RADIO = 10
+const RADIO = 9.5
 const ESCALA = 2 // se dibuja al doble de resolución para pantallas de alta densidad
 
 export type VarianteIcono = IndiceColor | "off"
@@ -31,8 +31,8 @@ function dibujar(color: string): ImageData {
   // triángulo de rumbo, arriba del círculo
   ctx.beginPath()
   ctx.moveTo(centro, 0.5)
-  ctx.lineTo(centro + 5, centro - RADIO + 1.5)
-  ctx.lineTo(centro - 5, centro - RADIO + 1.5)
+  ctx.lineTo(centro + 6.5, centro - RADIO + 3)
+  ctx.lineTo(centro - 6.5, centro - RADIO + 3)
   ctx.closePath()
   ctx.fillStyle = color
   ctx.fill()

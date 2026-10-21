@@ -170,6 +170,9 @@
   .maplibregl-ctrl-attrib {
     @apply bg-background! text-muted-foreground! border-border! rounded-md! border! shadow-sm!;
   }
+  .maplibregl-ctrl-scale {
+    @apply bg-card/85! text-muted-foreground! border-muted-foreground! text-[11px]!;
+  }
   .maplibregl-ctrl-attrib a {
     @apply text-muted-foreground!;
   }

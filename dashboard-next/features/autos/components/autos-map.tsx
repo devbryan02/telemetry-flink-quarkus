@@ -1,7 +1,6 @@
 "use client"
 
 import type { FeatureCollection, LineString } from "geojson"
-import type { LngLatBoundsLike } from "maplibre-gl"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Encabezado } from "@/components/encabezado"
@@ -17,14 +16,24 @@ import {
   obtenerRuta,
   obtenerSimulacion,
 } from "../api"
-import { cumpleFiltro, empresasDisponibles, type Filtro, flotasDisponibles, type Opcion, SIN_FILTRO } from "../filtros"
+import {
+  cumpleFiltro,
+  empresasDisponibles,
+  type Filtro,
+  flotasDisponibles,
+  nombreEmpresa,
+  type Opcion,
+  SIN_FILTRO,
+} from "../filtros"
 import { km } from "../formato"
 import { aGeoJSON } from "../geojson"
 import { useAutosSocket } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
-import { fraccionLider } from "../ruta-progreso"
+import { fraccionLider, limitesDe } from "../ruta-progreso"
 import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
 import { AutosLayer, type AutosLayerHandle, type Lider } from "./autos-layer"
+import { ControlesMapa } from "./controles-mapa"
+import { Leyenda } from "./leyenda"
 import { CarreraPanel, type ResumenMetricas } from "./carrera-panel"
 import { RutaLayer } from "./ruta-layer"
 import { SalidaMeta } from "./salida-meta"
@@ -34,22 +43,6 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL
 /** Durante la carrera el estado se consulta cada segundo; el resto del tiempo, cada 5 s. */
 const SONDEO_EN_CURSO_MS = 1_000
 const SONDEO_EN_REPOSO_MS = 5_000
-
-function limitesDe(ruta: FeatureCollection<LineString>): LngLatBoundsLike {
-  let [minLon, minLat, maxLon, maxLat] = [180, 90, -180, -90]
-  for (const f of ruta.features) {
-    for (const [lon, lat] of f.geometry.coordinates) {
-      minLon = Math.min(minLon, lon)
-      minLat = Math.min(minLat, lat)
-      maxLon = Math.max(maxLon, lon)
-      maxLat = Math.max(maxLat, lat)
-    }
-  }
-  return [
-    [minLon, minLat],
-    [maxLon, maxLat],
-  ]
-}
 
 function mensaje(e: unknown): string {
   return e instanceof Error ? e.message : "Error desconocido"
@@ -231,6 +224,9 @@ ${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
     : null
   // objeto estable mientras no cambie el texto, para no reaplicar la capa en cada render
   const idLider = primero?.carId
+  const leyenda = [...(simulacion?.autos ?? [])]
+    .sort((a, b) => a.carId.localeCompare(b.carId, "es", { numeric: true }))
+    .map((a) => ({ carId: a.carId, empresa: a.companyId ? nombreEmpresa(a.companyId) : "Particular" }))
   const etiquetaMapa = useMemo<Lider | null>(
     () => (idLider && etiquetaLider ? { carId: idLider, texto: etiquetaLider } : null),
     [idLider, etiquetaLider],
@@ -267,7 +263,9 @@ ${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
             <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
             <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
             <AutosLayer ref={capa} filtro={filtro} lider={etiquetaMapa} />
+            <ControlesMapa ruta={geometria} />
           </Map>
+          {leyenda.length > 0 && <Leyenda autos={leyenda} />}
         </div>
       </div>
     </div>

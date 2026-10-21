@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { type Coordenada, dividirRuta, fraccionLider } from "./ruta-progreso"
+import { type Coordenada, dividirRuta, fraccionLider, limitesDe } from "./ruta-progreso"
 import type { EstadoSimulacion } from "./types"
 
 // Tres puntos sobre el mismo meridiano: 0→1 y 1→2 miden lo mismo
@@ -65,5 +65,24 @@ describe("fraccionLider", () => {
   it("0 sin simulación o con longitud 0", () => {
     expect(fraccionLider(null, "av-brasil")).toBe(0)
     expect(fraccionLider({ ...sim("av-brasil", [10]), longitudM: 0 }, "av-brasil")).toBe(0)
+  })
+})
+
+describe("limitesDe", () => {
+  it("encierra todos los puntos de la ruta", () => {
+    const ruta = {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {},
+          geometry: { type: "LineString" as const, coordinates: [[-77.05, -12.06], [-77.02, -12.09], [-77.04, -12.05]] },
+        },
+      ],
+    }
+    expect(limitesDe(ruta)).toEqual([
+      [-77.05, -12.09],
+      [-77.02, -12.05],
+    ])
   })
 })

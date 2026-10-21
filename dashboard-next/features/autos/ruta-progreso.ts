@@ -1,3 +1,6 @@
+import type { FeatureCollection, LineString } from "geojson"
+import type { LngLatBoundsLike } from "maplibre-gl"
+
 import { metros } from "./distancia"
 import type { EstadoSimulacion } from "./types"
 
@@ -35,4 +38,21 @@ export function fraccionLider(simulacion: EstadoSimulacion | null, rutaSeleccion
   if (!simulacion || simulacion.ruta !== rutaSeleccionada || simulacion.longitudM <= 0) return 0
   const maximo = Math.max(0, ...simulacion.autos.map((a) => a.recorridoM))
   return Math.min(1, maximo / simulacion.longitudM)
+}
+
+/** Rectángulo que encierra la ruta, para encuadrarla con `fitBounds`. */
+export function limitesDe(ruta: FeatureCollection<LineString>): LngLatBoundsLike {
+  let [minLon, minLat, maxLon, maxLat] = [180, 90, -180, -90]
+  for (const f of ruta.features) {
+    for (const [lon, lat] of f.geometry.coordinates) {
+      minLon = Math.min(minLon, lon)
+      minLat = Math.min(minLat, lat)
+      maxLon = Math.max(maxLon, lon)
+      maxLat = Math.max(maxLat, lat)
+    }
+  }
+  return [
+    [minLon, minLat],
+    [maxLon, maxLat],
+  ]
 }
