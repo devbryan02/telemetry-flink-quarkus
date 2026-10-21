@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { Flag, LocateFixed, Play, RotateCcw, Square } from "lucide-react"
+import { useId, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -23,12 +24,15 @@ export type ResumenMetricas = {
 
 const TODAS = "todas"
 
+/** Desplegable de Carbon: etiqueta visible arriba, campo con línea inferior y texto de ayuda opcional. */
 function Selector({
   etiqueta,
   todas,
   opciones,
   valor,
   deshabilitado,
+  ayuda,
+  className,
   onCambiar,
 }: {
   etiqueta: string
@@ -36,27 +40,39 @@ function Selector({
   opciones: { value: string; label: string }[]
   valor: string | null
   deshabilitado?: boolean
+  ayuda?: string
+  className?: string
   onCambiar: (valor: string | null) => void
 }) {
+  const id = useId()
   const items = todas ? [{ value: TODAS, label: todas }, ...opciones] : opciones
   return (
-    <Select
-      items={items}
-      value={valor ?? (todas ? TODAS : null)}
-      disabled={deshabilitado}
-      onValueChange={(v) => onCambiar(!v || v === TODAS ? null : String(v))}
-    >
-      <SelectTrigger size="sm" className="w-full" aria-label={etiqueta}>
-        <SelectValue placeholder={etiqueta} />
-      </SelectTrigger>
-      <SelectContent>
-        {items.map((i) => (
-          <SelectItem key={i.value} value={i.value}>
-            {i.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className={cn("flex min-w-0 flex-col gap-2", className)}>
+      <span id={id} className="text-xs text-muted-foreground">
+        {etiqueta}
+      </span>
+      <Select
+        items={items}
+        value={valor ?? (todas ? TODAS : null)}
+        disabled={deshabilitado}
+        onValueChange={(v) => onCambiar(!v || v === TODAS ? null : String(v))}
+      >
+        <SelectTrigger
+          aria-labelledby={id}
+          className="h-10! w-full rounded-none border-0 border-b border-input bg-field px-4 dark:bg-field"
+        >
+          <SelectValue placeholder={etiqueta} />
+        </SelectTrigger>
+        <SelectContent>
+          {items.map((i) => (
+            <SelectItem key={i.value} value={i.value}>
+              {i.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {ayuda && <span className="text-xs text-muted-foreground">{ayuda}</span>}
+    </div>
   )
 }
 
@@ -159,46 +175,67 @@ export function CarreraPanel({
   const deEstaRuta = simulacion?.ruta === rutaSeleccionada
   const clasificacion = simulacion?.autos ?? []
 
+  const nueva = estado === "TERMINADA" || (deEstaRuta && clasificacion.some((a) => a.recorridoM > 0))
+
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex flex-col">
+      <section className="flex flex-col gap-4 border-b p-4 pt-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl leading-7 font-normal">Carrera en {ruta?.nombre ?? "—"}</h1>
+          {ruta && (
+            <p className="text-xs text-muted-foreground">
+              {ruta.desde} → {ruta.hasta} · {km.format(ruta.km)} km
+            </p>
+          )}
+        </div>
         <Selector
           etiqueta="Ruta"
           opciones={rutas.map((r) => ({ value: r.id, label: `${r.nombre} · ${km.format(r.km)} km` }))}
           valor={rutaSeleccionada}
           deshabilitado={enCurso}
+          ayuda={enCurso ? "No se puede cambiar con la carrera en curso" : undefined}
           onCambiar={(id) => id && onElegirRuta(id)}
         />
-        {ruta && (
-          <p className="-mt-1.5 text-xs text-muted-foreground">
-            {ruta.desde} → {ruta.hasta}
-          </p>
-        )}
-
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-px">
           {enCurso ? (
-            <Button size="sm" variant="destructive" className="flex-1" disabled={ocupado} onClick={onDetener}>
-              Detener
+            <Button
+              variant="destructive"
+              className="h-12 flex-1 justify-between rounded-none bg-destructive px-4 text-white hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90"
+              disabled={ocupado}
+              onClick={onDetener}
+            >
+              Detener carrera
+              <Square className="fill-current" />
             </Button>
           ) : (
-            <Button size="sm" className="flex-1" disabled={ocupado || !rutaSeleccionada} onClick={onIniciar}>
-              {estado === "TERMINADA" || (deEstaRuta && clasificacion.some((a) => a.recorridoM > 0))
-                ? "Nueva carrera"
-                : "Iniciar carrera"}
+            <Button
+              className="h-12 flex-1 justify-between rounded-none px-4"
+              disabled={ocupado || !rutaSeleccionada}
+              onClick={onIniciar}
+            >
+              {nueva ? "Nueva carrera" : "Iniciar carrera"}
+              {nueva ? <RotateCcw /> : <Play className="fill-current" />}
             </Button>
           )}
           <Button
-            size="sm"
             variant={seguirLider ? "secondary" : "outline"}
+            className="h-12 rounded-none px-4"
             aria-pressed={seguirLider}
             onClick={() => onSeguirLider(!seguirLider)}
           >
-            Seguir al líder
+            <LocateFixed />
+            Seguir líder
           </Button>
         </div>
         {estado === "TERMINADA" && deEstaRuta && (
-          <p className="text-xs font-medium text-green-600 dark:text-green-400">Carrera terminada 🏁</p>
+          <p className="flex items-center gap-1.5 text-xs font-medium text-success">
+            <Flag className="size-3.5" />
+            Carrera terminada
+          </p>
         )}
+      </section>
 
+      <div className="flex flex-col gap-3 p-4">
         <ol className="flex flex-col gap-2">
           {clasificacion.map((a) => (
             <FilaCorredor
@@ -239,6 +276,7 @@ export function CarreraPanel({
           <dd className="text-right">{segundos(metricas.latenciaP95Ms)}</dd>
         </dl>
         {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
     </div>
   )
 }
