@@ -73,14 +73,14 @@ El usuario eligió la opción A de las tres alternativas Carbon y pidió mejorar
 **Interfaces:**
 - Produces: `km: Intl.NumberFormat`, `segundos(ms: number | null): string`, `cronometro(ms: number): string`, `tiempoCarrera(inicioIso: string | null, ahoraMs: number): number | null`
 
-- [ ] **Step 1: Rama y plan**
+- [x] **Step 1: Rama y plan**
 ```bash
 git switch develop && git switch -c feature/inc-22-ui-carbon
 mkdir -p docs/plans/ui-carbon   # copiar este plan como README.md
 ```
 En `docs/plans/README.md`, agregar a la tabla: `| UI Carbon · opción A | [Plan](ui-carbon/README.md) | [Telemetría §10](../specs/telemetria.md) |`.
 
-- [ ] **Step 2: Instalar Vitest**
+- [x] **Step 2: Instalar Vitest**
 ```bash
 cd dashboard-next && npm install -D vitest
 ```
@@ -98,7 +98,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: Test que falla** — `features/autos/formato.test.ts`
+- [x] **Step 3: Test que falla** — `features/autos/formato.test.ts`
 ```ts
 import { describe, expect, it } from "vitest"
 
@@ -123,9 +123,9 @@ describe("tiempoCarrera", () => {
 })
 ```
 
-- [ ] **Step 4: Ver que falla** — `npm test` → FAIL "Cannot find module './formato'".
+- [x] **Step 4: Ver que falla** — `npm test` → FAIL "Cannot find module './formato'".
 
-- [ ] **Step 5: Implementar** — `features/autos/formato.ts` (mueve `km`, `segundos` y `cronometro` desde `carrera-panel.tsx`; `segundos` pasa a usar coma decimal, como la UI de Carbon en es-PE):
+- [x] **Step 5: Implementar** — `features/autos/formato.ts` (mueve `km`, `segundos` y `cronometro` desde `carrera-panel.tsx`; `segundos` pasa a usar coma decimal, como la UI de Carbon en es-PE):
 ```ts
 export const km = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
@@ -153,9 +153,9 @@ export function tiempoCarrera(inicioIso: string | null, ahoraMs: number): number
 ```
 En `carrera-panel.tsx`, borrar las definiciones locales e `import { cronometro, km, segundos } from "../formato"`.
 
-- [ ] **Step 6: Verificar** — `npm test && npm run lint && npm run build` → todo PASS.
+- [x] **Step 6: Verificar** — `npm test && npm run lint && npm run build` → todo PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 ```bash
 git add docs/plans dashboard-next/package.json dashboard-next/package-lock.json dashboard-next/vitest.config.ts dashboard-next/features/autos/formato.ts dashboard-next/features/autos/formato.test.ts dashboard-next/features/autos/components/carrera-panel.tsx
 git commit -m "test(dashboard): agregar Vitest y extraer formatos de la carrera"
@@ -171,7 +171,7 @@ git commit -m "test(dashboard): agregar Vitest y extraer formatos de la carrera"
 **Interfaces:**
 - Produces (variables CSS usadas por tareas siguientes): `--header`, `--header-foreground`, `--header-border`, `--field`, `--success`, `--error-text`, `--ruta-recorrido`, `--ruta-pendiente`, `--ruta-borde`, `--auto-1`, `--auto-2`, `--auto-3`, `--auto-off`; utilidades Tailwind `bg-header`, `text-header-foreground`, `bg-field`, `text-success`, `text-error-text`.
 
-- [ ] **Step 1: Fuentes** — en `layout.tsx` reemplazar Geist por:
+- [x] **Step 1: Fuentes** — en `layout.tsx` reemplazar Geist por:
 ```ts
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
 
@@ -180,7 +180,7 @@ const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"
 ```
 y `className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}`. En `@theme inline`: `--font-sans: var(--font-plex-sans); --font-mono: var(--font-plex-mono);`.
 
-- [ ] **Step 2: Tokens** — en `globals.css`, reemplazar los valores de `:root` (Carbon G10) y `.dark` (Carbon G100). Valores exactos:
+- [x] **Step 2: Tokens** — en `globals.css`, reemplazar los valores de `:root` (Carbon G10) y `.dark` (Carbon G100). Valores exactos:
 
 | Token | `:root` (G10) | `.dark` (G100) |
 |---|---|---|
@@ -208,9 +208,9 @@ y `className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}`. 
 
 En `@theme inline` agregar `--color-header: var(--header); --color-header-foreground: var(--header-foreground); --color-header-border: var(--header-border); --color-field: var(--field); --color-success: var(--success); --color-error-text: var(--error-text);`. Los `--sidebar-*` y `--chart-*` se dejan.
 
-- [ ] **Step 3: Verificar** — `npm test && npm run lint && npm run build`; `npm run dev` y abrir http://localhost:3000: el panel actual se ve con esquinas rectas, IBM Plex y botón azul `#0f62fe`, en claro y oscuro. Revisar con el selector de tema.
+- [x] **Step 3: Verificar** — `npm test && npm run lint && npm run build`; `npm run dev` y abrir http://localhost:3000: el panel actual se ve con esquinas rectas, IBM Plex y botón azul `#0f62fe`, en claro y oscuro. Revisar con el selector de tema.
 
-- [ ] **Step 4: Commit** — `git commit -m "feat(dashboard): tokens de Carbon G10/G100 y tipografía IBM Plex"`
+- [x] **Step 4: Commit** — `git commit -m "feat(dashboard): tokens de Carbon G10/G100 y tipografía IBM Plex"`
 
 ---
 
@@ -224,7 +224,7 @@ En `@theme inline` agregar `--color-header: var(--header); --color-header-foregr
 - Consumes: `EstadoConexion` de `features/autos/hooks/use-autos-socket.ts`; `SelectorTema` de `components/selector-tema.tsx`.
 - Produces: `Encabezado({ conexion }: { conexion: "conectando" | "abierta" | "reconectando" })`. Para no hacer que `components/` dependa de una feature, el tipo se declara en el componente como unión literal.
 
-- [ ] **Step 1: `components/encabezado.tsx`**
+- [x] **Step 1: `components/encabezado.tsx`**
 ```tsx
 import { SelectorTema } from "@/components/selector-tema"
 import { cn } from "@/lib/utils"
@@ -278,7 +278,7 @@ export function Encabezado({ conexion }: { conexion: Conexion }) {
 ```
 (Los colores del tag son fijos porque la cabecera es G100 en ambos temas; es la única excepción a "solo tokens", documentada con un comentario.)
 
-- [ ] **Step 2: Layout en `autos-map.tsx`** — reemplazar el `return` por:
+- [x] **Step 2: Layout en `autos-map.tsx`** — reemplazar el `return` por:
 ```tsx
 <div className="flex h-full flex-col">
   <Encabezado conexion={conexion} />
@@ -298,15 +298,15 @@ export function Encabezado({ conexion }: { conexion: Conexion }) {
 ```
 Y en `fitBounds` usar `padding: 60` (el panel ya no tapa el mapa).
 
-- [ ] **Step 3: `carrera-panel.tsx`** — quitar `Card`/`CardHeader`, el `Badge` de conexión y `SelectorTema`; el contenido queda en `<div className="flex flex-col">` con el mismo orden actual. Quitar `conexion` de sus props y de `PropsPanel`.
+- [x] **Step 3: `carrera-panel.tsx`** — quitar `Card`/`CardHeader`, el `Badge` de conexión y `SelectorTema`; el contenido queda en `<div className="flex flex-col">` con el mismo orden actual. Quitar `conexion` de sus props y de `PropsPanel`.
 
-- [ ] **Step 4: Verificar** — `npm test && npm run lint && npm run build`. En `npm run dev` (con la API en Docker):
+- [x] **Step 4: Verificar** — `npm test && npm run lint && npm run build`. En `npm run dev` (con la API en Docker):
   - cabecera oscura en claro y oscuro; Viajes/Operación deshabilitadas;
   - con la API detenida (`docker stop telemetria-api`) el tag pasa a "Reconectando" en rojo; al iniciarla vuelve a "En vivo";
   - en DevTools a 390 px de ancho, el panel queda arriba y el mapa debajo con altura visible (≥ 60 % de la pantalla);
   - al cambiar de ruta, la ruta queda centrada (sin el hueco de 360 px a la izquierda).
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(dashboard): cabecera tipo UI Shell y panel lateral fijo"`
+- [x] **Step 5: Commit** — `git commit -m "feat(dashboard): cabecera tipo UI Shell y panel lateral fijo"`
 
 ---
 
@@ -318,15 +318,15 @@ Y en `fitBounds` usar `padding: 60` (el panel ya no tapa el mapa).
 **Interfaces:**
 - Consumes: `km` de `formato.ts`; íconos `Play`, `Square`, `RotateCcw`, `LocateFixed` de `lucide-react`.
 
-- [ ] **Step 1: Sección superior** — primera sección del panel (`p-4 pt-6 flex flex-col gap-4 border-b`):
+- [x] **Step 1: Sección superior** — primera sección del panel (`p-4 pt-6 flex flex-col gap-4 border-b`):
   - `<h1 className="text-xl font-normal">Carrera en {ruta?.nombre ?? "—"}</h1>` y debajo `<p className="text-xs text-muted-foreground">{ruta.desde} → {ruta.hasta} · {km.format(ruta.km)} km</p>`;
   - el `Selector` de ruta con `<label>` visible "Ruta" encima (`text-xs text-muted-foreground`), trigger `h-10 bg-field border-0 border-b border-input`; si `enCurso`, texto de ayuda "No se puede cambiar con la carrera en curso".
-- [ ] **Step 2: Acciones** — fila `flex gap-px`:
+- [x] **Step 2: Acciones** — fila `flex gap-px`:
   - botón principal `h-12 flex-1 justify-between px-4 text-left` con ícono a la derecha: `Play` + "Iniciar carrera", `RotateCcw` + "Nueva carrera", o `variant="destructive"` con `Square` + "Detener" (misma lógica de estado que hoy, RF-U3);
   - "Seguir líder" con `LocateFixed`, `aria-pressed`, `h-12`, `variant={seguirLider ? "secondary" : "outline"}`.
   - Reemplazar "Carrera terminada 🏁" por `<p className="text-xs font-medium text-success">Carrera terminada</p>` con ícono `Flag`.
-- [ ] **Step 3: Verificar** — lint + build; en el navegador: los tres estados del botón (antes, durante y después de una carrera), el select deshabilitado durante la carrera y el texto de ayuda; navegación con Tab con foco visible azul.
-- [ ] **Step 4: Commit** — `git commit -m "feat(dashboard): encabezado de carrera, ruta y acciones al estilo Carbon"`
+- [x] **Step 3: Verificar** — lint + build; en el navegador: los tres estados del botón (antes, durante y después de una carrera), el select deshabilitado durante la carrera y el texto de ayuda; navegación con Tab con foco visible azul.
+- [x] **Step 4: Commit** — `git commit -m "feat(dashboard): encabezado de carrera, ruta y acciones al estilo Carbon"`
 
 ---
 
@@ -340,7 +340,7 @@ Y en `fitBounds` usar `padding: 60` (el panel ya no tapa el mapa).
 - Produces: `CANTIDAD_COLORES = 3`; `indiceColor(carId: string): 1 | 2 | 3`; `varColor(carId: string): string` (devuelve `"var(--auto-N)"`).
 - Consumes: `cronometro`, `tiempoCarrera`, `km` de `formato.ts`.
 
-- [ ] **Step 1: Test que falla** — `paleta.test.ts`
+- [x] **Step 1: Test que falla** — `paleta.test.ts`
 ```ts
 import { describe, expect, it } from "vitest"
 
@@ -364,8 +364,8 @@ describe("varColor", () => {
   it("referencia el token del tema", () => expect(varColor("auto-2")).toBe("var(--auto-2)"))
 })
 ```
-- [ ] **Step 2: Ver que falla** — `npm test` → FAIL "Cannot find module './paleta'".
-- [ ] **Step 3: Implementar** — `paleta.ts`
+- [x] **Step 2: Ver que falla** — `npm test` → FAIL "Cannot find module './paleta'".
+- [x] **Step 3: Implementar** — `paleta.ts`
 ```ts
 /** Colores categóricos de Carbon por auto; los valores están en globals.css (`--auto-1..3`). */
 export const CANTIDAD_COLORES = 3
@@ -381,15 +381,15 @@ export function indiceColor(carId: string): IndiceColor {
 
 export const varColor = (carId: string) => `var(--auto-${indiceColor(carId)})`
 ```
-- [ ] **Step 4: Ver que pasa** — `npm test` → PASS.
-- [ ] **Step 5: `fila-corredor.tsx`** — mover `FilaCorredor` desde el panel y rediseñarla (estructura del artboard A):
+- [x] **Step 4: Ver que pasa** — `npm test` → PASS.
+- [x] **Step 5: `fila-corredor.tsx`** — mover `FilaCorredor` desde el panel y rediseñarla (estructura del artboard A):
   - fila 1: posición en `font-mono` (`1º`), cuadrado `size-3` con `style={{ background: varColor(auto.carId) }}`, `carId` en `font-semibold` y debajo "Empresa · Flota" en `text-xs text-muted-foreground`; a la derecha `km` en `font-mono` o, si llegó, ícono `Flag` + `cronometro(llegadaMs)` en `text-success`;
   - fila 2: barra `role="progressbar"` con `aria-valuenow`, `h-1 bg-muted` y relleno `bg-primary` (`bg-success` al llegar);
   - fila 3: `<label>` "Velocidad", `Slider` (misma lógica de borrador/commit, RF-U5) y `{kmh} km/h` en `font-mono`.
   - `<li>` con `border-t px-4 py-3`, sin bordes redondeados.
-- [ ] **Step 6: Sección "Clasificación"** en el panel: `<h2 className="text-sm font-semibold">Clasificación</h2>` y a la derecha el cronómetro en `font-mono` cuando `enCurso`: `cronometro(tiempoCarrera(simulacion.inicio, Date.now()) ?? 0)`. Se refresca solo porque `PanelVivo` ya rerenderiza cada 1 s.
-- [ ] **Step 7: Verificar** — `npm test && npm run lint && npm run build`; en el navegador, iniciar una carrera: cada auto tiene su color, el cronómetro avanza, al llegar aparecen la bandera y el tiempo, y el slider sigue cambiando la velocidad.
-- [ ] **Step 8: Commit** — `git commit -m "feat(dashboard): clasificación con color por auto y cronómetro"`
+- [x] **Step 6: Sección "Clasificación"** en el panel: `<h2 className="text-sm font-semibold">Clasificación</h2>` y a la derecha el cronómetro en `font-mono` cuando `enCurso`: `cronometro(tiempoCarrera(simulacion.inicio, Date.now()) ?? 0)`. Se refresca solo porque `PanelVivo` ya rerenderiza cada 1 s.
+- [x] **Step 7: Verificar** — `npm test && npm run lint && npm run build`; en el navegador, iniciar una carrera: cada auto tiene su color, el cronómetro avanza, al llegar aparecen la bandera y el tiempo, y el slider sigue cambiando la velocidad.
+- [x] **Step 8: Commit** — `git commit -m "feat(dashboard): clasificación con color por auto y cronómetro"`
 
 ---
 
@@ -403,8 +403,8 @@ export const varColor = (carId: string) => `var(--auto-${indiceColor(carId)})`
 - Consumes: `ResumenMetricas` (de `carrera-panel.tsx`), `segundos` de `formato.ts`.
 - Produces: `MetricasTiles({ metricas }: { metricas: ResumenMetricas })`.
 
-- [ ] **Step 1: Filtros** — sección "Filtrar autos" (`p-4 border-b`): los dos `Selector` lado a lado (`flex flex-wrap gap-2`, cada uno `flex-[1_1_140px]`) con `<label>` visible "Empresa" y "Flota"; mismo comportamiento RF-U7.
-- [ ] **Step 2: `metricas-tiles.tsx`**
+- [x] **Step 1: Filtros** — sección "Filtrar autos" (`p-4 border-b`): los dos `Selector` lado a lado (`flex flex-wrap gap-2`, cada uno `flex-[1_1_140px]`) con `<label>` visible "Empresa" y "Flota"; mismo comportamiento RF-U7.
+- [x] **Step 2: `metricas-tiles.tsx`**
 ```tsx
 import { segundos } from "../formato"
 import type { ResumenMetricas } from "./carrera-panel"
@@ -429,8 +429,8 @@ export function MetricasTiles({ metricas }: { metricas: ResumenMetricas }) {
 }
 ```
 Reemplaza el `<dl>` actual; el error pasa a `<p role="alert" className="px-4 py-2 text-xs text-error-text">`.
-- [ ] **Step 3: Verificar** — lint + build; filtrar por Empresa 01 → "Mostrados 2/3" y el mapa solo muestra esos autos; Flota se habilita solo con empresa elegida.
-- [ ] **Step 4: Commit** — `git commit -m "feat(dashboard): filtros con etiqueta y métricas en tiles"`
+- [x] **Step 3: Verificar** — lint + build; filtrar por Empresa 01 → "Mostrados 2/3" y el mapa solo muestra esos autos; Flota se habilita solo con empresa elegida.
+- [x] **Step 4: Commit** — `git commit -m "feat(dashboard): filtros con etiqueta y métricas en tiles"`
 
 ---
 
@@ -449,8 +449,8 @@ Reemplaza el `<dl>` actual; el error pasa a `<p role="alert" className="px-4 py-
   - `leerToken(nombre: string, porDefecto: string): string`
   - `RutaLayer({ ruta, progreso }: { ruta: FeatureCollection<LineString> | null; progreso: number })`
 
-- [ ] **Step 1: Extraer `metros`** — mover la función de `animacion.ts` a `distancia.ts` con `export`, e importarla en `animacion.ts`. `npm test && npm run build` siguen PASS.
-- [ ] **Step 2: Test que falla** — `ruta-progreso.test.ts`
+- [x] **Step 1: Extraer `metros`** — mover la función de `animacion.ts` a `distancia.ts` con `export`, e importarla en `animacion.ts`. `npm test && npm run build` siguen PASS.
+- [x] **Step 2: Test que falla** — `ruta-progreso.test.ts`
 ```ts
 import { describe, expect, it } from "vitest"
 
@@ -508,8 +508,8 @@ describe("fraccionLider", () => {
   })
 })
 ```
-- [ ] **Step 3: Ver que falla** — `npm test` → FAIL "Cannot find module './ruta-progreso'".
-- [ ] **Step 4: Implementar** — `ruta-progreso.ts`
+- [x] **Step 3: Ver que falla** — `npm test` → FAIL "Cannot find module './ruta-progreso'".
+- [x] **Step 4: Implementar** — `ruta-progreso.ts`
 ```ts
 import { metros } from "./distancia"
 import type { EstadoSimulacion } from "./types"
@@ -550,8 +550,8 @@ export function fraccionLider(simulacion: EstadoSimulacion | null, rutaSeleccion
 }
 ```
 Casos borde: con `f = 0` corta en `i = 0, t = 0` → `recorrido = [p0, p0]`, `pendiente = línea`; con `f = 1` corta en el último segmento con `t = 1` → `recorrido = línea`, `pendiente = [pN, pN]`.
-- [ ] **Step 5: Ver que pasa** — `npm test` → PASS.
-- [ ] **Step 6: `tokens.ts`**
+- [x] **Step 5: Ver que pasa** — `npm test` → PASS.
+- [x] **Step 6: `tokens.ts`**
 ```ts
 /** Color de una variable CSS del tema, para capas de MapLibre (que no entienden `var(--x)`). */
 export function leerToken(nombre: string, porDefecto: string): string {
@@ -559,14 +559,14 @@ export function leerToken(nombre: string, porDefecto: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || porDefecto
 }
 ```
-- [ ] **Step 7: `RutaLayer` con tres capas** — una fuente `ruta` (la geometría completa) y otra `ruta-progreso` con dos features (`tramo: "recorrido" | "pendiente"`). Capas, en orden, antes de `CAPA_AUTOS`:
+- [x] **Step 7: `RutaLayer` con tres capas** — una fuente `ruta` (la geometría completa) y otra `ruta-progreso` con dos features (`tramo: "recorrido" | "pendiente"`). Capas, en orden, antes de `CAPA_AUTOS`:
   1. `ruta-borde`: `line-color: leerToken("--ruta-borde", "#ffffff")`, ancho `["interpolate",["linear"],["zoom"],11,6,15,12,18,18]`;
   2. `ruta-pendiente`: filtro `["==",["get","tramo"],"pendiente"]`, `line-color: --ruta-pendiente`, ancho 11→3, 15→6, 18→10;
   3. `ruta-recorrido`: igual, con `--ruta-recorrido`.
   Un segundo efecto con `[map, isLoaded, ruta, progreso]` hace `setData` de `ruta-progreso` con `dividirRuta(ruta.features[0].geometry.coordinates as Coordenada[], progreso)`. Como el efecto de creación depende de `isLoaded`, al cambiar el tema se recrean con los colores nuevos (Review Focus 1).
-- [ ] **Step 8: Conectar** — en `autos-map.tsx`: `<RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />`.
-- [ ] **Step 9: Verificar** — `npm test && npm run lint && npm run build`; en el navegador: sin carrera la ruta es azul claro; durante la carrera el tramo azul fuerte crece hasta el líder; al elegir otra ruta todo queda pendiente; cambiar a oscuro en plena carrera mantiene las dos capas con los colores oscuros.
-- [ ] **Step 10: Commit** — `git commit -m "feat(dashboard): ruta en tramo recorrido y pendiente"`
+- [x] **Step 8: Conectar** — en `autos-map.tsx`: `<RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />`.
+- [x] **Step 9: Verificar** — `npm test && npm run lint && npm run build`; en el navegador: sin carrera la ruta es azul claro; durante la carrera el tramo azul fuerte crece hasta el líder; al elegir otra ruta todo queda pendiente; cambiar a oscuro en plena carrera mantiene las dos capas con los colores oscuros.
+- [x] **Step 10: Commit** — `git commit -m "feat(dashboard): ruta en tramo recorrido y pendiente"`
 
 ---
 
@@ -575,12 +575,12 @@ export function leerToken(nombre: string, porDefecto: string): string {
 **Files:**
 - Modify: `features/autos/components/salida-meta.tsx`
 
-- [ ] **Step 1: Rediseño** — cada extremo es un `MapMarker` con `anchor="center"` y contenido:
+- [x] **Step 1: Rediseño** — cada extremo es un `MapMarker` con `anchor="center"` y contenido:
   - Salida: círculo `size-6 rounded-full border-2 border-foreground bg-card` con `Play` (`size-3`, relleno) y al lado una etiqueta `bg-card text-card-foreground text-xs shadow px-2 py-1` con "Salida" en negrita y `ruta.desde` en `text-muted-foreground`;
   - Meta: círculo `bg-foreground text-background` con `Flag` y etiqueta "Meta" + `ruta.hasta`.
   - Nuevas props: `{ ruta, desde, hasta }: { ruta: FeatureCollection<LineString> | null; desde?: string; hasta?: string }`, que `autos-map.tsx` pasa desde la `ResumenRuta` elegida.
-- [ ] **Step 2: Verificar** — lint + build; sin emoji, legibles en claro y oscuro, en las cuatro rutas.
-- [ ] **Step 3: Commit** — `git commit -m "feat(dashboard): marcadores de salida y meta al estilo Carbon"`
+- [x] **Step 2: Verificar** — lint + build; sin emoji, legibles en claro y oscuro, en las cuatro rutas.
+- [x] **Step 3: Commit** — `git commit -m "feat(dashboard): marcadores de salida y meta al estilo Carbon"`
 
 ---
 
@@ -593,7 +593,7 @@ export function leerToken(nombre: string, porDefecto: string): string {
 - Consumes: `indiceColor` de `paleta.ts`, `leerToken` de `tokens.ts`.
 - Produces: `PropiedadesAuto` gana `color: IndiceColor` y `numero: string`; `nombreIcono(color: IndiceColor | "off")`; `AutosLayer` gana la prop `lider: { carId: string; texto: string } | null`.
 
-- [ ] **Step 1: Test que falla** — `geojson.test.ts`
+- [x] **Step 1: Test que falla** — `geojson.test.ts`
 ```ts
 import { describe, expect, it } from "vitest"
 
@@ -614,31 +614,31 @@ describe("aGeoJSON", () => {
     expect(aGeoJSON([auto("car-xyz")]).features[0].properties.numero).toBe("CA"))
 })
 ```
-- [ ] **Step 2: Ver que falla** — `npm test` → FAIL (`color` undefined).
-- [ ] **Step 3: Implementar** en `geojson.ts`: `PropiedadesAuto = Pick<…> & { color: IndiceColor; numero: string }` y en `aGeoJSON`:
+- [x] **Step 2: Ver que falla** — `npm test` → FAIL (`color` undefined).
+- [x] **Step 3: Implementar** en `geojson.ts`: `PropiedadesAuto = Pick<…> & { color: IndiceColor; numero: string }` y en `aGeoJSON`:
 ```ts
 color: indiceColor(a.carId),
 numero: /-(\d+)$/.exec(a.carId)?.[1] ?? a.carId.slice(0, 2).toUpperCase(),
 ```
-- [ ] **Step 4: Ver que pasa** — `npm test` → PASS.
-- [ ] **Step 5: Íconos en `vehiculo.ts`** — reemplazar las 4 variantes motor/borde por 4 variantes `auto-1`, `auto-2`, `auto-3`, `auto-off`: círculo de 26 px de diámetro con el color (`leerToken("--auto-N", …)`), borde blanco de 2,5 px y un triángulo de rumbo arriba (el mapa lo rota con `icon-rotate`). El número no va en el canvas (giraría con el ícono): va como `text-field` de la capa.
+- [x] **Step 4: Ver que pasa** — `npm test` → PASS.
+- [x] **Step 5: Íconos en `vehiculo.ts`** — reemplazar las 4 variantes motor/borde por 4 variantes `auto-1`, `auto-2`, `auto-3`, `auto-off`: círculo de 26 px de diámetro con el color (`leerToken("--auto-N", …)`), borde blanco de 2,5 px y un triángulo de rumbo arriba (el mapa lo rota con `icon-rotate`). El número no va en el canvas (giraría con el ícono): va como `text-field` de la capa.
 ```ts
 export type VarianteIcono = 1 | 2 | 3 | "off"
 export const nombreIcono = (v: VarianteIcono) => `auto-${v}`
 ```
 `registrarIconos(mapa)` registra las 4 si faltan; como se llama al recargar el estilo, al cambiar el tema toma los colores nuevos.
-- [ ] **Step 6: Capa en `autos-layer.tsx`** — `ESTILO_VEHICULO.layout`:
+- [x] **Step 6: Capa en `autos-layer.tsx`** — `ESTILO_VEHICULO.layout`:
   - `"icon-image": ["case", ["==", ["get","engine"], "OFF"], nombreIcono("off"), ["concat", "auto-", ["to-string", ["get","color"]]]]`;
   - `"text-field": ["get","numero"]`, `"text-font": ["Open Sans Semibold"]` (fuente disponible en los estilos de CARTO), `"text-size": 11`, `"text-allow-overlap": true`, `"text-rotation-alignment": "viewport"`;
   - `paint: { "text-color": ["case", ["==",["get","color"],1], "#ffffff", "#161616"] }` (blanco sobre morado, negro sobre cian/amarillo; contraste ≥ 4.5).
   - Popup: agregar "Color" no hace falta; el popup se mantiene igual (RF-U11).
-- [ ] **Step 7: Etiqueta del líder** — capa `autos-lider` (symbol) sobre la misma fuente, filtrada por `["==", ["get","carId"], lider.carId]`, con `text-field: lider.texto`, `text-anchor: "right"`, `text-offset: [-1.6, 0]`, `text-justify: "left"`, halo `leerToken("--card")` de 2 px y color `leerToken("--foreground")`. Un efecto con `[map, lider]` aplica `setFilter` y `setLayoutProperty("autos-lider", "text-field", lider.texto)`; con `lider === null` se oculta (`visibility: none`). En `autos-map.tsx`:
+- [x] **Step 7: Etiqueta del líder** — capa `autos-lider` (symbol) sobre la misma fuente, filtrada por `["==", ["get","carId"], lider.carId]`, con `text-field: lider.texto`, `text-anchor: "right"`, `text-offset: [-1.6, 0]`, `text-justify: "left"`, halo `leerToken("--card")` de 2 px y color `leerToken("--foreground")`. Un efecto con `[map, lider]` aplica `setFilter` y `setLayoutProperty("autos-lider", "text-field", lider.texto)`; con `lider === null` se oculta (`visibility: none`). En `autos-map.tsx`:
 ```ts
 const primero = simulacion?.estado === "EN_CURSO" ? simulacion.autos[0] : undefined
 const lider = primero ? { carId: primero.carId, texto: `1º ${primero.carId}\n${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km` } : null
 ```
-- [ ] **Step 8: Verificar** — `npm test && npm run lint && npm run build`; en el navegador: tres colores distintos con número, la flecha apunta hacia donde avanza, el que llega se vuelve gris, la etiqueta sigue al líder y cambia cuando hay adelantamiento; filtro por empresa sigue ocultando autos (y la etiqueta si el líder queda fuera); cambio de tema en plena carrera conserva todo.
-- [ ] **Step 9: Commit** — `git commit -m "feat(dashboard): autos con color por auto, número y etiqueta del líder"`
+- [x] **Step 8: Verificar** — `npm test && npm run lint && npm run build`; en el navegador: tres colores distintos con número, la flecha apunta hacia donde avanza, el que llega se vuelve gris, la etiqueta sigue al líder y cambia cuando hay adelantamiento; filtro por empresa sigue ocultando autos (y la etiqueta si el líder queda fuera); cambio de tema en plena carrera conserva todo.
+- [x] **Step 9: Commit** — `git commit -m "feat(dashboard): autos con color por auto, número y etiqueta del líder"`
 
 ---
 
@@ -652,12 +652,12 @@ const lider = primero ? { carId: primero.carId, texto: `1º ${primero.carId}\n${
 - Consumes: `useMap` de `@/components/ui/map`; `varColor` de `paleta.ts`; `limitesDe` (moverlo de `autos-map.tsx` a `ruta-progreso.ts` y exportarlo).
 - Produces: `ControlesMapa({ ruta }: { ruta: FeatureCollection<LineString> | null })`, `Leyenda({ autos }: { autos: { carId: string; empresa: string }[] })`.
 
-- [ ] **Step 1: `controles-mapa.tsx`** — dentro de `<Map>`:
+- [x] **Step 1: `controles-mapa.tsx`** — dentro de `<Map>`:
   - grupo vertical abajo a la derecha (`absolute right-4 bottom-10 bg-card shadow`), botones de 40×40 con `aria-label`: Acercar (`Plus`, `map.zoomIn()`), Alejar (`Minus`, `map.zoomOut()`), Encuadrar la ruta (`Maximize`, `map.fitBounds(limitesDe(ruta), { padding: 60 })`, deshabilitado sin ruta), Orientar al norte (`Compass`, `map.resetNorthPitch()`);
   - barra inferior `absolute inset-x-0 bottom-0 h-6 bg-card/85 text-[11px] text-muted-foreground` con: escala (efecto que hace `map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left")` y la quita al desmontar; CSS en `globals.css` para que `.maplibregl-ctrl-scale` use tokens), coordenadas del centro y zoom en `font-mono` (estado actualizado en `moveend`, no por frame), y la atribución que ya da MapLibre.
-- [ ] **Step 2: `leyenda.tsx`** — tarjeta `absolute left-4 bottom-10 bg-card shadow min-w-[200px]`: título "Leyenda", un ítem por auto (círculo con `varColor`, "auto-N · Empresa 0X"), separador y dos ítems de tramo (línea `bg-[var(--ruta-recorrido)]` "Tramo recorrido por el líder" y `bg-[var(--ruta-pendiente)]` "Tramo pendiente"). Los autos salen de `simulacion.autos` (ya ordenados) con `nombreEmpresa`.
-- [ ] **Step 3: Verificar** — lint + build; cada botón hace lo que dice; la escala cambia al hacer zoom; coordenadas y zoom se actualizan al soltar; la leyenda no tapa los controles a 1280 px; a 390 px la leyenda se oculta (`hidden sm:block`) para no tapar el mapa.
-- [ ] **Step 4: Commit** — `git commit -m "feat(dashboard): controles, leyenda y escala del mapa"`
+- [x] **Step 2: `leyenda.tsx`** — tarjeta `absolute left-4 bottom-10 bg-card shadow min-w-[200px]`: título "Leyenda", un ítem por auto (círculo con `varColor`, "auto-N · Empresa 0X"), separador y dos ítems de tramo (línea `bg-[var(--ruta-recorrido)]` "Tramo recorrido por el líder" y `bg-[var(--ruta-pendiente)]` "Tramo pendiente"). Los autos salen de `simulacion.autos` (ya ordenados) con `nombreEmpresa`.
+- [x] **Step 3: Verificar** — lint + build; cada botón hace lo que dice; la escala cambia al hacer zoom; coordenadas y zoom se actualizan al soltar; la leyenda no tapa los controles a 1280 px; a 390 px la leyenda se oculta (`hidden sm:block`) para no tapar el mapa.
+- [x] **Step 4: Commit** — `git commit -m "feat(dashboard): controles, leyenda y escala del mapa"`
 
 ---
 
@@ -666,22 +666,22 @@ const lider = primero ? { carId: primero.carId, texto: `1º ${primero.carId}\n${
 **Files:**
 - Modify: `docs/specs/telemetria.md` §10, `CLAUDE.md` (bloque Frontend), `docs/plans/ui-carbon/README.md` (marcar tareas)
 
-- [ ] **Step 1: Spec §10** — actualizar:
+- [x] **Step 1: Spec §10** — actualizar:
   - RF-U1: cabecera + panel lateral fijo + mapa; en celular el panel se apila;
   - RF-U2: marcadores Salida/Meta con ícono (sin emoji) y tramo recorrido/pendiente;
   - RF-U4: color por auto, cronómetro de carrera, bandera de `lucide-react`;
   - RF-U8: círculo con color categórico por auto (`--auto-1..3`), número y flecha de rumbo; gris con motor OFF; ya no hay borde por tipo;
   - RF-U12: tokens de Carbon G10/G100 e IBM Plex;
   - nuevo RF-U13: controles (zoom, encuadrar, norte), leyenda, escala y etiqueta del líder.
-- [ ] **Step 2: CLAUDE.md** — en Frontend, cambiar "una fuente GeoJSON con una capa `symbol` de íconos (`vehiculo.ts`)" por la versión con color por auto y agregar: "tokens de Carbon (G10/G100) en `globals.css`; MapLibre lee los colores con `leerToken`; tests de funciones puras con Vitest (`npm test`)". Agregar `npm test` al bloque de comandos del dashboard.
-- [ ] **Step 3: Verificación final**
+- [x] **Step 2: CLAUDE.md** — en Frontend, cambiar "una fuente GeoJSON con una capa `symbol` de íconos (`vehiculo.ts`)" por la versión con color por auto y agregar: "tokens de Carbon (G10/G100) en `globals.css`; MapLibre lee los colores con `leerToken`; tests de funciones puras con Vitest (`npm test`)". Agregar `npm test` al bloque de comandos del dashboard.
+- [x] **Step 3: Verificación final**
 ```bash
 cd dashboard-next && npm test && npm run lint && npm run build
 cd .. && docker compose up -d --build dashboard
 ```
 En http://localhost:3000 recorrer: carrera completa en Av. Brasil, cambio de velocidad, seguir al líder, filtro por empresa/flota, cambio de tema a mitad de carrera, Vía Los Libertadores (325 km) con seguir al líder, y ancho de 390 px.
-- [ ] **Step 4: Commit** — `git commit -m "docs(dashboard): documentar la interfaz Carbon en la spec y CLAUDE.md"`
-- [ ] **Step 5: Integrar** — usar `superpowers:finishing-a-development-branch` para el merge a `develop` (sin PR, STD-GIT-001).
+- [x] **Step 4: Commit** — `git commit -m "docs(dashboard): documentar la interfaz Carbon en la spec y CLAUDE.md"`
+- [x] **Step 5: Integrar** — usar `superpowers:finishing-a-development-branch` para el merge a `develop` (sin PR, STD-GIT-001).
 
 ## Verificación end-to-end
 
