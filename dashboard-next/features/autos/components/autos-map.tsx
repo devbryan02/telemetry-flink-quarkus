@@ -29,6 +29,7 @@ import { km } from "../formato"
 import { aGeoJSON } from "../geojson"
 import { useAutosSocket } from "../hooks/use-autos-socket"
 import { Metricas } from "../metricas"
+import { useEstilosMapa } from "../hooks/use-estilos-mapa"
 import { fraccionLider, limitesDe } from "../ruta-progreso"
 import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
 import { AutosLayer, type AutosLayerHandle, type Lider } from "./autos-layer"
@@ -51,6 +52,7 @@ function mensaje(e: unknown): string {
 
 /** Mapa de la carrera: ruta elegida, autos en vivo filtrables por empresa y flota (spec §10). */
 export default function AutosMap() {
+  const estilos = useEstilosMapa()
   const mapa = useRef<MapRef>(null)
   const capa = useRef<AutosLayerHandle>(null)
   // El estado de los autos vive fuera de React; el Animador interpola su movimiento entre eventos
@@ -239,7 +241,7 @@ ${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
       {/* El mapa llena el área y el control flota encima; en el celular el mapa pasa debajo con altura propia */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div className="absolute inset-0 max-sm:static max-sm:order-last max-sm:h-[60dvh] max-sm:shrink-0">
-          <Map ref={mapa} center={LIMA} zoom={11}>
+          <Map ref={mapa} center={LIMA} zoom={11} styles={estilos}>
             <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
             <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
             <AutosLayer ref={capa} filtro={filtro} lider={etiquetaMapa} />
