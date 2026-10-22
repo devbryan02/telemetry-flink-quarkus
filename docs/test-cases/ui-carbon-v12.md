@@ -51,9 +51,9 @@ Cada decisión conserva su motivo y el coste si debe cambiarse:
 17. **R17 — Limitar los estilos universales heredados.** Los bordes propios se aplican a clases de layout; Carbon conserva sus bordes transparentes y foco. Coste: las tarjetas propias deben declarar sus clases de borde.
 18. **R18 — Verificar DOWN con un 503 controlado.** Se prueba el contrato real de salud sin detener PostgreSQL compartido. Coste: esta sesión no induce una caída real de la base de datos; readiness UP y el recorrido completo sí se verifican con servicios reales.
 
-## Menor diferido
+## Menor diferido (resuelto)
 
-Los controles del mapa conservan los **48×48 px** predeterminados de Carbon v12; el brief indicaba 40×40 px. No bloquea su uso ni tapa la leyenda. No quedan hallazgos importantes pendientes.
+Los controles del mapa usaban los **48×48 px** predeterminados de Carbon v12; el brief indicaba 40×40 px. Se resolvió con `size="md"` en los cuatro `IconButton` de `controles-mapa.tsx`: en Docker miden 40×40 px, siguen siendo circulares y no tapan la leyenda. No quedan hallazgos pendientes.
 
 ## Repetir la verificación
 

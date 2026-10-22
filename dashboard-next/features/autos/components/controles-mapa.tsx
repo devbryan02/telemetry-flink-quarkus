@@ -42,15 +42,16 @@ export function ControlesMapa({ ruta }: { ruta: FeatureCollection<LineString> | 
   return (
     <>
       <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-2">
-        <IconButton label="Acercar" kind="ghost" align="left" className={FLOTANTE} onClick={() => map?.zoomIn()}>
+        <IconButton label="Acercar" kind="ghost" size="md" align="left" className={FLOTANTE} onClick={() => map?.zoomIn()}>
           <Add />
         </IconButton>
-        <IconButton label="Alejar" kind="ghost" align="left" className={FLOTANTE} onClick={() => map?.zoomOut()}>
+        <IconButton label="Alejar" kind="ghost" size="md" align="left" className={FLOTANTE} onClick={() => map?.zoomOut()}>
           <Subtract />
         </IconButton>
         <IconButton
           label="Encuadrar la ruta"
           kind="ghost"
+          size="md"
           align="left"
           className={FLOTANTE}
           disabled={!ruta}
@@ -58,7 +59,7 @@ export function ControlesMapa({ ruta }: { ruta: FeatureCollection<LineString> | 
         >
           <FitToScreen />
         </IconButton>
-        <IconButton label="Orientar al norte" kind="ghost" align="left" className={FLOTANTE} onClick={() => map?.resetNorthPitch()}>
+        <IconButton label="Orientar al norte" kind="ghost" size="md" align="left" className={FLOTANTE} onClick={() => map?.resetNorthPitch()}>
           <Compass />
         </IconButton>
       </div>
