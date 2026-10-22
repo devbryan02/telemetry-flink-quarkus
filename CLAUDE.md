@@ -20,7 +20,7 @@ Next.js ── POST /simulacion/iniciar {ruta} ──► Quarkus 3.40 LTS · Jav
                                          │  viajes/: consumidor por lotes de "telemetria" → ViajesStore (tb_viaje,
                                          │          tb_posicion_historial) → GET /viajes[/{id}[/posiciones]]
                                          └─► PostgreSQL 17 (JDBC/Agroal + Flyway, sin ORM)
-Next.js 16 + shadcn/ui + mapcn (MapLibre) ◄── axios (autos, ruta, simulación) + WebSocket nativo
+Next.js 16 + Carbon v12 + mapcn (MapLibre) ◄── axios (autos, ruta, simulación, viajes, operación) + WebSocket nativo
 ```
 
 Decisiones que no son obvias si no se lee toda la spec:
@@ -52,12 +52,15 @@ Decisiones que no son obvias si no se lee toda la spec:
   El dashboard los pide a `GET /rutas` y `GET /rutas/{id}`. La velocidad por auto (10–500 km/h) se cambia con `PUT /simulacion/autos/{carId}/velocidad`.
 - **Flink se reinicia solo:** estrategia `exponential-delay` y heartbeat de 3 min en `FlinkJobRunner`. Sin checkpoints, el job no tiene reinicio por defecto y una pausa larga de la JVM lo dejaba caído.
 - **Frontend:**
-  - interfaz basada en Carbon: tokens G10/G100 en `globals.css` (con los de la ruta y los autos) e IBM Plex; MapLibre lee esos colores con `leerToken` al crear cada capa;
+  - interfaz con `@carbon/react` y flag `enable-v12-release` en Sass y React; temas White/G100 por `.dark`; tokens de `globals.css` sobre `--cds-*`, leídos por MapLibre con `leerToken`;
+  - acción principal `kind="secondary"` gris, Tailwind sin preflight e IBM Plex con Fontsource; `carbon.css` importa el CSS generado dentro de una capa anterior a las utilidades;
+  - no edites `components/ui/map.tsx` (mapcn); es el único componente generado que se conserva;
   - una fuente GeoJSON con una capa `symbol` de círculos por color de auto (`vehiculo.ts`, `paleta.ts`), filtrada con `setFilter` según empresa/flota; la ruta se divide en tramo recorrido/pendiente (`ruta-progreso.ts`);
-  - funciones puras con tests de Vitest (`features/**/*.test.ts`);
+  - funciones puras con tests de Vitest (`features/**/*.test.ts`, `lib/**/*.test.ts`);
+  - pantallas `/` (carrera), `/viajes`, `/viajes/[viajeId]` (repetición) y `/operacion`; cada feature tiene su propio cliente HTTP e importa otras features solo por su `index.ts`;
   - estado fuera de React (`useRef`);
   - movimiento interpolado entre eventos (`animacion.ts`);
-  - tema claro/oscuro con next-themes (clase `dark` en `<html>`); mapcn observa esa clase para cambiar el mapa base. Usa tokens de shadcn (`bg-popover`, `text-foreground`…) en vez de colores fijos;
+  - tema claro/oscuro con next-themes (clase `dark` en `<html>`); mapcn observa esa clase para cambiar el mapa base. usa tokens de la app (`bg-card`, `text-foreground`…) o `var(--cds-*)`;
   - el mapa es `"use client"` cargado con `dynamic(..., { ssr: false })`.
 - **Docker Compose:** requiere `.env` (copia de `.env.example`) con las credenciales de PostgreSQL. Los contenedores llegan a Kafka por `kafka:29092` (listener `INTERNO`) y el host por `localhost:9092` (`EXTERNO`). La API se configura por variables de entorno; las `NEXT_PUBLIC_*` del dashboard son build args (se incrustan al construir, las usa el navegador del host). Tras cambiar código: `docker compose up -d --build <servicio>`.
 - **Si cambia el contrato del evento,** hazlo compatible hacia atrás (como v2). **No recrees topics ni borres volúmenes** (`down -v`): eso destruye historial y offsets. Las tablas cambian con una migración Flyway nueva; nunca se edita una migración ya aplicada.
@@ -77,7 +80,7 @@ powershell -NoProfile -File scripts/probar-persistencia.ps1   # E2E con Kafka y 
 
 ## Base de conocimiento (`knowledge/`)
 
-`knowledge/` es una plantilla corporativa genérica de COMSATEL. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (PostgreSQL con JDBC y Flyway). Algunas reglas aplican aquí y otras no:
+`knowledge/` es una plantilla corporativa genérica de COMSATEL. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (PostgreSQL con JDBC y Flyway). La UI se define en `ADR-005` (Carbon v12). Algunas reglas aplican aquí y otras no:
 - **Aplican:**
   - `STD-ARCH-001`: organización **por features**, en backend (`simulacion/`, `flink/`, `autos/`, `viajes/`, `shared/`) y en frontend (`features/<x>/` con `index.ts` público). Los DTOs son `record` escritos a mano. El contrato JSON está en la spec §4.
   - `STD-GIT-001`: Conventional Commits; ramas `feature/<ticket>-<slug>` desde `develop`; sin PR/MR. **Todo cambio se versiona:** se trabaja en una rama de feature, nunca directo en `main` ni en `develop`, y cada tarea termina con su commit.

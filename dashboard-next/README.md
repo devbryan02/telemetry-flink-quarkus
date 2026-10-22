@@ -1,36 +1,11 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard de telemetría
 
-## Getting Started
+Next.js 16, React 19, Carbon Design System con flag v12 y mapcn/MapLibre. Las pantallas son Carrera (`/`), Viajes (`/viajes`), Repetición (`/viajes/[viajeId]`) y Operación (`/operacion`).
 
-First, run the development server:
+Copia `.env.example` a `.env.local` y ejecuta `npm ci` y `npm run dev`. La API debe estar disponible en `NEXT_PUBLIC_API_URL`; el WebSocket usa `NEXT_PUBLIC_WS_URL` y el enlace a Flink, `NEXT_PUBLIC_FLINK_UI_URL`. En Docker, estas variables son argumentos del build.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Verificación: `npm test`, `npm run lint` y `npm run build`. Vitest prueba funciones puras de `features/` y `lib/`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`predev` y `prebuild` compilan `app/carbon.scss` con Sass a `app/carbon.generated.css` (no se versiona). Si editas Sass con el servidor abierto, ejecuta `npm run carbon:css`. `app/carbon.css` coloca Carbon en la capa CSS anterior a las utilidades de Tailwind, que no carga preflight. Las fuentes IBM Plex se sirven localmente con Fontsource.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Desde la raíz: `docker compose up -d --build dashboard`. El contrato y las decisiones están en `docs/specs/telemetria.md` §10 y `knowledge/adrs/ADR-005-ui-carbon-v12.md`.

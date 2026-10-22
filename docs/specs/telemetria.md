@@ -1,7 +1,7 @@
 # Especificación del MVP: Telemetría de Autos en Tiempo Real
 
-**Versión:** 3.2
-**Stack:** Apache Kafka · Quarkus 3.40 LTS (Java 17) con Apache Flink 2.2 embebido · React 19 + Next.js 16 + shadcn/ui + MapLibre (mapcn) · todo en Docker Compose
+**Versión:** 3.3
+**Stack:** Apache Kafka · Quarkus 3.40 LTS (Java 17) con Apache Flink 2.2 embebido · React 19 + Next.js 16 + Carbon Design System (v12) + MapLibre (mapcn) · todo en Docker Compose
 **Escenario:** carreras de 3 autos en rutas establecidas (Av. Brasil, Panamericana Sur, Panamericana Norte y Vía Los Libertadores), seguidas en un mapa en tiempo real.
 
 > **Persistencia (v3.2):** la [especificación de persistencia](persistencia-posiciones-viajes.md) reemplaza el store en memoria y la reconstrucción al arrancar por PostgreSQL, y agrega el historial de viajes (feature `viajes`) y el contrato de eventos v2. Las secciones de esta especificación que la contradicen se marcan con **[v3.2]**.
@@ -39,7 +39,7 @@ flowchart LR
         FL["Flink 2.2 embebido<br/>MiniCluster local<br/>última posición por auto"]
         QK["autos y viajes<br/>REST + WebSocket"]
     end
-    NX["Next.js 16 + shadcn/ui<br/>mapa MapLibre (WebGL)"]
+    NX["Next.js 16 + Carbon Design System (v12)<br/>mapa MapLibre (WebGL)"]
 
     NX -- "POST /simulacion/iniciar · PUT velocidad" --> SIM
     SIM -- "key = carId · 1 ev/s por auto" --> K1
@@ -309,7 +309,7 @@ flink.topic.in=telemetria
 flink.topic.out=ultima-posicion
 ```
 
-## 10. Frontend (React 19 + Next.js 16 + shadcn/ui + MapLibre)
+## 10. Frontend (React 19 + Next.js 16 + Carbon Design System (v12) + MapLibre)
 
 ```mermaid
 flowchart TB
@@ -327,9 +327,9 @@ flowchart TB
 | Pieza | Versión / paquete |
 |---|---|
 | Next.js | **16.x** (App Router, React 19, TypeScript, Tailwind CSS v4) |
-| Componentes UI | **shadcn/ui** (`Card`, `Badge`, `Button`, `Select`, `Slider`, `Tooltip`) |
+| Componentes UI | **Carbon Design System** (`@carbon/react`, flag `enable-v12-release`): `Header`, `Button`, `IconButton`, `Select`, `Slider`, `Tag`, `ContentSwitcher`, `DatePicker`, `InlineNotification` |
 | Tema | **next-themes** (clase `dark` en `<html>`) |
-| Mapa | **mapcn** (`@mapcn/map`, registro shadcn sobre **MapLibre GL**) |
+| Mapa | **mapcn** (`@mapcn/map`, componente de mapcn sobre **MapLibre GL**) |
 | HTTP | **axios** 1.x |
 | Tiempo real | `WebSocket` nativo del navegador |
 
@@ -340,13 +340,13 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
 ```
 
-> Basemap: mapcn usa por defecto teselas de CARTO (OpenStreetMap). Para uso comercial se requiere licencia de CARTO o cambiar a otro proveedor compatible con MapLibre.
+> Basemap: OpenFreeMap (OpenMapTiles), recoloreado con grises de Carbon. Si falla la descarga del estilo, mapcn conserva su respaldo Carto. Se mantiene la atribución de cada proveedor.
 
 ### Requisitos funcionales
-- **RF-U1:** interfaz con el patrón *UI Shell* de Carbon: cabecera de 48 px (nombre, pestañas Carrera / Viajes / Operación —las dos últimas deshabilitadas hasta que existan—, estado de conexión y tema), panel lateral fijo de ~360 px y el mapa en el resto. En un celular el panel se apila sobre el mapa, que conserva al menos el 60 % de la altura. El componente del mapa es `"use client"` y se carga con `dynamic(..., { ssr: false })` dentro de un Client Component, porque MapLibre necesita `window`.
-- **RF-U2 (ruta):** `Select` de shadcn con las rutas de `GET /rutas` (nombre y km), deshabilitado durante una carrera. Al elegir una ruta:
+- **RF-U1:** interfaz con el patrón *UI Shell* de Carbon: cabecera de 48 px (nombre, pestañas Carrera / Viajes / Operación , estado de conexión y tema), mapa a pantalla completa, tarjeta flotante de 360 px con ruta, controles y clasificación, y barra de filtros y métricas a su derecha. La tarjeta no hace scroll a 1440×900. En un celular el panel se apila sobre el mapa, que conserva al menos el 60 % de la altura. El componente del mapa es `"use client"` y se carga con `dynamic(..., { ssr: false })` dentro de un Client Component, porque MapLibre necesita `window`.
+- **RF-U2 (ruta):** `Select` de Carbon con las rutas de `GET /rutas` (nombre y km), deshabilitado durante una carrera. Al elegir una ruta:
   - se dibuja su geometría (`GET /rutas/{id}`) con un borde y dos tramos: el **recorrido por el líder** (`--ruta-recorrido`) y el **pendiente** (`--ruta-pendiente`); el mapa se encuadra en ella, aunque no haya carrera;
-  - aparecen los marcadores **Salida** y **Meta** (`MapMarker` de mapcn, con íconos de `lucide-react` y el nombre de cada lugar) junto a sus extremos.
+  - aparecen los marcadores **Salida** y **Meta** (`MapMarker` de mapcn, con íconos de `@carbon/icons-react` y el nombre de cada lugar) junto a sus extremos.
 
   Al cargar la página se preselecciona la ruta de la carrera actual o de la última.
 - **RF-U3 (carrera):** botón **"Iniciar carrera" / "Detener" / "Nueva carrera"** según el estado, que llama a `POST /simulacion/iniciar {ruta}` o `POST /simulacion/detener`. `GET /simulacion` se consulta cada 1 s durante la carrera y cada 5 s el resto del tiempo.
@@ -354,9 +354,9 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
   - posición, color del auto, empresa · flota y km recorridos;
   - barra de progreso;
   - al llegar, una bandera y el tiempo de carrera (`m:ss,d` o `h:mm:ss,d`).
-- **RF-U5 (velocidad):** `Slider` de shadcn por auto (10–500 km/h, paso de 5). Mientras se arrastra muestra el valor; al soltar envía `PUT /simulacion/autos/{carId}/velocidad`. Funciona antes y durante la carrera.
+- **RF-U5 (velocidad):** `Slider` de Carbon por auto (10–500 km/h, paso de 5). Mientras se arrastra muestra el valor; al soltar envía `PUT /simulacion/autos/{carId}/velocidad`. Funciona antes y durante la carrera. Con el teclado se envía al salir del control, tanto desde el thumb como desde el campo numérico.
 - **RF-U6 (seguir al líder):** botón que, mientras está activo, centra el mapa cada segundo en el primero de la clasificación (con su posición interpolada). Es imprescindible en la Vía Los Libertadores (325 km).
-- **RF-U7:** filtro **empresa → flota** con dos `Select` de shadcn. "Todas las empresas" muestra todos los autos; al elegir una empresa quedan solo sus autos y se habilita el selector de flota; al elegir una flota, solo esa flota. Las opciones salen de los datos recibidos. El filtro se aplica con `setFilter` sobre la capa de autos.
+- **RF-U7:** filtro **empresa → flota** con dos `Select` de Carbon. "Todas las empresas" muestra todos los autos; al elegir una empresa quedan solo sus autos y se habilita el selector de flota; al elegir una flota, solo esa flota. Las opciones salen de los datos recibidos. El filtro se aplica con `setFilter` sobre la capa de autos.
 - **RF-U8:** cada auto es un **círculo con su color categórico** de Carbon (`--auto-1..3`, según el número de `auto-N`), su número y una flecha de rumbo (capa `symbol` con `icon-allow-overlap`):
   - la flecha se orienta según `heading` (`icon-rotate` con `icon-rotation-alignment: map`); el número no gira;
   - gris al llegar (motor OFF);
@@ -365,13 +365,19 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
   Las 4 variantes (tres colores y "off") se dibujan en canvas (`features/autos/vehiculo.ts`) con los colores del tema.
 - **RF-U9:** movimiento **interpolado** (`features/autos/animacion.ts`): entre dos eventos de un auto se lo desplaza en línea recta y se gira por el camino corto, repintando con `setData()` en cada `requestAnimationFrame`. Un salto de más de 2 km (p. ej. al empezar una carrera en otra ruta) no se anima.
 - **RF-U10:** carga inicial por `GET /autos` (axios) y cambios por WebSocket con reconexión y backoff exponencial. Cada evento se fusiona por `carId` solo si su `ts` es más reciente; el estado vive en `useRef`, fuera de React.
-- **RF-U12 (tema):** toda la interfaz admite **modo claro y oscuro**, con los tokens de Carbon G10 (claro) y G100 (oscuro) y la tipografía IBM Plex Sans / Mono.
+- **RF-U12 (tema):** toda la interfaz admite **modo claro y oscuro**, con los tokens de Carbon White (claro) y G100 (oscuro) y la tipografía IBM Plex Sans / Mono.
   - Un selector **Claro / Oscuro / Sistema** en la cabecera del panel; "Sistema" por defecto y la elección se guarda en el navegador.
-  - next-themes pone la clase `dark` en `<html>` antes de pintar, sin parpadeo. Los tokens de shadcn (`:root` / `.dark` en `globals.css`) cambian el panel y sus controles, y mapcn observa esa misma clase para alternar el mapa base claro u oscuro de CARTO.
+  - next-themes pone la clase `dark` en `<html>` antes de pintar, sin parpadeo. Carbon define White/G100 en `carbon.scss`; los tokens de `globals.css` apuntan a `--cds-*`. mapcn observa la misma clase y alterna el mapa base de OpenFreeMap recoloreado con grises de Carbon, con Carto como respaldo. La ruta es monocroma: recorrido sólido y pendiente punteado.
   - El popup de los autos y los marcadores de Salida y Meta usan tokens del tema.
   - La ruta y los íconos se vuelven a crear al cambiar el estilo, así que siguen visibles en plena carrera. MapLibre no entiende `var(--x)`: las capas leen los colores de las variables CSS al crearse (`leerToken`).
 - **RF-U13 (controles del mapa):** acercar, alejar, encuadrar la ruta y orientar al norte; escala métrica; centro y zoom actuales; leyenda con el color y la empresa de cada auto y los dos tramos de la ruta; y una etiqueta junto al primer auto que sigue en carrera con su posición, velocidad y km.
-- **RF-U11:** popup al pasar el mouse sobre un auto y métricas en el panel: estado de conexión, autos mostrados, edad del último dato y latencia p95 (`Date.now() - ts`), refrescadas una vez por segundo sin rerenderizar el mapa.
+- **RF-U11:** popup al pasar el mouse sobre un auto y métricas en la barra sobre el mapa: estado de conexión, autos mostrados, edad del último dato y latencia p95 (`Date.now() - ts`), refrescadas una vez por segundo sin rerenderizar el mapa.
+
+- **RF-U14 (Viajes):** `/viajes` agrupa los viajes del día por carrera, con clasificación (tiempo y diferencia para finalizados; distancia y metros detrás para el resto). Filtra por estado, ruta y fecha, permite cargar más páginas y se refresca cada 5 s mientras una carrera está en curso y solo hay una página cargada. Los viajes sin carrera quedan separados y se ignoran los reemplazados.
+- **RF-U15 (Repetición):** `/viajes/{viajeId}` muestra recorrido y muestras, reproductor 1×/4×/16× con saltos ±10 s, velocidad calculada y huecos mayores de 1,5 s. Empieza en pausa; ordena y deduplica las muestras por `ts`, y evita velocidades no finitas. Cambiar de auto reinicia mapa y reproductor.
+- **RF-U16 (Operación):** `/operacion` muestra readiness (200/503), detalle por check y canal, flujo de eventos y métricas Prometheus. Refresca cada 5 s; el lag es el máximo finito de las particiones de cada canal. `NEXT_PUBLIC_FLINK_UI_URL` configura el enlace a Flink y se incrusta al construir.
+
+Carbon activa v12 en Sass y React; las acciones principales usan `kind="secondary"` gris. Tailwind se usa sin preflight y Carbon está en una capa CSS anterior a las utilidades. IBM Plex se carga con Fontsource. Las pantallas usan las APIs públicas `index.ts` de cada feature. Los controles tienen etiquetas accesibles y foco visible.
 
 ## 11. Requisitos no funcionales
 
@@ -433,9 +439,11 @@ telemetria-flink/
 │       └── resources/       (application.properties, db/migration/, rutas/{indice.json, *.geojson}, escenarios/carrera.json)
 ├── dashboard-next/
 │   ├── Dockerfile                    (multi-stage: npm ci → next build → standalone)
-│   ├── app/page.tsx
+│   ├── app/                (page.tsx, viajes/, viajes/[viajeId]/, operacion/, carbon.scss, carbon.css, globals.css)
 │   ├── features/autos/      (components/{autos-map, autos-layer, ruta-layer, salida-meta, carrera-panel}, hooks/, api.ts, filtros.ts, animacion.ts, vehiculo.ts, types.ts)
-│   ├── components/ui/       (shadcn + mapcn)
+│   ├── features/viajes/     (cliente, agrupación, presentación, repetición, hooks/, components/, index.ts)
+│   ├── features/operacion/  (salud, Prometheus, cliente, components/, index.ts)
+│   ├── components/ui/       (solo map.tsx, generado por mapcn)
 │   └── lib/                 (instancia axios, utilidades)
 └── README.md
 ```
