@@ -1,11 +1,7 @@
 "use client"
 
-import { Flag, LocateFixed, Play, RotateCcw, Square } from "lucide-react"
-import { useId } from "react"
-
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { Button, IconButton, InlineNotification, Select, SelectItem } from "@carbon/react"
+import { Flag, LocationCurrent, PlayFilledAlt, Renew, StopFilledAlt } from "@carbon/icons-react"
 
 import type { Filtro, Opcion } from "../filtros"
 import { cronometro, km, tiempoCarrera } from "../formato"
@@ -20,61 +16,9 @@ export type ResumenMetricas = {
   latenciaP95Ms: number | null
 }
 
-const TODAS = "todas"
+const TODAS = ""
 
-/** Desplegable de Carbon: etiqueta visible arriba, campo con línea inferior y texto de ayuda opcional. */
-function Selector({
-  etiqueta,
-  todas,
-  opciones,
-  valor,
-  deshabilitado,
-  ayuda,
-  className,
-  onCambiar,
-}: {
-  etiqueta: string
-  todas?: string
-  opciones: { value: string; label: string }[]
-  valor: string | null
-  deshabilitado?: boolean
-  ayuda?: string
-  className?: string
-  onCambiar: (valor: string | null) => void
-}) {
-  const id = useId()
-  const items = todas ? [{ value: TODAS, label: todas }, ...opciones] : opciones
-  return (
-    <div className={cn("flex min-w-0 flex-col gap-2", className)}>
-      <span id={id} className="text-xs text-muted-foreground">
-        {etiqueta}
-      </span>
-      <Select
-        items={items}
-        value={valor ?? (todas ? TODAS : null)}
-        disabled={deshabilitado}
-        onValueChange={(v) => onCambiar(!v || v === TODAS ? null : String(v))}
-      >
-        <SelectTrigger
-          aria-labelledby={id}
-          className="h-10! w-full rounded-none border-0 border-b border-input bg-field px-4 dark:bg-field"
-        >
-          <SelectValue placeholder={etiqueta} />
-        </SelectTrigger>
-        <SelectContent>
-          {items.map((i) => (
-            <SelectItem key={i.value} value={i.value}>
-              {i.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {ayuda && <span className="text-xs text-muted-foreground">{ayuda}</span>}
-    </div>
-  )
-}
-
-/** Panel: ruta, control de la carrera, clasificación con velocidad por auto, filtro y métricas (spec §10). */
+/** Panel de la carrera (spec §10): ruta, control, clasificación con velocidad, filtro y métricas. */
 export function CarreraPanel({
   rutas,
   rutaSeleccionada,
@@ -119,83 +63,83 @@ export function CarreraPanel({
   // la clasificación solo tiene sentido para la ruta de la última carrera
   const deEstaRuta = simulacion?.ruta === rutaSeleccionada
   const clasificacion = simulacion?.autos ?? []
-
   const nueva = estado === "TERMINADA" || (deEstaRuta && clasificacion.some((a) => a.recorridoM > 0))
 
   return (
     <div className="flex flex-col">
-      <section className="flex flex-col gap-4 border-b p-4 pt-6">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl leading-7 font-normal">Carrera en {ruta?.nombre ?? "—"}</h1>
+      <section className="flex flex-col gap-3 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">
+            {enCurso ? "En curso" : estado === "TERMINADA" ? "Terminada" : "Lista"}
+          </span>
+          {enCurso && deEstaRuta && (
+            <span aria-label="Tiempo de carrera" className="font-mono text-xl">
+              {cronometro(tiempoCarrera(simulacion!.inicio, ahoraMs) ?? 0)}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl font-normal">Carrera en {ruta?.nombre ?? "—"}</h1>
           {ruta && (
             <p className="text-xs text-muted-foreground">
               {ruta.desde} → {ruta.hasta} · {km.format(ruta.km)} km
             </p>
           )}
         </div>
-        <Selector
-          etiqueta="Ruta"
-          opciones={rutas.map((r) => ({ value: r.id, label: `${r.nombre} · ${km.format(r.km)} km` }))}
-          valor={rutaSeleccionada}
-          deshabilitado={enCurso}
-          ayuda={enCurso ? "No se puede cambiar con la carrera en curso" : undefined}
-          onCambiar={(id) => id && onElegirRuta(id)}
-        />
-        <div className="flex flex-wrap gap-px">
+        <Select
+          id="ruta"
+          labelText="Ruta"
+          helperText={enCurso ? "Bloqueada durante la carrera" : undefined}
+          value={rutaSeleccionada ?? ""}
+          disabled={enCurso}
+          onChange={(e) => e.target.value && onElegirRuta(e.target.value)}
+        >
+          {rutas.map((r) => (
+            <SelectItem key={r.id} value={r.id} text={`${r.nombre} · ${km.format(r.km)} km`} />
+          ))}
+        </Select>
+        <div className="flex gap-2">
           {enCurso ? (
-            <Button
-              variant="destructive"
-              className="h-12 flex-1 justify-between rounded-none bg-destructive px-4 text-white hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90"
-              disabled={ocupado}
-              onClick={onDetener}
-            >
+            <Button kind="secondary" className="flex-1" renderIcon={StopFilledAlt} disabled={ocupado} onClick={onDetener}>
               Detener carrera
-              <Square className="fill-current" />
             </Button>
           ) : (
             <Button
-              className="h-12 flex-1 justify-between rounded-none px-4"
+              kind="secondary"
+              className="flex-1"
+              renderIcon={nueva ? Renew : PlayFilledAlt}
               disabled={ocupado || !rutaSeleccionada}
               onClick={onIniciar}
             >
               {nueva ? "Nueva carrera" : "Iniciar carrera"}
-              {nueva ? <RotateCcw /> : <Play className="fill-current" />}
             </Button>
           )}
-          <Button
-            variant={seguirLider ? "secondary" : "outline"}
-            className="h-12 rounded-none px-4"
+          <IconButton
+            label={seguirLider ? "Dejar de seguir al líder" : "Seguir al líder"}
+            kind={seguirLider ? "secondary" : "tertiary"}
             aria-pressed={seguirLider}
             onClick={() => onSeguirLider(!seguirLider)}
           >
-            <LocateFixed />
-            Seguir líder
-          </Button>
+            <LocationCurrent />
+          </IconButton>
         </div>
         {estado === "TERMINADA" && deEstaRuta && (
-          <p className="flex items-center gap-1.5 text-xs font-medium text-success">
-            <Flag className="size-3.5" />
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-success">
+            <Flag size={14} />
             Carrera terminada
           </p>
         )}
       </section>
 
-      <section aria-labelledby="titulo-clasificacion" className="border-b pt-4">
-        <div className="flex items-baseline justify-between px-4 pb-2">
-          <h2 id="titulo-clasificacion" className="text-sm font-semibold">
-            Clasificación
-          </h2>
-          {enCurso && deEstaRuta && (
-            <span className="font-mono text-sm tabular-nums">
-              {cronometro(tiempoCarrera(simulacion!.inicio, ahoraMs) ?? 0)}
-            </span>
-          )}
-        </div>
-        <ol>
+      <section aria-labelledby="titulo-clasificacion" className="flex flex-col gap-2 border-t px-2 pt-3 pb-2">
+        <h2 id="titulo-clasificacion" className="px-2 text-sm font-semibold">
+          Clasificación
+        </h2>
+        <ol className="flex flex-col gap-1">
           {clasificacion.map((a) => (
             <FilaCorredor
               key={a.carId}
-              auto={deEstaRuta ? a : { ...a, recorridoM: 0, llegadaMs: null, posicion: a.posicion }}
+              auto={deEstaRuta ? a : { ...a, recorridoM: 0, llegadaMs: null }}
               longitudM={deEstaRuta ? simulacion!.longitudM : 0}
               onVelocidad={onVelocidad}
             />
@@ -203,36 +147,42 @@ export function CarreraPanel({
         </ol>
       </section>
 
-      <section aria-labelledby="titulo-filtro" className="flex flex-col gap-3 border-b p-4">
+      <section aria-labelledby="titulo-filtro" className="flex flex-col gap-3 border-t p-4">
         <h2 id="titulo-filtro" className="text-sm font-semibold">
           Filtrar autos
         </h2>
         <div className="flex flex-wrap gap-2">
-          <Selector
-            etiqueta="Empresa"
-            todas="Todas las empresas"
-            opciones={empresas.map((o) => ({ value: o.id, label: `${o.nombre} · ${o.autos}` }))}
-            valor={filtro.empresa}
-            className="flex-[1_1_180px]"
-            onCambiar={(empresa) => onCambiarFiltro({ empresa, flota: null })}
-          />
-          <Selector
-            etiqueta="Flota"
-            todas="Todas las flotas"
-            opciones={flotas.map((o) => ({ value: o.id, label: `${o.nombre} · ${o.autos}` }))}
-            valor={filtro.flota}
-            deshabilitado={!filtro.empresa}
-            className="flex-[1_1_180px]"
-            onCambiar={(flota) => onCambiarFiltro({ ...filtro, flota })}
-          />
+          <Select
+            id="empresa"
+            labelText="Empresa"
+            className="flex-[1_1_150px]"
+            value={filtro.empresa ?? TODAS}
+            onChange={(e) => onCambiarFiltro({ empresa: e.target.value || null, flota: null })}
+          >
+            <SelectItem value={TODAS} text="Todas las empresas" />
+            {empresas.map((o) => (
+              <SelectItem key={o.id} value={o.id} text={`${o.nombre} · ${o.autos}`} />
+            ))}
+          </Select>
+          <Select
+            id="flota"
+            labelText="Flota"
+            className="flex-[1_1_150px]"
+            value={filtro.flota ?? TODAS}
+            disabled={!filtro.empresa}
+            onChange={(e) => onCambiarFiltro({ ...filtro, flota: e.target.value || null })}
+          >
+            <SelectItem value={TODAS} text="Todas las flotas" />
+            {flotas.map((o) => (
+              <SelectItem key={o.id} value={o.id} text={`${o.nombre} · ${o.autos}`} />
+            ))}
+          </Select>
         </div>
       </section>
 
       <MetricasTiles metricas={metricas} />
       {error && (
-        <p role="alert" className="px-4 py-2 text-xs text-error-text">
-          {error}
-        </p>
+        <InlineNotification kind="error" lowContrast hideCloseButton title="Error" subtitle={error} className="m-4" />
       )}
     </div>
   )

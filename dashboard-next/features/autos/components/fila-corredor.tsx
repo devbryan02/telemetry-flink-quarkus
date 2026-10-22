@@ -1,10 +1,8 @@
 "use client"
 
-import { Flag } from "lucide-react"
+import { Slider } from "@carbon/react"
+import { Flag } from "@carbon/icons-react"
 import { useState } from "react"
-
-import { Slider } from "@/components/ui/slider"
-import { cn } from "@/lib/utils"
 
 import { nombreEmpresa, nombreFlota } from "../filtros"
 import { cronometro, km } from "../formato"
@@ -14,7 +12,7 @@ import type { Clasificado } from "../types"
 export const VELOCIDAD_MIN = 10
 export const VELOCIDAD_MAX = 500
 
-/** Fila de la clasificación: posición, color del auto, progreso, llegada y slider de velocidad. */
+/** Fila compacta: posición, color, auto, avance (color del auto) y slider de velocidad de Carbon. */
 export function FilaCorredor({
   auto,
   longitudM,
@@ -24,18 +22,23 @@ export function FilaCorredor({
   longitudM: number
   onVelocidad: (carId: string, kmh: number) => void
 }) {
-  // mientras se arrastra se muestra el borrador; al soltar se envía y vuelve a mandar el valor del servidor
+  // mientras se arrastra se muestra el borrador; al soltar (o salir del control) se envía al servidor
   const [borrador, setBorrador] = useState<number | null>(null)
   const kmh = borrador ?? auto.velocidadKmh
+  const enviar = () => {
+    if (borrador !== null && borrador !== auto.velocidadKmh) onVelocidad(auto.carId, borrador)
+    setBorrador(null)
+  }
 
   const progreso = longitudM > 0 ? Math.min(100, (auto.recorridoM / longitudM) * 100) : 0
   const llego = auto.llegadaMs !== null
+  const color = varColor(auto.carId)
 
   return (
-    <li className="flex flex-col gap-2 border-t px-4 py-3" data-auto={auto.carId}>
-      <div className="flex items-center gap-3">
-        <span className="w-6 font-mono text-sm tabular-nums">{auto.posicion}º</span>
-        <span aria-hidden className="size-3 shrink-0" style={{ background: varColor(auto.carId) }} />
+    <li className="flex flex-col gap-1.5 rounded-lg bg-muted px-3 py-2.5" data-auto={auto.carId}>
+      <div className="flex items-center gap-2.5">
+        <span className="w-5 font-mono text-sm text-muted-foreground">{auto.posicion}º</span>
+        <span aria-hidden className="size-3 shrink-0 rounded-full" style={{ background: color }} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-sm font-semibold">{auto.carId}</span>
           <span className="truncate text-xs text-muted-foreground">
@@ -44,12 +47,12 @@ export function FilaCorredor({
           </span>
         </span>
         {llego ? (
-          <span className="flex items-center gap-1 font-mono text-sm font-medium text-success tabular-nums">
-            <Flag aria-label="Llegó" className="size-3.5" />
+          <span className="flex items-center gap-1 font-mono text-sm text-success">
+            <Flag aria-label="Llegó" size={14} />
             {cronometro(auto.llegadaMs!)}
           </span>
         ) : (
-          <span className="font-mono text-sm tabular-nums">{km.format(auto.recorridoM / 1000)} km</span>
+          <span className="font-mono text-sm">{km.format(auto.recorridoM / 1000)} km</span>
         )}
       </div>
       <div
@@ -58,29 +61,22 @@ export function FilaCorredor({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(progreso)}
-        className="h-1 bg-muted"
+        className="h-1 overflow-hidden rounded-full bg-border"
       >
-        <div className={cn("h-full", llego ? "bg-success" : "bg-primary")} style={{ width: `${progreso}%` }} />
+        <div className="h-full rounded-full" style={{ width: `${progreso}%`, background: color }} />
       </div>
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="shrink-0 text-xs text-muted-foreground">
-          Velocidad
-        </span>
-        <Slider
-          aria-label={`Velocidad de ${auto.carId}`}
-          min={VELOCIDAD_MIN}
-          max={VELOCIDAD_MAX}
-          step={5}
-          value={[kmh]}
-          disabled={llego}
-          onValueChange={(v) => setBorrador(Array.isArray(v) ? v[0] : v)}
-          onValueCommitted={(v) => {
-            setBorrador(null)
-            onVelocidad(auto.carId, Array.isArray(v) ? v[0] : v)
-          }}
-        />
-        <span className="shrink-0 text-right font-mono text-xs whitespace-nowrap tabular-nums">{kmh} km/h</span>
-      </div>
+      <Slider
+        id={`velocidad-${auto.carId}`}
+        labelText={`Velocidad de ${auto.carId} (km/h)`}
+        min={VELOCIDAD_MIN}
+        max={VELOCIDAD_MAX}
+        step={5}
+        value={kmh}
+        disabled={llego}
+        onChange={({ value }: { value: number }) => setBorrador(value)}
+        onRelease={enviar}
+        onBlur={enviar}
+      />
     </li>
   )
 }
