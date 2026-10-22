@@ -16,7 +16,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: tests que fallan**
+- [x] **Paso 1: tests que fallan**
 
 `dashboard-next/lib/secciones.test.ts`:
 
@@ -52,12 +52,12 @@ describe("siguienteTema", () => {
 
 En `vitest.config.ts` cambia `include` por `["features/**/*.test.ts", "lib/**/*.test.ts"]`.
 
-- [ ] **Paso 2: ver que fallan**
+- [x] **Paso 2: ver que fallan**
 
 Run: `npm test`
 Esperado: FAIL, porque no se encuentran `./secciones` ni `./tema`.
 
-- [ ] **Paso 3: implementar**
+- [x] **Paso 3: implementar**
 
 `dashboard-next/lib/secciones.ts`:
 
@@ -92,12 +92,12 @@ export function siguienteTema(actual: string | undefined): Tema {
 }
 ```
 
-- [ ] **Paso 4: ver que pasan**
+- [x] **Paso 4: ver que pasan**
 
 Run: `npm test`
 Esperado: PASS, los 6 casos nuevos más los existentes.
 
-- [ ] **Paso 5: selector de tema como acción de la cabecera**
+- [x] **Paso 5: selector de tema como acción de la cabecera**
 
 Reemplaza `dashboard-next/components/selector-tema.tsx`:
 
@@ -140,7 +140,7 @@ export function SelectorTema() {
 }
 ```
 
-- [ ] **Paso 6: cabecera con el `Header` de Carbon**
+- [x] **Paso 6: cabecera con el `Header` de Carbon**
 
 Reemplaza `dashboard-next/components/encabezado.tsx`:
 
@@ -195,7 +195,7 @@ export function Encabezado({ conexion }: { conexion?: Conexion }) {
 
 `autos-map.tsx` ya importa `Encabezado` desde `@/components/encabezado` y le pasa `conexion`, así que no cambia. El tipo `Conexion` que devuelve `useAutosSocket` debe coincidir con el exportado aquí: si `use-autos-socket.ts` declara su propio tipo con los mismos tres valores, déjalo; TypeScript lo valida en el build.
 
-- [ ] **Paso 7: verificar**
+- [x] **Paso 7: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -212,7 +212,7 @@ En el navegador:
 - el botón de tema rota claro → oscuro → sistema;
 - con Tab el foco se ve en cada elemento.
 
-- [ ] **Paso 8: commit**
+- [x] **Paso 8: commit**
 
 ```bash
 git add dashboard-next/lib/secciones.ts dashboard-next/lib/secciones.test.ts dashboard-next/lib/tema.ts \

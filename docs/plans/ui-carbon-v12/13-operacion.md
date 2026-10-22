@@ -48,7 +48,7 @@ export function tasaPorSegundo(anterior: number | null, actual: number | null, d
 
 ## Pasos
 
-- [ ] **Paso 1: tests que fallan**
+- [x] **Paso 1: tests que fallan**
 
 `features/operacion/salud.test.ts`:
 
@@ -129,12 +129,12 @@ describe("tasaPorSegundo", () => {
 })
 ```
 
-- [ ] **Paso 2: ver que fallan**
+- [x] **Paso 2: ver que fallan**
 
 Run: `npm test`
 Esperado: FAIL, porque no se encuentran `./salud` ni `./prometheus`.
 
-- [ ] **Paso 3: implementar `features/operacion/salud.ts`**
+- [x] **Paso 3: implementar `features/operacion/salud.ts`**
 
 ```ts
 export type Check = { name: string; status: "UP" | "DOWN"; data?: Record<string, unknown> }
@@ -164,7 +164,7 @@ export function filasSalud(s: Salud): FilaSalud[] {
 }
 ```
 
-- [ ] **Paso 4: implementar `features/operacion/prometheus.ts`**
+- [x] **Paso 4: implementar `features/operacion/prometheus.ts`**
 
 ```ts
 export type MuestraProm = { nombre: string; etiquetas: Record<string, string>; valor: number }
@@ -199,12 +199,12 @@ export function tasaPorSegundo(anterior: number | null, actual: number | null, d
 }
 ```
 
-- [ ] **Paso 5: ver que pasan**
+- [x] **Paso 5: ver que pasan**
 
 Run: `npm test`
 Esperado: PASS.
 
-- [ ] **Paso 6: cliente `features/operacion/api.ts`**
+- [x] **Paso 6: cliente `features/operacion/api.ts`**
 
 ```ts
 import { http } from "@/lib/http"
@@ -224,7 +224,7 @@ export async function obtenerMetricas(): Promise<MuestraProm[]> {
 }
 ```
 
-- [ ] **Paso 7: pantalla `features/operacion/components/operacion-pantalla.tsx`**
+- [x] **Paso 7: pantalla `features/operacion/components/operacion-pantalla.tsx`**
 
 ```tsx
 "use client"
@@ -398,7 +398,7 @@ export function OperacionPantalla() {
 
 `fill-success` y `fill-destructive` existen porque `--color-success` y `--color-destructive` ya están en `@theme inline`.
 
-- [ ] **Paso 8: exportar, ruta, sección y variable de entorno**
+- [x] **Paso 8: exportar, ruta, sección y variable de entorno**
 
 - `features/operacion/index.ts`:
   ```ts
@@ -409,7 +409,7 @@ export function OperacionPantalla() {
 - `lib/secciones.ts`: Operación pasa a `disponible: true`.
 - Busca dónde se documentan `NEXT_PUBLIC_API_URL` y `NEXT_PUBLIC_WS_URL`: `grep -rn "NEXT_PUBLIC_WS_URL" --include=*.example --include=*.yml --include=Dockerfile --include=*.md . | grep -v node_modules`. Agrega `NEXT_PUBLIC_FLINK_UI_URL=http://localhost:8081` en los mismos lugares: `.env.example`, `args` del servicio `dashboard` en `docker-compose.yml` y `ARG`/`ENV` del `Dockerfile` del dashboard.
 
-- [ ] **Paso 9: verificar**
+- [x] **Paso 9: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -424,7 +424,7 @@ Con la API arriba, en http://localhost:3000/operacion:
 - el lag de cada canal es un número;
 - **Review Focus 4:** detén PostgreSQL (`docker compose stop postgres`). En unos 10 s aparece "Readiness DOWN" con la base en rojo, sin el error "No se pudo leer la API". Después ejecuta `docker compose start postgres`.
 
-- [ ] **Paso 10: commit**
+- [x] **Paso 10: commit**
 
 ```bash
 git add dashboard-next/features/operacion dashboard-next/app/operacion dashboard-next/lib/secciones.ts

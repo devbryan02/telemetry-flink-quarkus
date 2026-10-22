@@ -1,5 +1,7 @@
 # UI Carbon v12: de shadcn a Carbon Design System — incrementos
 
+Los 14 incrementos están implementados. [Verificación, decisiones y menor visual diferido](../../test-cases/ui-carbon-v12.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** reemplazar shadcn/ui por Carbon Design System (`@carbon/react`) con el flag de v12 activado, y llevar al dashboard el diseño moderno aprobado: Carrera sin scroll, Viajes por carrera con repetición y Operación.

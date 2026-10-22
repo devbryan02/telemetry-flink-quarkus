@@ -20,7 +20,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: test que falla**
+- [x] **Paso 1: test que falla**
 
 `features/autos/estilo-mapa.test.ts`:
 
@@ -76,12 +76,12 @@ describe("recolorear", () => {
 })
 ```
 
-- [ ] **Paso 2: ver que falla**
+- [x] **Paso 2: ver que falla**
 
 Run: `npm test`
 Esperado: FAIL, porque no se encuentra `./estilo-mapa`.
 
-- [ ] **Paso 3: implementar `features/autos/estilo-mapa.ts`**
+- [x] **Paso 3: implementar `features/autos/estilo-mapa.ts`**
 
 ```ts
 import type { LayerSpecification, StyleSpecification } from "maplibre-gl"
@@ -150,12 +150,12 @@ export function recolorear(estilo: StyleSpecification, paleta: PaletaMapa): Styl
 }
 ```
 
-- [ ] **Paso 4: ver que pasa**
+- [x] **Paso 4: ver que pasa**
 
 Run: `npm test`
 Esperado: PASS.
 
-- [ ] **Paso 5: hook que descarga el estilo una vez**
+- [x] **Paso 5: hook que descarga el estilo una vez**
 
 `features/autos/hooks/use-estilos-mapa.ts`:
 
@@ -205,7 +205,7 @@ En `autos-map.tsx`:
 
 Exporta el hook desde `features/autos/index.ts` (lo usa 12): agrega `export { useEstilosMapa } from "./hooks/use-estilos-mapa"`.
 
-- [ ] **Paso 6: ruta monocroma**
+- [x] **Paso 6: ruta monocroma**
 
 En `app/globals.css`:
 - en `:root`, cambia los tres tokens de la ruta:
@@ -230,7 +230,7 @@ En `features/autos/components/ruta-layer.tsx`, dentro del `for` que crea `CAPA_P
 
 Conserva los anchos que ya tenga el archivo si son distintos; lo nuevo es solo el `line-dasharray`. Cambia los valores por defecto del arreglo a `"#a8a8a8"` (pendiente) y `"#161616"` (recorrido).
 
-- [ ] **Paso 7: verificar**
+- [x] **Paso 7: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -244,7 +244,7 @@ En el navegador:
 - al pasar a oscuro, el mapa pasa a Gray 100, la ruta recorrida se ve clara y los autos se redibujan (Review Focus 1);
 - con `ESTILO_BASE` apuntando a una URL inválida, la app sigue funcionando con Carto. Revierte esa prueba antes del commit.
 
-- [ ] **Paso 8: commit**
+- [x] **Paso 8: commit**
 
 ```bash
 git add dashboard-next/features/autos/estilo-mapa.ts dashboard-next/features/autos/estilo-mapa.test.ts \

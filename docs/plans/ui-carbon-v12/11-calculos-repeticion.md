@@ -43,7 +43,7 @@ export function estadoEn(r: Recorrido, ts: number): Instante | null
 
 ## Pasos
 
-- [ ] **Paso 1: distancia propia de la feature**
+- [x] **Paso 1: distancia propia de la feature**
 
 `features/viajes/distancia.ts`:
 
@@ -56,7 +56,7 @@ export function metros(a: { lat: number; lon: number }, b: { lat: number; lon: n
 }
 ```
 
-- [ ] **Paso 2: tests que fallan**
+- [x] **Paso 2: tests que fallan**
 
 `features/viajes/repeticion.test.ts`:
 
@@ -124,12 +124,12 @@ describe("estadoEn", () => {
 })
 ```
 
-- [ ] **Paso 3: ver que fallan**
+- [x] **Paso 3: ver que fallan**
 
 Run: `npm test`
 Esperado: FAIL, porque no se encuentra `./repeticion`.
 
-- [ ] **Paso 4: implementar `features/viajes/repeticion.ts`**
+- [x] **Paso 4: implementar `features/viajes/repeticion.ts`**
 
 ```ts
 import { metros } from "./distancia"
@@ -210,12 +210,12 @@ export function estadoEn(r: Recorrido, ts: number): Instante | null {
 }
 ```
 
-- [ ] **Paso 5: ver que pasan**
+- [x] **Paso 5: ver que pasan**
 
 Run: `npm test`
 Esperado: PASS, los 7 casos.
 
-- [ ] **Paso 6: verificar y commit**
+- [x] **Paso 6: verificar y commit**
 
 ```bash
 npm test && npm run lint && npm run build

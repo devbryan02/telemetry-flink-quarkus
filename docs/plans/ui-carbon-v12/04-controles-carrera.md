@@ -16,7 +16,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: fila de la clasificación**
+- [x] **Paso 1: fila de la clasificación**
 
 Reemplaza `features/autos/components/fila-corredor.tsx`:
 
@@ -105,7 +105,7 @@ export function FilaCorredor({
 }
 ```
 
-- [ ] **Paso 2: panel con controles de Carbon**
+- [x] **Paso 2: panel con controles de Carbon**
 
 Reemplaza `features/autos/components/carrera-panel.tsx` (mismas props que hoy):
 
@@ -301,7 +301,7 @@ export function CarreraPanel({
 }
 ```
 
-- [ ] **Paso 3: verificar**
+- [x] **Paso 3: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -316,7 +316,7 @@ En el navegador:
 - con el teclado (flechas y luego Tab), cambia al salir del control;
 - con la carrera en curso, la ruta queda bloqueada y muestra el texto de ayuda.
 
-- [ ] **Paso 4: commit**
+- [x] **Paso 4: commit**
 
 ```bash
 git add dashboard-next/features/autos/components/carrera-panel.tsx dashboard-next/features/autos/components/fila-corredor.tsx

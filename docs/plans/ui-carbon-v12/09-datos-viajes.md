@@ -57,11 +57,11 @@ export function agruparPorCarrera(viajes: ViajeVista[], resumenes: Map<string, R
 
 ## Pasos
 
-- [ ] **Paso 1: tipos**
+- [x] **Paso 1: tipos**
 
 Crea `features/viajes/types.ts` con exactamente los 6 tipos del bloque de Interfaces, cada uno con `export`, y este comentario arriba: `/** Contrato de GET /viajes (spec de persistencia §5.2). Copia propia de la feature: no se comparte con autos. */`.
 
-- [ ] **Paso 2: tests que fallan**
+- [x] **Paso 2: tests que fallan**
 
 `features/viajes/carreras.test.ts`:
 
@@ -148,12 +148,12 @@ describe("agruparPorCarrera", () => {
 })
 ```
 
-- [ ] **Paso 3: ver que fallan**
+- [x] **Paso 3: ver que fallan**
 
 Run: `npm test`
 Esperado: FAIL, porque no se encuentra `./carreras`.
 
-- [ ] **Paso 4: implementar `features/viajes/carreras.ts`**
+- [x] **Paso 4: implementar `features/viajes/carreras.ts`**
 
 ```ts
 import type { EstadoViaje, ResumenViaje, ViajeVista } from "./types"
@@ -247,12 +247,12 @@ export function agruparPorCarrera(viajes: ViajeVista[], resumenes: Map<string, R
 }
 ```
 
-- [ ] **Paso 5: ver que pasan**
+- [x] **Paso 5: ver que pasan**
 
 Run: `npm test`
 Esperado: PASS, los 7 casos.
 
-- [ ] **Paso 6: cliente `features/viajes/api.ts`**
+- [x] **Paso 6: cliente `features/viajes/api.ts`**
 
 ```ts
 import { http } from "@/lib/http"
@@ -308,7 +308,7 @@ export async function listarPosiciones(viajeId: string, signal?: AbortSignal): P
 
 El tope de 1000 por página viene de `ConsultaPagina` (`limit` entre 1 y 1000; si no, responde 400).
 
-- [ ] **Paso 7: verificar**
+- [x] **Paso 7: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -324,7 +324,7 @@ curl -s "localhost:8080/viajes?limit=5" | head -c 400
 
 Esperado: un JSON `{"items":[{"viajeId":…,"carreraId":…}],"nextCursor":…}` con los mismos nombres de campo que `types.ts`.
 
-- [ ] **Paso 8: commit**
+- [x] **Paso 8: commit**
 
 ```bash
 git add dashboard-next/features/viajes/types.ts dashboard-next/features/viajes/api.ts \

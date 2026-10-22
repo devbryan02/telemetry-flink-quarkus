@@ -15,7 +15,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: instalar dependencias**
+- [x] **Paso 1: instalar dependencias**
 
 ```bash
 cd dashboard-next
@@ -25,7 +25,7 @@ npm install -D sass
 
 Esperado: `package.json` gana las 4 dependencias y `sass` en `devDependencies`, sin errores de *peer dependencies* con React 19.3. Si npm se queja de React, **detente** y reporta la versión de `@carbon/react` y el mensaje: no uses `--force` ni `--legacy-peer-deps`.
 
-- [ ] **Paso 2: confirmar el flag y su sintaxis en la versión instalada**
+- [x] **Paso 2: confirmar el flag y su sintaxis en la versión instalada**
 
 ```bash
 grep -n -A3 "enable-v12-release" node_modules/@carbon/feature-flags/feature-flags.yml
@@ -40,7 +40,7 @@ Esperado:
 
 Anota en el commit la versión de `@carbon/react` (`npm ls @carbon/react`).
 
-- [ ] **Paso 3: crear `app/carbon.scss`**
+- [x] **Paso 3: crear `app/carbon.scss`**
 
 ```scss
 // Carbon Design System con el flag de v12: esquinas redondeadas, campos con borde y botones de ícono
@@ -53,7 +53,7 @@ Anota en el commit la versión de `@carbon/react` (`npm ls @carbon/react`).
 @use '@carbon/react';
 ```
 
-- [ ] **Paso 4: crear `components/flags-carbon.tsx`**
+- [x] **Paso 4: crear `components/flags-carbon.tsx`**
 
 ```tsx
 "use client"
@@ -69,7 +69,7 @@ export function FlagsCarbon({ children }: { children: ReactNode }) {
 
 Si el paso 2 mostró `enableV12Release` y no `flags`, usa `<FeatureFlags enableV12Release>{children}</FeatureFlags>`.
 
-- [ ] **Paso 5: tipografía con Fontsource y Carbon en `app/layout.tsx`**
+- [x] **Paso 5: tipografía con Fontsource y Carbon en `app/layout.tsx`**
 
 Reemplaza el archivo completo:
 
@@ -108,7 +108,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 ```
 
-- [ ] **Paso 6: Tailwind sin preflight en `app/globals.css`**
+- [x] **Paso 6: Tailwind sin preflight en `app/globals.css`**
 
 Carbon trae su propio *reset*; el preflight de Tailwind lo pisaría (botones, listas, encabezados). Cambia la línea 1:
 
@@ -132,7 +132,7 @@ Al inicio del bloque `:root { … }`, agrega las dos variables de fuente que ant
   --font-plex-mono: "IBM Plex Mono", Menlo, monospace;
 ```
 
-- [ ] **Paso 7: verificar**
+- [x] **Paso 7: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -149,7 +149,7 @@ Después, con `npm run dev`, abre http://localhost:3000 y revisa en las DevTools
 
 Si algo de shadcn se rompe por el reset, anótalo en el commit: se reemplaza en 04–06.
 
-- [ ] **Paso 8: commit**
+- [x] **Paso 8: commit**
 
 ```bash
 git add dashboard-next/package.json dashboard-next/package-lock.json dashboard-next/app/carbon.scss \

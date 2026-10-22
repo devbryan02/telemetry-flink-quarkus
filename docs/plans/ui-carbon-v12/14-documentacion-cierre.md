@@ -14,7 +14,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: ADR-005**
+- [x] **Paso 1: ADR-005**
 
 `knowledge/adrs/ADR-005-ui-carbon-v12.md`:
 
@@ -41,14 +41,14 @@ Límites que se aceptan:
 - **Componentes propios:** algunos (tarjetas de carrera, chips de métricas, gráfico de velocidad) son propios con tokens de Carbon, porque Carbon no los ofrece.
 ```
 
-- [ ] **Paso 2: índice de conocimiento**
+- [x] **Paso 2: índice de conocimiento**
 
 En `knowledge/README.md`:
 - en la tabla de stack, la fila del frontend dice ahora `React 19 + Next.js 16 + Carbon Design System (flag v12) + mapcn ([ADR-005](adrs/ADR-005-ui-carbon-v12.md))`;
 - la fila de ADR-003 queda con el estado `Aceptado (sin persistencia → ADR-004; shadcn/ui → ADR-005)`;
 - agrega la fila de ADR-005 con el resumen «UI con `@carbon/react` y el flag `enable-v12-release`, temas White/G100, acción principal gris y mapa base gris» y el estado `Aceptado`.
 
-- [ ] **Paso 3: spec `docs/specs/telemetria.md`**
+- [x] **Paso 3: spec `docs/specs/telemetria.md`**
 
 - **Stack (línea 4) y diagrama (línea 42):** cambia `shadcn/ui` por `Carbon Design System (v12)`.
 - **Título de §10:** `## 10. Frontend (React 19 + Next.js 16 + Carbon Design System v12 + MapLibre)`.
@@ -62,7 +62,7 @@ En `knowledge/README.md`:
   - **RF-U15 (Operación):** `/operacion` muestra la readiness (200/503) por check y canal, el flujo de eventos y las métricas Prometheus documentadas en el runbook. Se refresca cada 5 s.
 - **Árbol de carpetas:** `components/ui/` pasa a ser «solo `map.tsx` (mapcn)». Agrega `features/viajes/` y `features/operacion/`, y `app/viajes/` y `app/operacion/`.
 
-- [ ] **Paso 4: CLAUDE.md**
+- [x] **Paso 4: CLAUDE.md**
 
 - Diagrama (línea 23): `Next.js 16 + Carbon v12 + mapcn (MapLibre) ◄── axios (autos, ruta, simulación, viajes, operación) + WebSocket nativo`.
 - En **Frontend**, reemplaza la viñeta «interfaz basada en Carbon: tokens G10/G100…» por:
@@ -73,11 +73,11 @@ En `knowledge/README.md`:
 - Agrega una viñeta: «Pantallas: `/` (carrera), `/viajes` (por carrera), `/viajes/[viajeId]` (repetición) y `/operacion`. Las features `viajes` y `operacion` tienen su propio cliente HTTP y no importan internos de `autos`.»
 - En **Base de conocimiento**, agrega `ADR-005` (Carbon v12) junto a ADR-003 y ADR-004.
 
-- [ ] **Paso 5: índice de planes**
+- [x] **Paso 5: índice de planes**
 
 La iniciativa ya figura en `docs/plans/README.md` desde que se redactó el plan. Al cerrar, agrega en `docs/plans/ui-carbon-v12/README.md`, debajo del título, la línea `Los 14 incrementos están implementados.` (como en `persistencia-posiciones-viajes/README.md`).
 
-- [ ] **Paso 6: verificación final**
+- [x] **Paso 6: verificación final**
 
 ```bash
 cd dashboard-next && npm test && npm run lint && npm run build && cd ..
@@ -99,7 +99,7 @@ Recorrido en http://localhost:3000 (contenedor), en claro y en oscuro:
 4. **Operación:** readiness UP, canales en verde y eventos por segundo ≈ 3 durante una carrera.
 5. **Teclado:** el foco es visible en cabecera, selects, sliders, botones del mapa y reproductor.
 
-- [ ] **Paso 7: commit**
+- [x] **Paso 7: commit**
 
 ```bash
 git add knowledge/adrs/ADR-005-ui-carbon-v12.md knowledge/README.md docs/specs/telemetria.md CLAUDE.md docs/plans/ui-carbon-v12/README.md

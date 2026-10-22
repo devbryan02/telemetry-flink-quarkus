@@ -16,7 +16,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: controles con `IconButton`**
+- [x] **Paso 1: controles con `IconButton`**
 
 Reemplaza `features/autos/components/controles-mapa.tsx`:
 
@@ -95,7 +95,7 @@ export function ControlesMapa({ ruta }: { ruta: FeatureCollection<LineString> | 
 }
 ```
 
-- [ ] **Paso 2: leyenda como tarjeta flotante**
+- [x] **Paso 2: leyenda como tarjeta flotante**
 
 Reemplaza `features/autos/components/leyenda.tsx`:
 
@@ -136,7 +136,7 @@ export function Leyenda({ autos }: { autos: { carId: string; empresa: string }[]
 
 El tramo pendiente se dibuja punteado desde ahora, para que coincida con el mapa monocromo de 07.
 
-- [ ] **Paso 3: verificar**
+- [x] **Paso 3: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -150,7 +150,7 @@ En el navegador:
 - la leyenda no tapa los controles;
 - en oscuro, controles y leyenda usan `#262626` con texto claro.
 
-- [ ] **Paso 4: commit**
+- [x] **Paso 4: commit**
 
 ```bash
 git add dashboard-next/features/autos/components/controles-mapa.tsx dashboard-next/features/autos/components/leyenda.tsx

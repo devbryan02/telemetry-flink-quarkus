@@ -28,7 +28,7 @@ Cada token apunta a un `--cds-*` siempre que existe uno equivalente.
 
 ## Pasos
 
-- [ ] **Paso 1: tema por clase en `app/carbon.scss`**
+- [x] **Paso 1: tema por clase en `app/carbon.scss`**
 
 Agrega al final del archivo:
 
@@ -47,7 +47,7 @@ Agrega al final del archivo:
 }
 ```
 
-- [ ] **Paso 2: tokens de la app desde Carbon en `app/globals.css`**
+- [x] **Paso 2: tokens de la app desde Carbon en `app/globals.css`**
 
 Reemplaza los bloques `:root { … }` y `.dark { … }` completos (de `:root {` hasta el `}` que cierra `.dark`) por:
 
@@ -120,7 +120,7 @@ Reemplaza los bloques `:root { … }` y `.dark { … }` completos (de `:root {` 
 - Agrega `--shadow-flotante: var(--sombra);` dentro de `@theme inline`. Así `shadow-flotante` queda disponible para las tarjetas de 05 y 06.
 - Los colores de la ruta cambian a monocromo en 07; aquí solo se mueven.
 
-- [ ] **Paso 3: actualizar el comentario de `components/theme-provider.tsx`**
+- [x] **Paso 3: actualizar el comentario de `components/theme-provider.tsx`**
 
 ```tsx
 /**
@@ -129,7 +129,7 @@ Reemplaza los bloques `:root { … }` y `.dark { … }` completos (de `:root {` 
  */
 ```
 
-- [ ] **Paso 4: verificar**
+- [x] **Paso 4: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -147,7 +147,7 @@ Después, con `npm run dev` y una carrera en curso (`curl -H 'Content-Type: appl
    - la ruta y los autos se redibujan con los colores oscuros (Review Focus 1).
 3. **Volver a claro sin recargar:** no queda ningún color mezclado.
 
-- [ ] **Paso 5: commit**
+- [x] **Paso 5: commit**
 
 ```bash
 git add dashboard-next/app/carbon.scss dashboard-next/app/globals.css dashboard-next/components/theme-provider.tsx

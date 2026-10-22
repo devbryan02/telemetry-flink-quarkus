@@ -18,7 +18,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: comprobar que no queda ningún uso**
+- [x] **Paso 1: comprobar que no queda ningún uso**
 
 ```bash
 cd dashboard-next
@@ -27,7 +27,7 @@ grep -rn "components/ui/\(badge\|button\|card\|select\|slider\|tooltip\)" app co
 
 Esperado: solo `app/layout.tsx` (el `TooltipProvider`). Si aparece otro archivo, pásalo a Carbon antes de seguir; los incrementos 03–06 debían cubrirlos todos.
 
-- [ ] **Paso 2: íconos de Carbon en `salida-meta.tsx`**
+- [x] **Paso 2: íconos de Carbon en `salida-meta.tsx`**
 
 Cambia el import de la línea 4:
 
@@ -53,7 +53,7 @@ grep -rln "lucide-react" app components features lib
 
 Esperado: solo `components/ui/map.tsx`.
 
-- [ ] **Paso 3: sin `TooltipProvider` en `app/layout.tsx`**
+- [x] **Paso 3: sin `TooltipProvider` en `app/layout.tsx`**
 
 Borra `import { TooltipProvider } from "@/components/ui/tooltip"` y cambia:
 
@@ -71,7 +71,7 @@ por:
 
 Los tooltips de Carbon (`IconButton`, `HeaderGlobalAction`) no necesitan proveedor.
 
-- [ ] **Paso 4: borrar archivos, imports CSS y dependencias**
+- [x] **Paso 4: borrar archivos, imports CSS y dependencias**
 
 ```bash
 git rm components/ui/badge.tsx components/ui/button.tsx components/ui/card.tsx \
@@ -86,7 +86,7 @@ En `app/globals.css`, borra las líneas:
 @import "shadcn/tailwind.css";
 ```
 
-- [ ] **Paso 5: verificar**
+- [x] **Paso 5: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -103,7 +103,7 @@ En el navegador:
 - la carrera funciona igual que en 07: tooltips, selects, sliders y botones;
 - los marcadores de salida y meta muestran sus íconos.
 
-- [ ] **Paso 6: commit**
+- [x] **Paso 6: commit**
 
 ```bash
 git add -A dashboard-next/components/ui dashboard-next/components.json

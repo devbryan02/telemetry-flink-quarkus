@@ -21,7 +21,7 @@
 
 ## Pasos
 
-- [ ] **Paso 1: métricas como chips**
+- [x] **Paso 1: métricas como chips**
 
 Crea `features/autos/components/metricas-chips.tsx` y borra `metricas-tiles.tsx`:
 
@@ -49,7 +49,7 @@ export function MetricasChips({ metricas }: { metricas: ResumenMetricas }) {
 }
 ```
 
-- [ ] **Paso 2: barra sobre el mapa**
+- [x] **Paso 2: barra sobre el mapa**
 
 Crea `features/autos/components/barra-mapa.tsx`:
 
@@ -118,14 +118,14 @@ export function BarraMapa({
 }
 ```
 
-- [ ] **Paso 3: panel sin filtro ni métricas**
+- [x] **Paso 3: panel sin filtro ni métricas**
 
 En `features/autos/components/carrera-panel.tsx`:
 1. Borra la sección `<section aria-labelledby="titulo-filtro" …>…</section>` completa, la línea `<MetricasTiles metricas={metricas} />`, el import de `MetricasTiles`, la constante `TODAS` y el import de `Filtro, Opcion` (solo si ya no se usa).
 2. Quita de la desestructuración y del tipo de props: `empresas`, `flotas`, `filtro`, `onCambiarFiltro` y `metricas`.
 3. Quita `SelectItem` del import de Carbon solo si ya no se usa (sigue en uso para la ruta).
 
-- [ ] **Paso 4: layout del mapa a pantalla completa en `autos-map.tsx`**
+- [x] **Paso 4: layout del mapa a pantalla completa en `autos-map.tsx`**
 
 Agrega el import `import { BarraMapa } from "./barra-mapa"` y reemplaza el `return (…)` del componente `AutosMap` por:
 
@@ -223,7 +223,7 @@ function PanelVivo({ resumir, opciones, filtro, onCambiarFiltro, ...resto }: Pro
 
 `overflow-y-auto` queda solo como respaldo para pantallas de menos de 768 px de alto; el criterio de este incremento es que a 1440×900 no aparezca.
 
-- [ ] **Paso 5: verificar**
+- [x] **Paso 5: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -241,7 +241,7 @@ En el navegador, con una carrera en curso:
    - el mapa queda debajo con unos 500 px de alto y se puede mover.
 4. **Filtro y chips:** el filtro de empresa/flota sigue ocultando autos en el mapa, y los chips se actualizan cada segundo.
 
-- [ ] **Paso 6: commit**
+- [x] **Paso 6: commit**
 
 ```bash
 git add dashboard-next/features/autos/components/barra-mapa.tsx dashboard-next/features/autos/components/metricas-chips.tsx \

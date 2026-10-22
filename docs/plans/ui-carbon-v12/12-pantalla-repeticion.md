@@ -28,7 +28,7 @@ La repetición empieza **en pausa**: el movimiento solo arranca si el usuario lo
 
 ## Pasos
 
-- [ ] **Paso 1: test que falla de `trazoVelocidad`**
+- [x] **Paso 1: test que falla de `trazoVelocidad`**
 
 Agrega a `features/viajes/presentacion.test.ts` (y suma `trazoVelocidad` al import):
 
@@ -50,7 +50,7 @@ describe("trazoVelocidad", () => {
 Run: `npm test`
 Esperado: FAIL, porque `trazoVelocidad` no existe.
 
-- [ ] **Paso 2: implementar `trazoVelocidad` en `presentacion.ts`**
+- [x] **Paso 2: implementar `trazoVelocidad` en `presentacion.ts`**
 
 ```ts
 /** Path SVG de la velocidad en el tiempo: x = ts dentro de [inicio, fin], y = km/h (0 abajo, maxKmh arriba). */
@@ -72,7 +72,7 @@ export function trazoVelocidad(
 Run: `npm test`
 Esperado: PASS.
 
-- [ ] **Paso 3: hook de datos y reproducción `features/viajes/hooks/use-repeticion.ts`**
+- [x] **Paso 3: hook de datos y reproducción `features/viajes/hooks/use-repeticion.ts`**
 
 ```ts
 "use client"
@@ -163,7 +163,7 @@ export function useRepeticion(viajeId: string) {
 
 En `features/viajes/api.ts`, amplía el filtro de `listarViajes` con `carreraId`: el parámetro pasa a ser `filtro: { desde?: number; hasta?: number; cursor?: string; carreraId?: string }`. La API ya lo acepta (`ViajesResource.listar`).
 
-- [ ] **Paso 4: capa del recorrido `features/viajes/components/recorrido-layer.tsx`**
+- [x] **Paso 4: capa del recorrido `features/viajes/components/recorrido-layer.tsx`**
 
 ```tsx
 "use client"
@@ -253,7 +253,7 @@ export function RecorridoLayer({ recorrido, huecos, instante, tokenColor }: { re
 }
 ```
 
-- [ ] **Paso 5: gráfico y reproductor**
+- [x] **Paso 5: gráfico y reproductor**
 
 `features/viajes/components/grafico-velocidad.tsx`:
 
@@ -358,7 +358,7 @@ export function Reproductor(props: {
 
 Si `Rewind_10` o `Forward_10` no existen en tu versión de `@carbon/icons-react` (`grep -o "Rewind_10\|Forward_10" node_modules/@carbon/icons-react/lib/index.d.ts`), usa `SkipBack` y `SkipForward`.
 
-- [ ] **Paso 6: pantalla `features/viajes/components/repeticion-pantalla.tsx`**
+- [x] **Paso 6: pantalla `features/viajes/components/repeticion-pantalla.tsx`**
 
 ```tsx
 "use client"
@@ -475,7 +475,7 @@ export function RepeticionPantalla() {
 }
 ```
 
-- [ ] **Paso 7: exportar y crear la ruta**
+- [x] **Paso 7: exportar y crear la ruta**
 
 En `features/viajes/index.ts` agrega `export { RepeticionPantalla } from "./components/repeticion-pantalla"`.
 
@@ -493,7 +493,7 @@ export default function Page() {
 }
 ```
 
-- [ ] **Paso 8: verificar**
+- [x] **Paso 8: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -510,7 +510,7 @@ Con una carrera terminada en Av. Brasil, desde `/viajes` haz clic en el 3.º y r
 6. **Viaje inexistente:** `/viajes/00000000-0000-0000-0000-000000000000` muestra "El viaje no existe.".
 7. **Huecos:** el simulador emite uno por segundo, así que en una carrera normal la leyenda del gráfico dice "Sin huecos". La detección está cubierta por los tests de `huecos` (11). No detengas la API para forzar uno: el simulador vive en la misma JVM y se pierde la carrera.
 
-- [ ] **Paso 9: commit**
+- [x] **Paso 9: commit**
 
 ```bash
 git add dashboard-next/features/viajes dashboard-next/app/viajes

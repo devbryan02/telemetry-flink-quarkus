@@ -32,7 +32,7 @@ Arriba van los filtros por estado, ruta y fecha. Cada auto es un enlace a su rep
 
 ## Pasos
 
-- [ ] **Paso 1: tests de presentación que fallan**
+- [x] **Paso 1: tests de presentación que fallan**
 
 `features/viajes/presentacion.test.ts`:
 
@@ -95,12 +95,12 @@ describe("trazoSvg", () => {
 })
 ```
 
-- [ ] **Paso 2: ver que fallan**
+- [x] **Paso 2: ver que fallan**
 
 Run: `npm test`
 Esperado: FAIL, porque no se encuentra `./presentacion`.
 
-- [ ] **Paso 3: implementar `features/viajes/presentacion.ts`**
+- [x] **Paso 3: implementar `features/viajes/presentacion.ts`**
 
 ```ts
 import type { Carrera, EstadoCarrera, Participante } from "./carreras"
@@ -161,14 +161,14 @@ export function trazoSvg(coords: [number, number][], ancho: number, alto: number
 }
 ```
 
-- [ ] **Paso 4: ver que pasan**
+- [x] **Paso 4: ver que pasan**
 
 Run: `npm test`
 Esperado: PASS.
 
 Si `"2.57 km"` falla por el separador decimal: el repo usa `es-PE`, que en Node da punto (ver `features/autos/formato.test.ts`). Ajusta el test al separador que devuelve `Intl` en tu Node, no el formateador.
 
-- [ ] **Paso 5: rutas en el cliente de viajes**
+- [x] **Paso 5: rutas en el cliente de viajes**
 
 En `features/viajes/types.ts` agrega:
 
@@ -193,7 +193,7 @@ export async function obtenerGeometria(id: string, signal?: AbortSignal): Promis
 
 Y amplía el `import type` de `./types` con `ResumenRuta` y `GeometriaRuta`.
 
-- [ ] **Paso 6: hook de datos `features/viajes/hooks/use-carreras.ts`**
+- [x] **Paso 6: hook de datos `features/viajes/hooks/use-carreras.ts`**
 
 ```ts
 "use client"
@@ -283,7 +283,7 @@ export function useCarreras(fecha: Date) {
 }
 ```
 
-- [ ] **Paso 7: tarjeta de una carrera `features/viajes/components/tarjeta-carrera.tsx`**
+- [x] **Paso 7: tarjeta de una carrera `features/viajes/components/tarjeta-carrera.tsx`**
 
 ```tsx
 import { Tag } from "@carbon/react"
@@ -380,7 +380,7 @@ export function TarjetaCarrera({
 
 `avance`: `distanciaM / (longitudKm * 1000) * 100`, que se simplifica a `distanciaM / (longitudKm * 10)`.
 
-- [ ] **Paso 8: pantalla `features/viajes/components/viajes-pantalla.tsx`**
+- [x] **Paso 8: pantalla `features/viajes/components/viajes-pantalla.tsx`**
 
 ```tsx
 "use client"
@@ -489,7 +489,7 @@ export function ViajesPantalla() {
 }
 ```
 
-- [ ] **Paso 9: exportar y crear la ruta**
+- [x] **Paso 9: exportar y crear la ruta**
 
 `features/viajes/index.ts`:
 
@@ -514,7 +514,7 @@ export default function Page() {
 
 En `features/autos/index.ts` agrega `export { varColor } from "./paleta"`. En `lib/secciones.ts`, cambia Viajes a `disponible: true`.
 
-- [ ] **Paso 10: verificar**
+- [x] **Paso 10: verificar**
 
 ```bash
 npm test && npm run lint && npm run build
@@ -530,7 +530,7 @@ Con la API arriba, haz dos carreras (una terminada y una en curso). Después:
 - con una fecha sin carreras se ve el mensaje vacío;
 - un clic en un auto navega a `/viajes/<uuid>`. Esa ruta da 404 hasta 12; es lo esperado.
 
-- [ ] **Paso 11: commit**
+- [x] **Paso 11: commit**
 
 ```bash
 git add dashboard-next/features/viajes dashboard-next/app/viajes/page.tsx dashboard-next/features/autos/index.ts dashboard-next/lib/secciones.ts
