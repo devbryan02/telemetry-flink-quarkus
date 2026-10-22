@@ -12,10 +12,10 @@ const c = (x: Partial<Carrera>): Carrera => ({
 })
 
 describe("rangoDelDia", () => {
-  it("va de la medianoche local al último milisegundo del día", () => {
+  it("abarca el día completo con la medianoche siguiente como límite exclusivo de la API", () => {
     expect(rangoDelDia(new Date(2026, 9, 21, 15, 30))).toEqual({
       desde: new Date(2026, 9, 21).getTime(),
-      hasta: new Date(2026, 9, 22).getTime() - 1,
+      hasta: new Date(2026, 9, 22).getTime(),
     })
   })
 })

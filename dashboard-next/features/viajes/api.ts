@@ -42,10 +42,10 @@ export async function listarPosiciones(viajeId: string, signal?: AbortSignal): P
       signal,
     })
     todas.push(...data.items)
-    if (!data.nextCursor) break
+    if (!data.nextCursor) return todas
     cursor = data.nextCursor
   }
-  return todas
+  throw new Error("El viaje supera el límite de 50 páginas de muestras; no se pudo cargar el recorrido completo.")
 }
 
 export async function listarRutas(signal?: AbortSignal): Promise<ResumenRuta[]> {

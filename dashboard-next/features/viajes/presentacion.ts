@@ -5,7 +5,7 @@ const km2 = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 2, maximumFr
 /** Día local completo de la fecha dada, en epoch ms (los filtros `desde`/`hasta` de GET /viajes). */
 export function rangoDelDia(d: Date): { desde: number; hasta: number } {
   const desde = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-  const hasta = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() - 1
+  const hasta = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime()
   return { desde, hasta }
 }
 

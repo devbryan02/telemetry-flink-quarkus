@@ -73,6 +73,7 @@ export function FilaCorredor({
         if (valor !== null && valor !== "") enviar(Number(valor))
       }}>
       <Slider
+        className="w-full [&_.cds--slider]:min-w-0 [&_.cds--slider]:flex-1 [&_.cds--slider-container]:w-full [&_.cds--slider-container]:gap-2"
         id={`velocidad-${auto.carId}`}
         labelText={`Velocidad de ${auto.carId} (km/h)`}
         min={VELOCIDAD_MIN}

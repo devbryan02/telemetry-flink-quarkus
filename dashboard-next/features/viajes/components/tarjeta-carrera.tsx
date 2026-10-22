@@ -64,19 +64,19 @@ export function TarjetaCarrera({
                 <Link
                   href={`/viajes/${p.viajeId}`}
                   title={`Ver el viaje de ${p.carId}`}
-                  className="grid min-h-10 grid-cols-[28px_minmax(120px,1.2fr)_minmax(80px,2fr)_88px_80px_72px] items-center gap-3 rounded-md px-2 text-foreground no-underline hover:bg-muted"
+                  className="grid min-h-10 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-md px-2 py-2 text-foreground no-underline hover:bg-muted min-[900px]:grid-cols-[28px_minmax(120px,1.2fr)_minmax(80px,2fr)_88px_80px_72px]"
                 >
                   <span className="flex size-6 items-center justify-center rounded-full bg-muted font-mono text-xs">{p.posicion}</span>
                   <span className="flex min-w-0 items-center gap-2">
                     <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: varColor(p.carId) }} />
                     <strong className="font-semibold">{p.carId}</strong>
                   </span>
-                  <span role="progressbar" aria-label={`Avance de ${p.carId}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(avance)} className="h-1 overflow-hidden rounded-full bg-border">
+                  <span role="progressbar" aria-label={`Avance de ${p.carId}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(avance)} className="col-span-3 row-start-3 h-1 overflow-hidden rounded-full bg-border min-[900px]:col-span-1 min-[900px]:row-auto">
                     <span className="block h-full rounded-full" style={{ width: `${avance}%`, background: varColor(p.carId) }} />
                   </span>
                   <span className="text-right font-mono">{valor}</span>
-                  <span className="text-right font-mono text-xs text-muted-foreground">{diferencia}</span>
-                  <span className="text-right font-mono text-xs text-muted-foreground">
+                  <span aria-label="Diferencia" className="col-span-2 text-right font-mono text-xs text-muted-foreground min-[900px]:col-span-1">{diferencia}</span>
+                  <span aria-label="Velocidad media" className="text-right font-mono text-xs text-muted-foreground">
                     {p.velocidadMediaKmh === null ? "—" : `${kmh.format(p.velocidadMediaKmh)} km/h`}
                   </span>
                 </Link>

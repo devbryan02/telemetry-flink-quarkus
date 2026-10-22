@@ -1,95 +1,58 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useReducer, useRef } from "react"
 
 import { listarViajes, obtenerResumenes } from "../api"
-import { agruparPorCarrera, type Carrera } from "../carreras"
+import { agruparPorCarrera } from "../carreras"
+import { crearEstado, reducirCarreras, type ModoCarga } from "../estado-carreras"
 import { rangoDelDia } from "../presentacion"
-import type { ResumenViaje, ViajeVista } from "../types"
 
 const REFRESCO_EN_CURSO_MS = 5_000
 
-type Estado = { carreras: Carrera[]; cargando: boolean; error: string | null; hayMas: boolean }
-
-/** Viajes del día agrupados por carrera; refresca mientras hay una carrera en curso y solo hay una página. */
+/** Cancela solicitudes anteriores y aplica resultados solo a la fecha y página vigentes. */
 export function useCarreras(fecha: Date) {
-  const [viajes, setViajes] = useState<ViajeVista[]>([])
-  const [resumenes, setResumenes] = useState(new Map<string, ResumenViaje>())
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [paginas, setPaginas] = useState(0)
-  const [estado, setEstado] = useState<Omit<Estado, "carreras" | "hayMas">>({ cargando: true, error: null })
   const dia = fecha.toDateString()
-  const [diaGuardado, setDiaGuardado] = useState(dia)
-  // Al cambiar de día se descartan los datos anteriores antes de pintarlos.
-  if (diaGuardado !== dia) {
-    setDiaGuardado(dia)
-    setViajes([])
-    setResumenes(new Map())
-    setCursor(null)
-    setPaginas(0)
-    setEstado({ cargando: true, error: null })
-  }
+  const [datos, enviar] = useReducer(reducirCarreras, dia, crearEstado)
+  const pendiente = useRef<AbortController | null>(null)
+  const secuencia = useRef(0)
+  if (datos.dia !== dia) enviar({ tipo: "dia", dia })
 
-  const cargar = useCallback(
-    async (desdeCursor: string | null, signal?: AbortSignal) => {
-      const { desde, hasta } = rangoDelDia(new Date(dia))
-      const pagina = await listarViajes({ desde, hasta, cursor: desdeCursor ?? undefined }, signal)
-      const nuevos = await obtenerResumenes(pagina.items.map((v) => v.viajeId), signal)
-      return { pagina, nuevos }
-    },
-    [dia],
-  )
-
-  // primera página al cambiar de día
-  useEffect(() => {
+  const pedir = useCallback(async (modo: ModoCarga, cursor: string | null) => {
+    // Un refresco periódico nunca interrumpe una carga inicial ni una ampliación.
+    if (modo === "refresco" && pendiente.current && !pendiente.current.signal.aborted) return
+    pendiente.current?.abort()
     const control = new AbortController()
-    cargar(null, control.signal)
-      .then(({ pagina, nuevos }) => {
-        if (control.signal.aborted) return
-        setViajes(pagina.items)
-        setResumenes(nuevos)
-        setCursor(pagina.nextCursor)
-        setPaginas(1)
-        setEstado({ cargando: false, error: null })
-      })
-      .catch((e: unknown) => {
-        if (!control.signal.aborted) setEstado({ cargando: false, error: e instanceof Error ? e.message : "Error desconocido" })
-      })
-    return () => control.abort()
-  }, [cargar])
+    pendiente.current = control
+    const solicitud = ++secuencia.current
+    enviar({ tipo: "iniciar", dia, solicitud, modo })
+    try {
+      const rango = rangoDelDia(new Date(dia))
+      const pagina = await listarViajes({ ...rango, cursor: cursor ?? undefined }, control.signal)
+      const resumenes = await obtenerResumenes(pagina.items.map(v => v.viajeId), control.signal)
+      if (!control.signal.aborted) enviar({ tipo: "recibir", dia, solicitud, modo, pagina, resumenes })
+    } catch (e) {
+      if (!control.signal.aborted) enviar({ tipo: "error", dia, solicitud, mensaje: e instanceof Error ? e.message : "Error desconocido" })
+    } finally {
+      if (pendiente.current === control) pendiente.current = null
+    }
+  }, [dia])
 
-  const carreras = agruparPorCarrera(viajes, resumenes)
-  const enCurso = paginas === 1 && carreras.some((c) => c.estado === "EN_CURSO")
+  useEffect(() => {
+    void pedir("inicial", null)
+    return () => pendiente.current?.abort()
+  }, [pedir])
 
-  // con una carrera en curso, la primera página se vuelve a pedir cada 5 s
+  const carreras = agruparPorCarrera(datos.viajes, datos.resumenes)
+  const enCurso = datos.paginas === 1 && carreras.some(c => c.estado === "EN_CURSO")
   useEffect(() => {
     if (!enCurso) return
-    const id = setInterval(() => {
-      cargar(null)
-        .then(({ pagina, nuevos }) => {
-          setViajes(pagina.items)
-          setResumenes(nuevos)
-          setCursor(pagina.nextCursor)
-        })
-        .catch(() => undefined)
-    }, REFRESCO_EN_CURSO_MS)
+    const id = setInterval(() => void pedir("refresco", null), REFRESCO_EN_CURSO_MS)
     return () => clearInterval(id)
-  }, [enCurso, cargar])
+  }, [enCurso, pedir])
 
   const cargarMas = useCallback(async () => {
-    if (!cursor) return
-    setEstado((e) => ({ ...e, cargando: true }))
-    try {
-      const { pagina, nuevos } = await cargar(cursor)
-      setViajes((vs) => [...vs, ...pagina.items])
-      setResumenes((r) => new Map([...r, ...nuevos]))
-      setCursor(pagina.nextCursor)
-      setPaginas((n) => n + 1)
-      setEstado({ cargando: false, error: null })
-    } catch (e) {
-      setEstado({ cargando: false, error: e instanceof Error ? e.message : "Error desconocido" })
-    }
-  }, [cursor, cargar])
+    if (datos.cursor && !datos.cargando) await pedir("mas", datos.cursor)
+  }, [datos.cursor, datos.cargando, pedir])
 
-  return { carreras, ...estado, hayMas: cursor !== null, cargarMas }
+  return { carreras, cargando: datos.cargando, error: datos.error, hayMas: datos.cursor !== null, cargarMas }
 }

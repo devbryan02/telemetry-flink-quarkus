@@ -63,7 +63,7 @@ export function ViajesPantalla() {
               size="sm"
               selectedIndex={ESTADOS.indexOf(estado)}
               onChange={({ index }) => setEstado(ESTADOS[index ?? 0])}
-              className="w-auto"
+              className="w-full min-w-0 sm:w-auto"
             >
               {ESTADOS.map((e) => (
                 <Switch key={e ?? "todas"} name={e ?? "todas"} text={e ? `${NOMBRE[e]} · ${conteo[e]}` : `Todas · ${carreras.length}`} />
