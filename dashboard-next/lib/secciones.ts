@@ -3,7 +3,7 @@ export type Seccion = { href: string; nombre: string; disponible: boolean }
 /** Secciones de la cabecera. Una sección se muestra cuando su pantalla existe. */
 export const SECCIONES: Seccion[] = [
   { href: "/", nombre: "Carrera", disponible: true },
-  { href: "/viajes", nombre: "Viajes", disponible: false },
+  { href: "/viajes", nombre: "Viajes", disponible: true },
   { href: "/operacion", nombre: "Operación", disponible: false },
 ]
 

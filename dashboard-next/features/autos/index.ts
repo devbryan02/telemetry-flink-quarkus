@@ -3,3 +3,4 @@ export { AutosDashboard } from "./components/autos-dashboard"
 export type { Auto } from "./types"
 
 export { useEstilosMapa } from "./hooks/use-estilos-mapa"
+export { varColor } from "./paleta"

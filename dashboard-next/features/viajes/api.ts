@@ -1,6 +1,6 @@
 import { http } from "@/lib/http"
 
-import type { Pagina, PosicionVista, ResumenViaje, ViajeDetalle, ViajeVista } from "./types"
+import type { GeometriaRuta, ResumenRuta, Pagina, PosicionVista, ResumenViaje, ViajeDetalle, ViajeVista } from "./types"
 
 /** Límite por página que pide la pantalla; la API acepta de 1 a 1000 (ConsultaPagina). */
 const LIMITE_VIAJES = 100
@@ -46,4 +46,14 @@ export async function listarPosiciones(viajeId: string, signal?: AbortSignal): P
     cursor = data.nextCursor
   }
   return todas
+}
+
+export async function listarRutas(signal?: AbortSignal): Promise<ResumenRuta[]> {
+  const { data } = await http.get<ResumenRuta[]>("/rutas", { signal })
+  return data
+}
+
+export async function obtenerGeometria(id: string, signal?: AbortSignal): Promise<GeometriaRuta> {
+  const { data } = await http.get<GeometriaRuta>(`/rutas/${encodeURIComponent(id)}`, { signal })
+  return data
 }

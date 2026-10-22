@@ -5,3 +5,6 @@ export type ResumenViaje = { cantidadMuestras: number; ultimoTs: number; duracio
 export type ViajeDetalle = { viaje: ViajeVista; resumen: ResumenViaje }
 export type PosicionVista = { eventId: string; viajeId: string; tipoEvento: string; receivedAt: string; carId: string; companyId: string | null; fleetId: string | null; lat: number; lon: number; heading: number; engine: string; battery: number; ts: number }
 export type Pagina<T> = { items: T[]; nextCursor: string | null }
+
+export type ResumenRuta = { id: string; nombre: string; desde: string; hasta: string; km: number }
+export type GeometriaRuta = { features: { geometry: { coordinates: [number, number][] } }[] }
