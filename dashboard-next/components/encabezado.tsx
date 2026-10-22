@@ -1,66 +1,46 @@
-import { Wifi, WifiOff } from "lucide-react"
+"use client"
+
+import { Header, HeaderGlobalBar, HeaderMenuItem, HeaderName, HeaderNavigation, Tag, Theme } from "@carbon/react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import { SelectorTema } from "@/components/selector-tema"
-import { cn } from "@/lib/utils"
+import { SECCIONES, seccionActiva } from "@/lib/secciones"
 
-type Conexion = "conectando" | "abierta" | "reconectando"
+export type Conexion = "conectando" | "abierta" | "reconectando"
 
-const ETIQUETA: Record<Conexion, string> = { conectando: "Conectando", abierta: "En vivo", reconectando: "Reconectando" }
-const PESTANAS = [
-  { nombre: "Carrera", activa: true },
-  { nombre: "Viajes", activa: false },
-  { nombre: "Operación", activa: false },
-] as const
+const ESTADO: Record<Conexion, { texto: string; tipo: "green" | "gray" | "red" }> = {
+  conectando: { texto: "Conectando", tipo: "gray" },
+  abierta: { texto: "En vivo", tipo: "green" },
+  reconectando: { texto: "Reconectando", tipo: "red" },
+}
 
-/**
- * Cabecera tipo UI Shell de Carbon: nombre, secciones, estado del WebSocket y tema.
- * Es G100 en ambos temas: la clase `dark` hace que sus controles usen los tokens oscuros.
- */
-export function Encabezado({ conexion }: { conexion: Conexion }) {
-  const enVivo = conexion === "abierta"
+/** UI Shell de Carbon: G100 en ambos temas, secciones como rutas de Next, estado del WebSocket y tema. */
+export function Encabezado({ conexion }: { conexion?: Conexion }) {
+  const activa = seccionActiva(usePathname())
   return (
-    <header className="dark flex h-12 shrink-0 items-center border-b border-header-border bg-header text-header-foreground">
-      <span className="px-4 text-sm whitespace-nowrap">
-        Telemetría <span className="hidden font-semibold sm:inline">[Carrera]</span>
-      </span>
-      <nav aria-label="Secciones" className="flex h-12 border-l border-header-border">
-        {PESTANAS.map((p) =>
-          p.activa ? (
-            <span
-              key={p.nombre}
-              aria-current="page"
-              className="flex items-center bg-white/10 px-4 text-sm shadow-[inset_0_-3px_0_var(--primary)]"
-            >
-              {p.nombre}
-            </span>
-          ) : (
-            <button
-              key={p.nombre}
-              type="button"
-              disabled
-              title="Próximamente"
-              className="hidden px-4 text-sm text-header-foreground/50 sm:block"
-            >
-              {p.nombre}
-            </button>
-          ),
-        )}
-      </nav>
-      <div className="ml-auto flex items-center gap-2 pr-2">
-        {/* Colores de las etiquetas de estado de Carbon G100 (verde 80/20 y rojo 80/20): fijos como la cabecera */}
-        <span
-          role="status"
-          className={cn(
-            "inline-flex h-6 items-center gap-1.5 rounded-full px-2 text-xs whitespace-nowrap",
-            enVivo ? "bg-[#044317] text-[#a7f0ba]" : "bg-[#750e13] text-[#ffd7d9]",
+    <Theme theme="g100">
+      {/* El Header de Carbon es fixed; aquí va en el flujo para que el layout flex no lo tape */}
+      <Header aria-label="Telemetría" className="static!">
+        <HeaderName as={Link} href="/" prefix="Telemetría">
+          [Carrera]
+        </HeaderName>
+        <HeaderNavigation aria-label="Secciones">
+          {SECCIONES.filter((s) => s.disponible).map((s) => (
+            <HeaderMenuItem key={s.href} as={Link} href={s.href} isActive={activa === s.href}>
+              {s.nombre}
+            </HeaderMenuItem>
+          ))}
+        </HeaderNavigation>
+        <HeaderGlobalBar>
+          {conexion && (
+            <Tag type={ESTADO[conexion].tipo} size="sm" role="status" className="self-center">
+              {ESTADO[conexion].texto}
+            </Tag>
           )}
-        >
-          {/* el ícono cambia de forma con el estado: en el celular el texto queda solo para lectores de pantalla */}
-          {enVivo ? <Wifi aria-hidden className="size-3.5" /> : <WifiOff aria-hidden className="size-3.5" />}
-          <span className="sr-only sm:not-sr-only">{ETIQUETA[conexion]}</span>
-        </span>
-        <SelectorTema />
-      </div>
-    </header>
+          <SelectorTema />
+        </HeaderGlobalBar>
+      </Header>
+    </Theme>
   )
 }
