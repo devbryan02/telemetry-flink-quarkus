@@ -9,6 +9,7 @@ Los planes se organizan por iniciativa. Cada carpeta reúne sus incrementos y un
 | Telemetría MVP | [Índice e incrementos 01–14](telemetria-mvp/README.md) | [Telemetría de autos en tiempo real](../specs/telemetria.md) |
 | Persistencia de posiciones y viajes | [Índice e incrementos 01–08](persistencia-posiciones-viajes/README.md) | [Últimas posiciones e historial de viajes](../specs/persistencia-posiciones-viajes.md) |
 | UI Carbon · opción A | [Plan e incrementos 1–11](ui-carbon/README.md) | [Telemetría §10](../specs/telemetria.md) |
+| UI Carbon v12 (de shadcn a Carbon) | [Índice e incrementos 01–14](ui-carbon-v12/README.md) | [Telemetría §10](../specs/telemetria.md) |
 
 ## Convención
 
