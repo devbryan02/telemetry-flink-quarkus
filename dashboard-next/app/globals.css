@@ -1,4 +1,7 @@
-@import "tailwindcss";
+/* Sin preflight: el reset es el de Carbon (app/carbon.scss). Tailwind aporta tema y utilidades de layout. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -55,6 +58,8 @@
 }
 
 :root {
+  --font-plex-sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-plex-mono: "IBM Plex Mono", Menlo, monospace;
   --background: #f4f4f4;
   --foreground: #161616;
   --card: #ffffff;
