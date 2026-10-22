@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, IconButton, InlineNotification, Select, SelectItem } from "@carbon/react"
+import { Button, IconButton, InlineNotification, Select, SelectItem, Tag } from "@carbon/react"
 import { Flag, LocationCurrent, PlayFilledAlt, Renew, StopFilledAlt } from "@carbon/icons-react"
 
 import { cronometro, km, tiempoCarrera } from "../formato"
@@ -56,9 +56,9 @@ export function CarreraPanel({
     <div className="flex flex-col">
       <section className="flex flex-col gap-3 p-4">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">
+          <Tag type="gray" size="md" className="m-0!">
             {enCurso ? "En curso" : estado === "TERMINADA" ? "Terminada" : "Lista"}
-          </span>
+          </Tag>
           {enCurso && deEstaRuta && (
             <span aria-label="Tiempo de carrera" className="font-mono text-xl">
               {cronometro(tiempoCarrera(simulacion!.inicio, ahoraMs) ?? 0)}
@@ -75,8 +75,12 @@ export function CarreraPanel({
         </div>
         <Select
           id="ruta"
-          labelText="Ruta"
-          helperText={enCurso ? "Bloqueada durante la carrera" : undefined}
+          size="md"
+          labelText={
+            <>
+              Ruta{enCurso && " · bloqueada durante la carrera"}
+            </>
+          }
           value={rutaSeleccionada ?? ""}
           disabled={enCurso}
           onChange={(e) => e.target.value && onElegirRuta(e.target.value)}
@@ -87,12 +91,13 @@ export function CarreraPanel({
         </Select>
         <div className="flex gap-2">
           {enCurso ? (
-            <Button kind="secondary" className="flex-1" renderIcon={StopFilledAlt} disabled={ocupado} onClick={onDetener}>
+            <Button kind="secondary" size="md" className="flex-1" renderIcon={StopFilledAlt} disabled={ocupado} onClick={onDetener}>
               Detener carrera
             </Button>
           ) : (
             <Button
               kind="secondary"
+              size="md"
               className="flex-1"
               renderIcon={nueva ? Renew : PlayFilledAlt}
               disabled={ocupado || !rutaSeleccionada}
@@ -104,6 +109,7 @@ export function CarreraPanel({
           <IconButton
             label={seguirLider ? "Dejar de seguir al líder" : "Seguir al líder"}
             kind={seguirLider ? "secondary" : "tertiary"}
+            size="md"
             aria-pressed={seguirLider}
             onClick={() => onSeguirLider(!seguirLider)}
           >

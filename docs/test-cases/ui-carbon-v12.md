@@ -55,6 +55,22 @@ Cada decisión conserva su motivo y el coste si debe cambiarse:
 
 Los controles del mapa usaban los **48×48 px** predeterminados de Carbon v12; el brief indicaba 40×40 px. Se resolvió con `size="md"` en los cuatro `IconButton` de `controles-mapa.tsx`: en Docker miden 40×40 px, siguen siendo circulares y no tapan la leyenda. No quedan hallazgos pendientes.
 
+## Panel de la carrera igual al diseño
+
+Revisión posterior al cierre: con una carrera en curso, el panel hacía scroll porque cada fila llevaba la etiqueta de velocidad en su propia línea, el mínimo y el máximo del slider y un campo numérico de 48 px. Se igualó al diseño `Moderno-Carrera`:
+- velocidad en una sola línea, con la etiqueta "Velocidad", el slider y una píldora `N km/h`;
+- estado en un `Tag`; "bloqueada durante la carrera" dentro de la etiqueta de la ruta;
+- select y botones de 40 px.
+
+Además se corrigió un fallo previo: Carbon llama a `onChange` cuando cambia la prop `value`, y ese eco del sondeo quedaba como borrador. Desde entonces, la fila dejaba de reflejar los cambios de velocidad hechos por otro cliente.
+
+| Comprobación (Docker, Chrome 1440×900, carrera en curso) | Resultado |
+|---|---|
+| Panel | 614 px de alto, sin scroll; filas de 104 px; mínimo y máximo ocultos |
+| Cambio externo por `PUT` | La fila pasa a 175 y vuelve a 170 sin recargar |
+| Teclado (flechas y salir del control) | La API recibe el nuevo valor y la fila lo conserva |
+| Tema oscuro | Tag, píldoras y slider legibles |
+
 ## Repetir la verificación
 
 Desde `dashboard-next/`, ejecutar `npm test`, `npm run lint` y `npm run build`. Desde la raíz, `docker compose up -d --build --no-deps dashboard`, con el backend ya saludable, y abrir `http://localhost:3000`.

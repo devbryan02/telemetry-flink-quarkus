@@ -67,23 +67,37 @@ export function FilaCorredor({
       >
         <div className="h-full rounded-full" style={{ width: `${progreso}%`, background: color }} />
       </div>
-      {/* Carbon solo llama onBlur en su campo numérico. El thumb publica su valor por aria-valuenow. */}
-      <div onBlur={(e) => {
-        const valor = e.target instanceof HTMLInputElement ? e.target.value : e.target.getAttribute("aria-valuenow")
-        if (valor !== null && valor !== "") enviar(Number(valor))
-      }}>
-      <Slider
-        className="w-full [&_.cds--slider]:min-w-0 [&_.cds--slider]:flex-1 [&_.cds--slider-container]:w-full [&_.cds--slider-container]:gap-2"
-        id={`velocidad-${auto.carId}`}
-        labelText={`Velocidad de ${auto.carId} (km/h)`}
-        min={VELOCIDAD_MIN}
-        max={VELOCIDAD_MAX}
-        step={5}
-        value={kmh}
-        disabled={llego}
-        onChange={({ value }: { value: number }) => setBorrador(value)}
-        onRelease={({ value }) => enviar(value)}
-      />
+      {/* Una sola línea, como en el diseño: sin campo numérico ni mínimo/máximo; el valor va en la píldora.
+          Carbon no llama onBlur en el thumb: publica su valor por aria-valuenow. */}
+      <div
+        className="flex items-center gap-2.5"
+        onBlur={(e) => {
+          const valor = e.target.getAttribute("aria-valuenow")
+          if (valor !== null && valor !== "") enviar(Number(valor))
+        }}
+      >
+        <span aria-hidden className="text-xs text-muted-foreground">
+          Velocidad
+        </span>
+        <Slider
+          className="min-w-0 flex-1 [&_.cds--slider]:min-w-0 [&_.cds--slider]:flex-1 [&_.cds--slider-container]:w-full [&_.cds--slider-container>span]:hidden"
+          id={`velocidad-${auto.carId}`}
+          labelText={`Velocidad de ${auto.carId} (km/h)`}
+          hideLabel
+          hideTextInput
+          min={VELOCIDAD_MIN}
+          max={VELOCIDAD_MAX}
+          step={5}
+          value={kmh}
+          disabled={llego}
+          // Carbon también llama onChange cuando cambia la prop value (sondeo): ese eco no es un borrador
+          onChange={({ value }: { value: number }) => setBorrador(value === auto.velocidadKmh ? null : value)}
+          onRelease={({ value }) => enviar(value)}
+        />
+        <span className="flex h-6 shrink-0 items-center gap-1 rounded-full border bg-card px-2.5 font-mono text-xs whitespace-nowrap">
+          {kmh}
+          <span className="text-muted-foreground">km/h</span>
+        </span>
       </div>
     </li>
   )
