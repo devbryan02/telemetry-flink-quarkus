@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "carbon:css": "sass --load-path=node_modules --no-source-map --style=compressed app/carbon.scss app/carbon.generated.css",
+    "predev": "npm run carbon:css",
+    "prebuild": "npm run carbon:css",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
