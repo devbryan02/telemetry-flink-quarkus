@@ -25,8 +25,10 @@ export function FilaCorredor({
   // mientras se arrastra se muestra el borrador; al soltar (o salir del control) se envía al servidor
   const [borrador, setBorrador] = useState<number | null>(null)
   const kmh = borrador ?? auto.velocidadKmh
-  const enviar = () => {
-    if (borrador !== null && borrador !== auto.velocidadKmh) onVelocidad(auto.carId, borrador)
+  const enviar = (valor: number) => {
+    if (Number.isFinite(valor) && valor !== auto.velocidadKmh) {
+      onVelocidad(auto.carId, Math.max(VELOCIDAD_MIN, Math.min(VELOCIDAD_MAX, valor)))
+    }
     setBorrador(null)
   }
 
@@ -65,6 +67,11 @@ export function FilaCorredor({
       >
         <div className="h-full rounded-full" style={{ width: `${progreso}%`, background: color }} />
       </div>
+      {/* Carbon solo llama onBlur en su campo numérico. El thumb publica su valor por aria-valuenow. */}
+      <div onBlur={(e) => {
+        const valor = e.target instanceof HTMLInputElement ? e.target.value : e.target.getAttribute("aria-valuenow")
+        if (valor !== null && valor !== "") enviar(Number(valor))
+      }}>
       <Slider
         id={`velocidad-${auto.carId}`}
         labelText={`Velocidad de ${auto.carId} (km/h)`}
@@ -74,9 +81,9 @@ export function FilaCorredor({
         value={kmh}
         disabled={llego}
         onChange={({ value }: { value: number }) => setBorrador(value)}
-        onRelease={enviar}
-        onBlur={enviar}
+        onRelease={({ value }) => enviar(value)}
       />
+      </div>
     </li>
   )
 }

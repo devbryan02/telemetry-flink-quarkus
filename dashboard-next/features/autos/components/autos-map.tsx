@@ -34,6 +34,7 @@ import type { Auto, EstadoSimulacion, ResumenRuta } from "../types"
 import { AutosLayer, type AutosLayerHandle, type Lider } from "./autos-layer"
 import { ControlesMapa } from "./controles-mapa"
 import { Leyenda } from "./leyenda"
+import { BarraMapa } from "./barra-mapa"
 import { CarreraPanel, type ResumenMetricas } from "./carrera-panel"
 import { RutaLayer } from "./ruta-layer"
 import { SalidaMeta } from "./salida-meta"
@@ -235,11 +236,19 @@ ${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
   return (
     <div className="flex h-full flex-col">
       <Encabezado conexion={conexion} />
-      <div className="flex min-h-0 flex-1 flex-wrap">
-        <aside
-          aria-label="Control de la carrera"
-          className="flex max-h-full min-w-0 flex-[1_1_340px] flex-col overflow-y-auto border-r bg-card min-[900px]:max-w-[400px]"
-        >
+      {/* El mapa llena el área y el control flota encima; en el celular el mapa pasa debajo con altura propia */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="absolute inset-0 max-sm:static max-sm:order-last max-sm:h-[60dvh] max-sm:shrink-0">
+          <Map ref={mapa} center={LIMA} zoom={11}>
+            <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
+            <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
+            <AutosLayer ref={capa} filtro={filtro} lider={etiquetaMapa} />
+            <ControlesMapa ruta={geometria} />
+          </Map>
+          {leyenda.length > 0 && <Leyenda autos={leyenda} />}
+        </div>
+        {/* pointer-events-none deja arrastrar el mapa entre las tarjetas */}
+        <div className="pointer-events-none relative flex min-h-0 flex-wrap items-start gap-4 p-4">
           <PanelVivo
             resumir={resumir}
             opciones={opciones}
@@ -257,28 +266,22 @@ ${primero.velocidadKmh} km/h · ${km.format(primero.recorridoM / 1000)} km`
             onCambiarFiltro={cambiarFiltro}
             error={error}
           />
-        </aside>
-        <div className="relative min-h-[60dvh] min-w-0 flex-[999_1_560px]">
-          <Map ref={mapa} center={LIMA} zoom={11}>
-            <RutaLayer ruta={geometria} progreso={fraccionLider(simulacion, rutaSeleccionada)} />
-            <SalidaMeta ruta={geometria} desde={resumenRuta?.desde} hasta={resumenRuta?.hasta} />
-            <AutosLayer ref={capa} filtro={filtro} lider={etiquetaMapa} />
-            <ControlesMapa ruta={geometria} />
-          </Map>
-          {leyenda.length > 0 && <Leyenda autos={leyenda} />}
         </div>
       </div>
     </div>
   )
+
 }
 
-type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "metricas" | "empresas" | "flotas" | "ahoraMs"> & {
+type PropsPanel = Omit<Parameters<typeof CarreraPanel>[0], "ahoraMs"> & {
   resumir: () => ResumenMetricas
   opciones: () => { empresas: Opcion[]; flotas: Opcion[] }
+  filtro: Filtro
+  onCambiarFiltro: (filtro: Filtro) => void
 }
 
-/** Refresca métricas y opciones del filtro una vez por segundo sin rerenderizar el mapa. */
-function PanelVivo({ resumir, opciones, ...resto }: PropsPanel) {
+/** Refresca métricas, opciones del filtro y cronómetro una vez por segundo sin rerenderizar el mapa. */
+function PanelVivo({ resumir, opciones, filtro, onCambiarFiltro, ...resto }: PropsPanel) {
   const [metricas, setMetricas] = useState<ResumenMetricas>({
     total: 0,
     mostrados: 0,
@@ -297,7 +300,23 @@ function PanelVivo({ resumir, opciones, ...resto }: PropsPanel) {
     refrescar()
     const id = setInterval(refrescar, 1_000)
     return () => clearInterval(id)
-  }, [resumir, opciones, resto.filtro])
+  }, [resumir, opciones, filtro])
 
-  return <CarreraPanel metricas={metricas} ahoraMs={ahoraMs} empresas={listas.empresas} flotas={listas.flotas} {...resto} />
+  return (
+    <>
+      <aside
+        aria-label="Control de la carrera"
+        className="pointer-events-auto flex max-h-full w-full min-w-0 flex-col overflow-y-auto rounded-lg bg-card shadow-flotante sm:w-[360px]"
+      >
+        <CarreraPanel ahoraMs={ahoraMs} {...resto} />
+      </aside>
+      <BarraMapa
+        empresas={listas.empresas}
+        flotas={listas.flotas}
+        filtro={filtro}
+        onCambiarFiltro={onCambiarFiltro}
+        metricas={metricas}
+      />
+    </>
+  )
 }

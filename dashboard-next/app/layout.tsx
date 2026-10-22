@@ -10,7 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 
 // Carbon primero: globals.css (Tailwind y tokens de la app) se apoya en sus variables --cds-*
 // Generado por `npm run carbon:css` desde carbon.scss: Turbopack en Windows no resuelve los imports SCSS de Carbon
-import "./carbon.generated.css"
+import "./carbon.css"
 import "./globals.css"
 
 export const metadata: Metadata = {

@@ -1,5 +1,5 @@
 /* Sin preflight: el reset es el de Carbon (app/carbon.scss). Tailwind aporta tema y utilidades de layout. */
-@layer theme, base, components, utilities;
+@layer theme, base, carbon, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 @import "tw-animate-css";

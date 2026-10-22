@@ -3,11 +3,9 @@
 import { Button, IconButton, InlineNotification, Select, SelectItem } from "@carbon/react"
 import { Flag, LocationCurrent, PlayFilledAlt, Renew, StopFilledAlt } from "@carbon/icons-react"
 
-import type { Filtro, Opcion } from "../filtros"
 import { cronometro, km, tiempoCarrera } from "../formato"
 import type { EstadoSimulacion, ResumenRuta } from "../types"
 import { FilaCorredor } from "./fila-corredor"
-import { MetricasTiles } from "./metricas-tiles"
 
 export type ResumenMetricas = {
   total: number
@@ -16,7 +14,6 @@ export type ResumenMetricas = {
   latenciaP95Ms: number | null
 }
 
-const TODAS = ""
 
 /** Panel de la carrera (spec §10): ruta, control, clasificación con velocidad, filtro y métricas. */
 export function CarreraPanel({
@@ -30,11 +27,6 @@ export function CarreraPanel({
   onVelocidad,
   seguirLider,
   onSeguirLider,
-  empresas,
-  flotas,
-  filtro,
-  onCambiarFiltro,
-  metricas,
   ahoraMs,
   error,
 }: {
@@ -48,11 +40,6 @@ export function CarreraPanel({
   onVelocidad: (carId: string, kmh: number) => void
   seguirLider: boolean
   onSeguirLider: (seguir: boolean) => void
-  empresas: Opcion[]
-  flotas: Opcion[]
-  filtro: Filtro
-  onCambiarFiltro: (filtro: Filtro) => void
-  metricas: ResumenMetricas
   /** Hora del último refresco de PanelVivo (1 s): avanza el cronómetro sin leer el reloj al renderizar */
   ahoraMs: number
   error: string | null
@@ -147,40 +134,6 @@ export function CarreraPanel({
         </ol>
       </section>
 
-      <section aria-labelledby="titulo-filtro" className="flex flex-col gap-3 border-t p-4">
-        <h2 id="titulo-filtro" className="text-sm font-semibold">
-          Filtrar autos
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          <Select
-            id="empresa"
-            labelText="Empresa"
-            className="flex-[1_1_150px]"
-            value={filtro.empresa ?? TODAS}
-            onChange={(e) => onCambiarFiltro({ empresa: e.target.value || null, flota: null })}
-          >
-            <SelectItem value={TODAS} text="Todas las empresas" />
-            {empresas.map((o) => (
-              <SelectItem key={o.id} value={o.id} text={`${o.nombre} · ${o.autos}`} />
-            ))}
-          </Select>
-          <Select
-            id="flota"
-            labelText="Flota"
-            className="flex-[1_1_150px]"
-            value={filtro.flota ?? TODAS}
-            disabled={!filtro.empresa}
-            onChange={(e) => onCambiarFiltro({ ...filtro, flota: e.target.value || null })}
-          >
-            <SelectItem value={TODAS} text="Todas las flotas" />
-            {flotas.map((o) => (
-              <SelectItem key={o.id} value={o.id} text={`${o.nombre} · ${o.autos}`} />
-            ))}
-          </Select>
-        </div>
-      </section>
-
-      <MetricasTiles metricas={metricas} />
       {error && (
         <InlineNotification kind="error" lowContrast hideCloseButton title="Error" subtitle={error} className="m-4" />
       )}
