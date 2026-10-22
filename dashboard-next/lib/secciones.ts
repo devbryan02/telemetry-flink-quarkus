@@ -4,7 +4,7 @@ export type Seccion = { href: string; nombre: string; disponible: boolean }
 export const SECCIONES: Seccion[] = [
   { href: "/", nombre: "Carrera", disponible: true },
   { href: "/viajes", nombre: "Viajes", disponible: true },
-  { href: "/operacion", nombre: "Operación", disponible: false },
+  { href: "/operacion", nombre: "Operación", disponible: true },
 ]
 
 /** `href` de la sección que contiene la ruta actual; la raíz solo coincide consigo misma. */
