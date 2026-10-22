@@ -8,6 +8,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --shadow-flotante: var(--sombra);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-plex-sans);
@@ -19,19 +20,6 @@
   --color-success: var(--success);
   --color-error-text: var(--error-text);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -57,103 +45,67 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Tokens de la app sobre los de Carbon (--cds-*). Los que dependen del tema ya cambian solos con .dark;
+ * aquí solo se redefinen los que el diseño asigna a una capa distinta en cada tema.
+ */
 :root {
   --font-plex-sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
   --font-plex-mono: "IBM Plex Mono", Menlo, monospace;
-  --background: #f4f4f4;
-  --foreground: #161616;
-  --card: #ffffff;
-  --card-foreground: #161616;
-  --popover: #ffffff;
-  --popover-foreground: #161616;
-  --primary: #0f62fe;
-  --primary-foreground: #ffffff;
-  --secondary: #edf5ff;
-  --secondary-foreground: #0f62fe;
-  --muted: #e0e0e0;
-  --muted-foreground: #525252;
-  --accent: #e8e8e8;
-  --accent-foreground: #161616;
-  --destructive: #da1e28;
-  --border: #e0e0e0;
-  --input: #8d8d8d;
-  --ring: #0f62fe;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Carbon G10: cabecera G100, campos, estados, ruta y autos (MapLibre los lee con leerToken) */
+  --radius: 0.5rem;
+  --background: var(--cds-background);
+  --foreground: var(--cds-text-primary);
+  --card: var(--cds-background);
+  --card-foreground: var(--cds-text-primary);
+  --popover: var(--cds-background);
+  --popover-foreground: var(--cds-text-primary);
+  /* Acción principal gris (botón secundario de Carbon: Gray 80 en claro, Gray 60 en oscuro) */
+  --primary: var(--cds-button-secondary);
+  --primary-foreground: var(--cds-text-on-color);
+  --secondary: var(--cds-layer-selected-01);
+  --secondary-foreground: var(--cds-text-primary);
+  --muted: var(--cds-layer-01);
+  --muted-foreground: var(--cds-text-secondary);
+  --accent: var(--cds-layer-hover-01);
+  --accent-foreground: var(--cds-text-primary);
+  --destructive: var(--cds-support-error);
+  --border: var(--cds-border-subtle-00);
+  --input: var(--cds-border-strong-01);
+  --ring: var(--cds-focus);
+  --field: var(--cds-field-01);
+  --sombra: 0 2px 12px rgb(0 0 0 / 0.14);
+  /* Texto de estado con contraste AA sobre blanco (support-success #24a148 no llega a 4.5:1) */
+  --success: #198038;
+  --error-text: var(--cds-text-error);
+  /* Cabecera G100 en ambos temas */
   --header: #161616;
   --header-foreground: #f4f4f4;
   --header-border: #393939;
-  --field: #f4f4f4;
-  --success: #198038;
-  --error-text: #da1e28;
+  /* Autos: paleta categórica de Carbon en orden (Purple 70, Cyan 50, Teal 70) */
+  --auto-1: #6929c4;
+  --auto-2: #1192e8;
+  --auto-3: #005d5d;
+  --auto-off: #8d8d8d;
   --ruta-recorrido: #0f62fe;
   --ruta-pendiente: #a6c8ff;
   --ruta-borde: #ffffff;
-  --auto-1: #6929c4;
-  --auto-2: #1192e8;
-  --auto-3: #b28600;
-  --auto-off: #8d8d8d;
 }
 
 .dark {
-  --background: #161616;
-  --foreground: #f4f4f4;
-  --card: #262626;
-  --card-foreground: #f4f4f4;
-  --popover: #262626;
-  --popover-foreground: #f4f4f4;
-  --primary: #0f62fe;
-  --primary-foreground: #ffffff;
-  --secondary: #393939;
-  --secondary-foreground: #f4f4f4;
-  --muted: #393939;
-  --muted-foreground: #c6c6c6;
-  --accent: #333333;
-  --accent-foreground: #f4f4f4;
-  --destructive: #da1e28;
-  --border: #393939;
-  --input: #6f6f6f;
-  --ring: #ffffff;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  /* Carbon G100 */
-  --header: #161616;
-  --header-foreground: #f4f4f4;
-  --header-border: #393939;
-  --field: #393939;
+  --card: var(--cds-layer-01);
+  --popover: var(--cds-layer-01);
+  --muted: var(--cds-layer-02);
+  --field: var(--cds-field-02);
+  --sombra: 0 2px 12px rgb(0 0 0 / 0.5);
   --success: #42be65;
-  --error-text: #ff8389;
+  /* Paleta categórica para fondo oscuro (Purple 60, Cyan 40, Teal 60) */
+  --auto-1: #8a3ffc;
+  --auto-2: #33b1ff;
+  --auto-3: #007d79;
+  --auto-off: #6f6f6f;
   --ruta-recorrido: #78a9ff;
   --ruta-pendiente: #002d9c;
   --ruta-borde: #161616;
-  --auto-1: #a56eff;
-  --auto-2: #33b1ff;
-  --auto-3: #f1c21b;
-  --auto-off: #6f6f6f;
 }
 
 @layer base {

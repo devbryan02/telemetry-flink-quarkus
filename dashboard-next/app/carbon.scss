@@ -10,3 +10,16 @@
   $css--font-face: false
 );
 @use '@carbon/react';
+
+@use '@carbon/react/scss/themes';
+@use '@carbon/react/scss/theme';
+
+// Claro = White y oscuro = G100 (la dirección de v12: dos temas). next-themes pone `dark` en <html>
+// y mapcn observa la misma clase, así que Carbon, Tailwind y el mapa cambian juntos.
+:root {
+  @include theme.theme(themes.$white);
+}
+
+.dark {
+  @include theme.theme(themes.$g100);
+}
