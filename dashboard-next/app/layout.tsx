@@ -6,7 +6,6 @@ import "@fontsource/ibm-plex-mono/500.css"
 
 import { FlagsCarbon } from "@/components/flags-carbon"
 import { ThemeProvider } from "@/components/theme-provider"
-import { TooltipProvider } from "@/components/ui/tooltip"
 
 // Carbon primero: globals.css (Tailwind y tokens de la app) se apoya en sus variables --cds-*
 // Generado por `npm run carbon:css` desde carbon.scss: Turbopack en Windows no resuelve los imports SCSS de Carbon
@@ -24,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <FlagsCarbon>
-            <TooltipProvider>{children}</TooltipProvider>
+            {children}
           </FlagsCarbon>
         </ThemeProvider>
       </body>
