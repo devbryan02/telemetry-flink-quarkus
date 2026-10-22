@@ -54,3 +54,18 @@ export function trazoSvg(coords: [number, number][], ancho: number, alto: number
   const py = (y: number) => Math.round(alto - margen - (y - y0) * escala)
   return coords.map((c, i) => `${i === 0 ? "M" : "L"}${px(c[0])} ${py(c[1])}`).join(" ")
 }
+
+/** Path SVG de la velocidad en el tiempo: x = ts dentro de [inicio, fin], y = km/h (0 abajo, maxKmh arriba). */
+export function trazoVelocidad(
+  puntos: { ts: number; kmh: number }[],
+  inicio: number,
+  fin: number,
+  ancho: number,
+  alto: number,
+  maxKmh: number,
+): string {
+  if (puntos.length === 0 || fin <= inicio || maxKmh <= 0) return ""
+  const x = (ts: number) => Math.round(((ts - inicio) / (fin - inicio)) * ancho)
+  const y = (kmh: number) => Math.round(alto - (Math.min(kmh, maxKmh) / maxKmh) * alto)
+  return puntos.map((p, i) => `${i === 0 ? "M" : "L"}${x(p.ts)} ${y(p.kmh)}`).join(" ")
+}

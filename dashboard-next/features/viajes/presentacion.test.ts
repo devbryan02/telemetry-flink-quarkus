@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import type { Carrera, Participante } from "./carreras"
-import { conteoPorEstado, duracion, filtrarCarreras, rangoDelDia, textoResultado, trazoSvg } from "./presentacion"
+import { conteoPorEstado, duracion, filtrarCarreras, rangoDelDia, textoResultado, trazoVelocidad, trazoSvg } from "./presentacion"
 
 const p = (x: Partial<Participante>): Participante => ({
   viajeId: "v", carId: "auto-1", companyId: null, fleetId: null, estado: "SIN_CIERRE", posicion: 1,
@@ -53,4 +53,17 @@ describe("trazoSvg", () => {
   })
   it("con menos de 2 puntos no dibuja nada", () => expect(trazoSvg([[1, 1]], 100, 100, 10)).toBe(""))
   it("un tramo sin extensión no produce NaN", () => expect(trazoSvg([[5, 5], [5, 5]], 100, 100, 10)).not.toContain("NaN"))
+})
+
+describe("trazoVelocidad", () => {
+  it("escala tiempo a lo ancho y km/h a lo alto, con 0 abajo", () => {
+    expect(trazoVelocidad([{ ts: 0, kmh: 0 }, { ts: 10, kmh: 80 }], 0, 10, 100, 50, 80)).toBe("M0 50 L100 0")
+  })
+  it("sin puntos o con duración 0 no dibuja nada", () => {
+    expect(trazoVelocidad([], 0, 10, 100, 50, 80)).toBe("")
+    expect(trazoVelocidad([{ ts: 5, kmh: 10 }], 5, 5, 100, 50, 80)).toBe("")
+  })
+  it("recorta velocidades por encima del máximo del eje", () => {
+    expect(trazoVelocidad([{ ts: 0, kmh: 999 }, { ts: 10, kmh: 0 }], 0, 10, 100, 50, 80)).toBe("M0 0 L100 50")
+  })
 })

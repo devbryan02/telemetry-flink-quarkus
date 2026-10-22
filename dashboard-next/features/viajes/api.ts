@@ -10,7 +10,7 @@ const MAX_PAGINAS_POSICIONES = 50
 const LOTE_RESUMENES = 6
 
 export async function listarViajes(
-  filtro: { desde?: number; hasta?: number; cursor?: string },
+  filtro: { desde?: number; hasta?: number; cursor?: string; carreraId?: string },
   signal?: AbortSignal,
 ): Promise<Pagina<ViajeVista>> {
   const { data } = await http.get<Pagina<ViajeVista>>("/viajes", { params: { ...filtro, limit: LIMITE_VIAJES }, signal })
