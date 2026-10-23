@@ -17,18 +17,18 @@ Sin stack trace en la respuesta. `requestId` correlaciona con logs.
 
 ## Excepciones de negocio
 
-Clase base `ComsatelException` (`shared/error/`, ver `STD-ARCH-001`) con `status` HTTP + `code`; subclases concretas por caso, nunca se lanza la base directamente. Stack Quarkus (ver `ADR-003`): se usa `jakarta.ws.rs.core.Response.Status`, no tipos de Spring.
+Clase base `NegocioException` (`shared/error/`, ver `STD-ARCH-001`) con `status` HTTP + `code`; subclases concretas por caso, nunca se lanza la base directamente. Stack Quarkus (ver `ADR-003`): se usa `jakarta.ws.rs.core.Response.Status`, no tipos de Spring.
 
 ```java
 package dev.bryan.shared.error;
 
 import jakarta.ws.rs.core.Response;
 
-public class ComsatelException extends RuntimeException {
+public class NegocioException extends RuntimeException {
     private final Response.Status status;
     private final String code;
 
-    public ComsatelException(Response.Status status, String code, String message) {
+    public NegocioException(Response.Status status, String code, String message) {
         super(message);
         this.status = status;
         this.code = code;
@@ -40,7 +40,7 @@ public class ComsatelException extends RuntimeException {
 ```
 
 ```java
-public class <Entidad>NotFoundException extends ComsatelException {
+public class <Entidad>NotFoundException extends NegocioException {
     public <Entidad>NotFoundException(String message) {
         super(Response.Status.NOT_FOUND, "<ENTIDAD>_NOT_FOUND", message);
     }
@@ -61,7 +61,7 @@ Manejador global único. En Quarkus REST: una clase con métodos `@ServerExcepti
 ```java
 public class GlobalExceptionMapper {
     @ServerExceptionMapper
-    public RestResponse<ErrorResponse> map(ComsatelException ex, UriInfo uri) {
+    public RestResponse<ErrorResponse> map(NegocioException ex, UriInfo uri) {
         return RestResponse.status(ex.getStatus(), ErrorResponse.of(ex, uri.getPath()));
     }
 }
@@ -69,7 +69,7 @@ public class GlobalExceptionMapper {
 
 Reglas:
 
-- `ComsatelException` y subclases se mapean directo (ya traen `status`/`code`).
+- `NegocioException` y subclases se mapean directo (ya traen `status`/`code`).
 - Validación → 400. Excepciones de adaptadores de salida → 500 técnico. No clasificadas → `INTERNAL_ERROR`.
 - No capturar `Exception` de forma dispersa en cada método.
 

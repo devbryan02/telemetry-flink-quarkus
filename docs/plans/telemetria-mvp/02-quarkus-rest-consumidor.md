@@ -14,7 +14,7 @@
 - [ ] `autos/AutosStore`: `ConcurrentHashMap<String, Auto>` + set concurrente de "sucios"; solo reemplaza si `ts` es mayor.
 - [ ] `autos/AutosConsumer`: `@Incoming("ultima-posicion")` que actualiza el store y marca sucio.
 - [ ] `autos/AutosResource`: `GET /autos` y filtro opcional `?bbox=minLon,minLat,maxLon,maxLat`; bbox mal formado → 400.
-- [ ] `shared/error`: `ComsatelException`, `ErrorResponse`, `GlobalExceptionMapper` (`@ServerExceptionMapper`) con `requestId`.
+- [ ] `shared/error`: `NegocioException`, `ErrorResponse`, `GlobalExceptionMapper` (`@ServerExceptionMapper`) con `requestId`.
 - [ ] Tests: store (ts viejo no reemplaza), resource (lista y bbox).
 
 ## Archivos

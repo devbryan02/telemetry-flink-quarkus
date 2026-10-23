@@ -77,7 +77,7 @@ powershell -NoProfile -File scripts/probar-persistencia.ps1   # E2E con Kafka y 
 
 ## Base de conocimiento (`knowledge/`)
 
-`knowledge/` es una plantilla corporativa genérica de COMSATEL. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (PostgreSQL con JDBC y Flyway). Algunas reglas aplican aquí y otras no:
+`knowledge/` es una plantilla corporativa genérica. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (PostgreSQL con JDBC y Flyway). Algunas reglas aplican aquí y otras no:
 - **Aplican:**
   - `STD-ARCH-001`: organización **por features**, en backend (`simulacion/`, `flink/`, `autos/`, `viajes/`, `shared/`) y en frontend (`features/<x>/` con `index.ts` público). Los DTOs son `record` escritos a mano. El contrato JSON está en la spec §4.
   - `STD-GIT-001`: Conventional Commits; ramas `feature/<ticket>-<slug>` desde `develop`; sin PR/MR. **Todo cambio se versiona:** se trabaja en una rama de feature, nunca directo en `main` ni en `develop`, y cada tarea termina con su commit.

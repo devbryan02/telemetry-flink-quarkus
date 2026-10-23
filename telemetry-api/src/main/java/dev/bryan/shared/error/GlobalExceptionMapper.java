@@ -12,7 +12,7 @@ class GlobalExceptionMapper {
     private static final Logger LOG = Logger.getLogger(GlobalExceptionMapper.class);
 
     @ServerExceptionMapper
-    RestResponse<ErrorResponse> negocio(ComsatelException ex, UriInfo uri) {
+    RestResponse<ErrorResponse> negocio(NegocioException ex, UriInfo uri) {
         String requestId = ErrorResponse.nuevoRequestId();
         LOG.debugf("requestId=%s code=%s status=%d", requestId, ex.getCode(), ex.getStatus().getStatusCode());
         return respuesta(ErrorResponse.of(ex.getStatus().getStatusCode(), ex.getCode(), ex.getMessage(),

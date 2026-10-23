@@ -15,6 +15,6 @@ sequenceDiagram
     R-->>C: 200 application/geo+json
     C->>C: RutaLayer y SalidaMeta, fitBounds
   else id inválido o ruta inexistente
-    CAT-->>E: ComsatelException 404 RUTA_NO_ENCONTRADA
+    CAT-->>E: NegocioException 404 RUTA_NO_ENCONTRADA
     E-->>C: 404 ErrorResponse con requestId
   end
