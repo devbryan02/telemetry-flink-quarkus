@@ -50,7 +50,7 @@ sequenceDiagram
     CAT-->>R: id, nombre, desde, hasta, km
     R-->>C: 200 application/json
   else falta el índice
-    CAT-->>E: ComsatelException 404 RUTA_NO_ENCONTRADA
+    CAT-->>E: NegocioException 404 RUTA_NO_ENCONTRADA
     E-->>C: 404 ErrorResponse con requestId
   else JSON ilegible
     CAT-->>E: UncheckedIOException

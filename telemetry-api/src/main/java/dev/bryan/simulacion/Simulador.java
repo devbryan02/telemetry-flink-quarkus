@@ -2,7 +2,7 @@ package dev.bryan.simulacion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.bryan.shared.error.ComsatelException;
+import dev.bryan.shared.error.NegocioException;
 import io.quarkus.runtime.ShutdownEvent;
 import io.smallrye.reactive.messaging.kafka.Record;
 import io.vertx.core.Vertx;
@@ -132,13 +132,13 @@ class Simulador {
     /** Cambia la velocidad de un auto, también en plena carrera. */
     synchronized Estado velocidad(String carId, double kmh) {
         if (!AutoCorredor.velocidadValida(kmh)) {
-            throw new ComsatelException(Response.Status.BAD_REQUEST, "VELOCIDAD_INVALIDA",
+            throw new NegocioException(Response.Status.BAD_REQUEST, "VELOCIDAD_INVALIDA",
                     "La velocidad debe estar entre " + (int) AutoCorredor.VELOCIDAD_MINIMA_KMH + " y "
                             + (int) AutoCorredor.VELOCIDAD_MAXIMA_KMH + " km/h");
         }
         boolean existe = escenario().autos().stream().anyMatch(a -> a.carId().equals(carId));
         if (!existe) {
-            throw new ComsatelException(Response.Status.NOT_FOUND, "AUTO_NO_ENCONTRADO", "No existe el auto " + carId);
+            throw new NegocioException(Response.Status.NOT_FOUND, "AUTO_NO_ENCONTRADO", "No existe el auto " + carId);
         }
         velocidades.put(carId, kmh);
         autos.stream().filter(a -> a.carId().equals(carId)).forEach(a -> a.velocidad(kmh));

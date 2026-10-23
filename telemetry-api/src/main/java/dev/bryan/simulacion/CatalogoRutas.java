@@ -3,7 +3,7 @@ package dev.bryan.simulacion;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.bryan.shared.error.ComsatelException;
+import dev.bryan.shared.error.NegocioException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
@@ -86,7 +86,7 @@ class CatalogoRutas {
         return in;
     }
 
-    private static ComsatelException noEncontrada(String nombre) {
-        return new ComsatelException(Response.Status.NOT_FOUND, "RUTA_NO_ENCONTRADA", "No existe la ruta " + nombre);
+    private static NegocioException noEncontrada(String nombre) {
+        return new NegocioException(Response.Status.NOT_FOUND, "RUTA_NO_ENCONTRADA", "No existe la ruta " + nombre);
     }
 }

@@ -63,9 +63,9 @@ flowchart TB
   tel -->|"Incoming por lotes<br/>quarkus-viajes-postgres"| viajes
   autos -->|"JDBC tb_ultima_posicion"| pg
   viajes -->|"JDBC tb_viaje y tb_posicion_historial"| pg
-  sim -.->|"ComsatelException"| err
-  autos -.->|"ComsatelException"| err
-  viajes -.->|"ComsatelException"| err
+  sim -.->|"NegocioException"| err
+  autos -.->|"NegocioException"| err
+  viajes -.->|"NegocioException"| err
   classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
   classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
   class web,rec,tel,flink,up,autos,viajes,pg,err other
@@ -78,7 +78,7 @@ flowchart TB
 | flink | Job `telemetria` → última posición por auto → `ultima-posicion`, dentro de un MiniCluster embebido. Conserva el contexto v2 del evento. | Topic `telemetria` | Topic `ultima-posicion` |
 | autos | Proyección persistente de la última posición (`tb_ultima_posicion`); `GET /autos` consulta PostgreSQL y los cambios confirmados salen por WebSocket cada 500 ms. | Topic `ultima-posicion`, `GET /autos`, `WS /ws/autos` | PostgreSQL, JSON REST y WebSocket |
 | viajes | Historial de viajes y muestras (`tb_viaje`, `tb_posicion_historial`) leído directamente de `telemetria`, con ingesta idempotente por `eventId`; consultas paginadas y resumen del viaje. | Topic `telemetria`, `GET /viajes…` | PostgreSQL, JSON REST, métricas |
-| shared/error | Convierte excepciones en `ErrorResponse` con `requestId`, sin stack traces ni detalles de BD (`STD-ERR-001`). | `ComsatelException`, `WebApplicationException`, `Throwable` | JSON de error |
+| shared/error | Convierte excepciones en `ErrorResponse` con `requestId`, sin stack traces ni detalles de BD (`STD-ERR-001`). | `NegocioException`, `WebApplicationException`, `Throwable` | JSON de error |
 
 ## Detalle: simulacion
 

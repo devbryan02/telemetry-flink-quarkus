@@ -1,6 +1,6 @@
 package dev.bryan.simulacion;
 
-import dev.bryan.shared.error.ComsatelException;
+import dev.bryan.shared.error.NegocioException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -38,7 +38,7 @@ public class SimulacionResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Simulador.Estado iniciar(Inicio cuerpo) {
         if (cuerpo == null || cuerpo.ruta() == null || cuerpo.ruta().isBlank()) {
-            throw new ComsatelException(Response.Status.BAD_REQUEST, "RUTA_REQUERIDA", "Indica la ruta de la carrera");
+            throw new NegocioException(Response.Status.BAD_REQUEST, "RUTA_REQUERIDA", "Indica la ruta de la carrera");
         }
         return simulador.iniciar(cuerpo.ruta());
     }
@@ -54,7 +54,7 @@ public class SimulacionResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Simulador.Estado velocidad(@PathParam("carId") String carId, Velocidad cuerpo) {
         if (cuerpo == null || cuerpo.kmh() == null) {
-            throw new ComsatelException(Response.Status.BAD_REQUEST, "VELOCIDAD_INVALIDA", "Indica la velocidad en km/h");
+            throw new NegocioException(Response.Status.BAD_REQUEST, "VELOCIDAD_INVALIDA", "Indica la velocidad en km/h");
         }
         return simulador.velocidad(carId, cuerpo.kmh());
     }

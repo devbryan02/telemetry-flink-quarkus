@@ -44,7 +44,7 @@ flowchart TB
   evt["TelemetriaEvento<br/>record v2: 9 campos de posición y 8 de contexto"]
   pub["PublicadorTelemetria<br/>publicar · pendientes"]
   dto["Estado y Clasificado<br/>records de respuesta con carreraId y viajeId"]
-  err["ComsatelException"]
+  err["NegocioException"]
   res -->|"delegación"| sim
   res -.->|"400 RUTA_REQUERIDA o VELOCIDAD_INVALIDA"| err
   sim --> cat
@@ -148,8 +148,8 @@ stateDiagram-v2
 ### shared/error
 | Clase | Rol |
 |---|---|
-| [`GlobalExceptionMapper.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/GlobalExceptionMapper.java) | `@ServerExceptionMapper` para `ComsatelException` (status y código propios), `WebApplicationException` (`HTTP_<status>`) y `Throwable` (500 `INTERNAL_ERROR`, sin SQL ni detalles de BD). |
-| [`ErrorResponse.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/ErrorResponse.java) · [`ComsatelException.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/ComsatelException.java) | Contrato `timestamp, status, code, message, path, requestId` y excepción de negocio. |
+| [`GlobalExceptionMapper.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/GlobalExceptionMapper.java) | `@ServerExceptionMapper` para `NegocioException` (status y código propios), `WebApplicationException` (`HTTP_<status>`) y `Throwable` (500 `INTERNAL_ERROR`, sin SQL ni detalles de BD). |
+| [`ErrorResponse.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/ErrorResponse.java) · [`NegocioException.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/NegocioException.java) | Contrato `timestamp, status, code, message, path, requestId` y excepción de negocio. |
 
 ### dashboard (`features/autos`)
 | Módulo | Rol |

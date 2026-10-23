@@ -44,17 +44,17 @@ sequenceDiagram
   participant E as GlobalExceptionMapper
   C->>R: PUT /simulacion/autos/auto-2/velocidad · velocidad · body kmh
   alt kmh ausente
-    R-->>E: ComsatelException 400 VELOCIDAD_INVALIDA
+    R-->>E: NegocioException 400 VELOCIDAD_INVALIDA
     E-->>C: 400 ErrorResponse
   else kmh presente
     R->>S: velocidad(carId, kmh)
     alt fuera de 10 a 500 km/h
-      S-->>E: ComsatelException 400 VELOCIDAD_INVALIDA
+      S-->>E: NegocioException 400 VELOCIDAD_INVALIDA
       E-->>C: 400 ErrorResponse
     else rango válido
       S->>CAT: escenario(carrera)
       alt carId no está en el escenario
-        S-->>E: ComsatelException 404 AUTO_NO_ENCONTRADO
+        S-->>E: NegocioException 404 AUTO_NO_ENCONTRADO
         E-->>C: 404 ErrorResponse
       else auto existente
         S->>S: guardar velocidad para próximas carreras

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import dev.bryan.shared.error.ComsatelException;
+import dev.bryan.shared.error.NegocioException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,7 +26,7 @@ class BboxTest {
     @ValueSource(strings = {"abc", "1,2,3", "1,2,3,4,5", "a,b,c,d", "-77,-12,-78,-11", "-200,-12,-77,-11",
             "-77,-12,-76,95", ",,,"})
     void bboxInvalidoDevuelve400(String texto) {
-        ComsatelException ex = assertThrows(ComsatelException.class, () -> Bbox.parse(texto));
+        NegocioException ex = assertThrows(NegocioException.class, () -> Bbox.parse(texto));
 
         assertEquals(Response.Status.BAD_REQUEST, ex.getStatus());
         assertEquals("INVALID_BBOX", ex.getCode());

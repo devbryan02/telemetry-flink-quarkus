@@ -50,13 +50,13 @@ sequenceDiagram
   participant E as GlobalExceptionMapper
   C->>R: POST /simulacion/iniciar · iniciar · body ruta
   alt ruta vacía o ausente
-    R-->>E: ComsatelException 400 RUTA_REQUERIDA
+    R-->>E: NegocioException 400 RUTA_REQUERIDA
     E-->>C: 400 ErrorResponse con requestId
   else ruta indicada
     R->>S: iniciar(ruta)
     S->>CAT: ruta(id)
     alt ruta inexistente
-      CAT-->>E: ComsatelException 404 RUTA_NO_ENCONTRADA
+      CAT-->>E: NegocioException 404 RUTA_NO_ENCONTRADA
       E-->>C: 404 ErrorResponse con requestId
     else ruta encontrada
       CAT-->>S: Ruta con longitud

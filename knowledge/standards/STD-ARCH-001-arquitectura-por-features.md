@@ -27,7 +27,7 @@ dev.bryan
 │   ├── UltimaPosicionFunction.java
 │   └── Posicion.java       record del evento que ve el job
 └── shared/                 solo lo transversal de verdad
-    └── error/              ComsatelException, GlobalExceptionMapper (ver STD-ERR-001)
+    └── error/              NegocioException, GlobalExceptionMapper (ver STD-ERR-001)
 ```
 
 Reglas:
