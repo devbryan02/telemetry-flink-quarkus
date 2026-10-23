@@ -1,6 +1,6 @@
 package dev.bryan.autos;
 
-import dev.bryan.shared.error.ComsatelException;
+import dev.bryan.shared.error.NegocioException;
 import jakarta.ws.rs.core.Response;
 
 /** Caja geográfica {@code minLon,minLat,maxLon,maxLat} usada por {@code GET /autos?bbox=}. */
@@ -31,8 +31,8 @@ record Bbox(double minLon, double minLat, double maxLon, double maxLat) {
                 && auto.lat() >= minLat && auto.lat() <= maxLat;
     }
 
-    private static ComsatelException invalido() {
-        return new ComsatelException(Response.Status.BAD_REQUEST, "INVALID_BBOX",
+    private static NegocioException invalido() {
+        return new NegocioException(Response.Status.BAD_REQUEST, "INVALID_BBOX",
                 "bbox debe ser minLon,minLat,maxLon,maxLat con valores válidos");
     }
 }

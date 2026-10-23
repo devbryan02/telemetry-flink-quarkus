@@ -55,7 +55,7 @@ sequenceDiagram
   else con bbox
     R->>B: parse(minLon,minLat,maxLon,maxLat)
     alt formato o rango inválido
-      B-->>E: ComsatelException 400 INVALID_BBOX
+      B-->>E: NegocioException 400 INVALID_BBOX
       E-->>C: 400 ErrorResponse con requestId
     else bbox válido
       R->>ST: enBbox(bbox)

@@ -9,7 +9,7 @@ flowchart TB
   evt["TelemetriaEvento<br/>record v2: 9 campos de posición y 8 de contexto"]
   pub["PublicadorTelemetria<br/>publicar · pendientes"]
   dto["Estado y Clasificado<br/>records de respuesta con carreraId y viajeId"]
-  err["ComsatelException"]
+  err["NegocioException"]
   res -->|"delegación"| sim
   res -.->|"400 RUTA_REQUERIDA o VELOCIDAD_INVALIDA"| err
   sim --> cat
