@@ -12,7 +12,7 @@ import com.tngtech.archunit.lang.ArchRule;
 class ArquitecturaHexagonalTest {
 
     private static final String[] FRAMEWORKS = {
-        "jakarta..", "io.quarkus..", "io.vertx..", "io.smallrye..", "org.apache.flink..", "org.apache.kafka..",
+        "jakarta..", "io.quarkus..", "io.vertx..", "org.hibernate..", "io.smallrye..", "org.apache.flink..", "org.apache.kafka..",
         "java.sql..", "javax.sql..", "org.eclipse.microprofile..", "com.fasterxml.jackson..", "io.micrometer.."
     };
 
@@ -48,4 +48,9 @@ class ArquitecturaHexagonalTest {
             .should().dependOnClassesThat().resideInAnyPackage("dev.bryan.domain..", "dev.bryan.application..",
                     "dev.bryan.infrastructure.in..", "dev.bryan.infrastructure.out..", "dev.bryan.infrastructure.config..")
             .as("los operadores de Flink se serializan: no dependen del núcleo ni de otros adaptadores");
+
+    @ArchTest
+    static final ArchRule hibernateSoloEnPersistencia = noClasses().that().resideOutsideOfPackage("dev.bryan.infrastructure.out.persistence..")
+            .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..", "org.hibernate..", "io.quarkus.hibernate..")
+            .as("solo infrastructure.out.persistence conoce Hibernate y JPA (ADR-007)");
 }

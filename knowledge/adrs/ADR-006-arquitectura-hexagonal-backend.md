@@ -13,7 +13,7 @@ dev.bryan
 │   └── service/      implementación de los casos de uso
 └── infrastructure/
     ├── in/           rest, ws, messaging (adaptadores de entrada)
-    ├── out/          jdbc, kafka, ws, classpath, metrics, vertx (adaptadores de salida)
+    ├── out/          persistence, kafka, ws, classpath, metrics, vertx (adaptadores de salida)
     └── flink/        job Flink embebido (operadores serializables)
 ```
 
@@ -25,7 +25,7 @@ Reglas:
 - **Las features siguen sin llamarse por dentro:** `simulacion`, `flink`, `autos` y `viajes` se comunican por los topics `telemetria` y `ultima-posicion`. Cada una conserva su propio record del evento y su copia de `EventoJson`, ahora en `infrastructure/in/messaging` (o `infrastructure/flink`).
 - **Flink sigue siendo un adaptador autocontenido:** `Posicion` y sus (de)serializadores viven en `infrastructure/flink`, sin CDI ni referencias a clases no serializables.
 - **El contrato HTTP no cambia:** `NegocioException` usa un `Tipo` independiente de JAX-RS y `GlobalExceptionMapper` lo traduce al mismo cuerpo de error (`STD-ERR-001`).
-- **Transacciones en el adaptador:** la ingesta de `viajes` (bloqueos `FOR UPDATE`, detección de conflictos, `eventId` idempotente) y el commit previo al ack de Kafka siguen dentro del adaptador JDBC; el puerto solo expone `guardarLote`.
+- **Transacciones en el adaptador:** la ingesta de `viajes` (bloqueos `FOR UPDATE`, detección de conflictos, `eventId` idempotente) y el commit previo al ack de Kafka siguen dentro del adaptador de persistencia; el puerto solo expone `guardarLote`.
 - **Se verifica con una prueba:** `ArquitecturaHexagonalTest` (ArchUnit) falla si se rompe la dirección de las dependencias.
 
 Sin cambios: contrato JSON de `/autos`, WebSocket y `/viajes`, nombres de topics y canales, propiedades de configuración, migraciones Flyway y tablas (`ADR-002`, `ADR-004`).

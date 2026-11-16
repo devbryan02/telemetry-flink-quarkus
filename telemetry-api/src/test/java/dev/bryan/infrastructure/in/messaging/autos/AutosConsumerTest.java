@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import dev.bryan.domain.model.AutoEvento;
 import dev.bryan.application.port.out.AutosRepositorio;
-import dev.bryan.infrastructure.out.jdbc.autos.AutosStoreTest;
+import dev.bryan.infrastructure.out.persistence.autos.AutosStoreTest;
 import dev.bryan.infrastructure.out.ws.AutosCambios;
 @QuarkusTest
 @QuarkusTestResource(InMemoryKafkaResource.class)

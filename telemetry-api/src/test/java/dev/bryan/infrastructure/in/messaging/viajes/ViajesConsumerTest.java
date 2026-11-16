@@ -7,7 +7,7 @@ import jakarta.inject.Inject;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import dev.bryan.domain.model.EventoViaje;
-import dev.bryan.infrastructure.out.jdbc.viajes.ViajesStore;
+import dev.bryan.infrastructure.out.persistence.viajes.ViajesStore;
 @QuarkusTest
 @QuarkusTestResource(InMemoryKafkaResource.class)
 class ViajesConsumerTest {

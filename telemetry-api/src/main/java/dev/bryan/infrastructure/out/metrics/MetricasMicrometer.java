@@ -2,7 +2,7 @@ package dev.bryan.infrastructure.out.metrics;
 
 import dev.bryan.application.port.out.MetricasIngesta;
 import dev.bryan.domain.model.ResultadoIngesta;
-import dev.bryan.infrastructure.out.jdbc.viajes.ViajesStore;
+import dev.bryan.infrastructure.out.persistence.viajes.ViajesStore;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;

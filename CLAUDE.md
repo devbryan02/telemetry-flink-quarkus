@@ -19,12 +19,13 @@ Next.js ── POST /simulacion/iniciar {ruta} ──► Quarkus 3.40 LTS · Jav
                                          │          AutosCambios (solo confirmados) → timer Vert.x 500 ms → WS /ws/autos
                                          │  viajes/: consumidor por lotes de "telemetria" → ViajesStore (tb_viaje,
                                          │          tb_posicion_historial) → GET /viajes[/{id}[/posiciones]]
-                                         └─► PostgreSQL 17 (JDBC/Agroal + Flyway, sin ORM)
+                                         └─► PostgreSQL 17 (Hibernate ORM + Panache sobre Agroal, Flyway crea el esquema)
 Next.js 16 + Carbon v12 + mapcn (MapLibre) ◄── axios (autos, ruta, simulación, viajes, operación) + WebSocket nativo
 ```
 
 Decisiones que no son obvias si no se lee toda la spec:
-- **Backend hexagonal (`ADR-006`):** `domain/` (records y reglas), `application/` (`port/in`, `port/out`, `service`) e `infrastructure/` (`in/{rest,ws,messaging}`, `out/{jdbc,kafka,ws,classpath,metrics,vertx}`, `flink`, `config`). Las dependencias apuntan hacia adentro: `domain` y `application` no importan Quarkus, Vert.x, Flink, Kafka, JDBC ni Jackson, y `ArquitecturaHexagonalTest` (ArchUnit) lo hace cumplir. Los servicios de `application` no llevan anotaciones de CDI: los crea `infrastructure/config/ServiciosConfig` con `@Produces @Singleton`. Una clase nueva va en su capa; un acceso nuevo a I/O es un puerto de salida con su adaptador. Sin Lombok: los DTOs son `record` escritos a mano.
+- **Backend hexagonal (`ADR-006`):** `domain/` (records y reglas), `application/` (`port/in`, `port/out`, `service`) e `infrastructure/` (`in/{rest,ws,messaging}`, `out/{persistence,kafka,ws,classpath,metrics,vertx}`, `flink`, `config`). Las dependencias apuntan hacia adentro: `domain` y `application` no importan Quarkus, Vert.x, Flink, Kafka, JDBC ni Jackson, y `ArquitecturaHexagonalTest` (ArchUnit) lo hace cumplir. Los servicios de `application` no llevan anotaciones de CDI: los crea `infrastructure/config/ServiciosConfig` con `@Produces @Singleton`. Una clase nueva va en su capa; un acceso nuevo a I/O es un puerto de salida con su adaptador. Sin Lombok: los DTOs son `record` escritos a mano.
+- **Persistencia con Panache (`ADR-007`):** entities, repositories y adaptadores viven en `infrastructure/out/persistence/{autos,viajes}`; solo ahí se importa Hibernate o JPA (`ArquitecturaHexagonalTest`). Flyway crea el esquema e Hibernate lo **valida** (`schema-management.strategy=validate`): si cambias una tabla, escribe una migración nueva y actualiza la entity. El upsert de última posición, los `INSERT … ON CONFLICT DO NOTHING` y el `SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY` del detalle son SQL nativo a propósito; no los pases a HQL ni a `merge`. En la ingesta de viajes, las entities se `flush`/`clear` antes de bloquear cada viaje porque el SQL nativo no las actualiza. Entities como clases escritas a mano, sin Lombok.
 - **Las features del backend (`simulacion`, `flink`, `autos`, `viajes`) se comunican solo por los topics**, aunque compartan JVM:
   - `simulacion` publica en `telemetria`;
   - `flink` lee de `telemetria` y publica en `ultima-posicion`;
@@ -41,8 +42,8 @@ Decisiones que no son obvias si no se lee toda la spec:
   - Java 17 (recomendada por Flink 2.x);
   - Flink 2.2.1 con `flink-connector-kafka:5.0.0-2.2`;
   - Kafka **4.2.1**: la 4.0.x tiene KAFKA-19888 y el coordinador de grupos deja de funcionar en Docker Desktop.
-- **Consumidores JDBC (`AutosConsumer`, `ViajesConsumer`):** son por lotes, `@Blocking` (JDBC no puede ir en el event loop) y `POST_PROCESSING`, con `enable.auto.commit=false`, `commit-strategy=throttled` y `failure-strategy=fail`. Usan los grupos `quarkus-dash-postgres` y `quarkus-viajes-postgres`.
-  - El commit JDBC ocurre dentro de `guardarLote`, antes de confirmar el offset. Solo después pasan los cambios al búfer del WebSocket.
+- **Consumidores con persistencia (`AutosConsumer`, `ViajesConsumer`):** son por lotes, `@Blocking` (Hibernate/JDBC no puede ir en el event loop) y `POST_PROCESSING`, con `enable.auto.commit=false`, `commit-strategy=throttled` y `failure-strategy=fail`. Usan los grupos `quarkus-dash-postgres` y `quarkus-viajes-postgres`.
+  - El commit (`@Transactional` del adaptador) ocurre dentro de `guardarLote`, antes de confirmar el offset. Solo después pasan los cambios al búfer del WebSocket.
   - Un fallo detiene el canal y pone la readiness en DOWN. No lo conviertas en éxito ni en `ignore`: se recupera reiniciando la API, y `eventId` hace idempotente la reentrega.
 - **Operación:** `/q/health/ready` (BD y canales) y `/q/metrics` (Prometheus). El runbook está en `docs/test-cases/persistencia-posiciones-viajes.md`.
 - **Temporizadores de Vert.x, no `@Scheduled`:** el planificador de Quarkus solo evalúa una vez por segundo.
@@ -81,7 +82,7 @@ powershell -NoProfile -File scripts/probar-persistencia.ps1   # E2E con Kafka y 
 
 ## Base de conocimiento (`knowledge/`)
 
-`knowledge/` es una plantilla corporativa genérica. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (PostgreSQL con JDBC y Flyway). La UI se define en `ADR-005` (Carbon v12). Algunas reglas aplican aquí y otras no:
+`knowledge/` es una plantilla corporativa genérica. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (esquema con Flyway) y `ADR-007` (Hibernate ORM con Panache, repository). La UI se define en `ADR-005` (Carbon v12). Algunas reglas aplican aquí y otras no:
 - **Aplican:**
   - `STD-ARCH-001` y `ADR-006`: backend hexagonal (`domain`, `application`, `infrastructure`) y frontend **por features** (`features/<x>/` con `index.ts` público). Los DTOs son `record` escritos a mano. El contrato JSON está en la spec §4.
   - `STD-GIT-001`: Conventional Commits; ramas `feature/<ticket>-<slug>` desde `develop`; sin PR/MR. **Todo cambio se versiona:** se trabaja en una rama de feature, nunca directo en `main` ni en `develop`, y cada tarea termina con su commit.
