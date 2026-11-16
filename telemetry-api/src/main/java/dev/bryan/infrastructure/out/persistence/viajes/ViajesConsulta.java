@@ -1,14 +1,9 @@
 package dev.bryan.infrastructure.out.persistence.viajes;
+
 import dev.bryan.application.port.out.ViajesConsultaRepositorio;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.*;
 import dev.bryan.domain.exception.ConsultaViajesInvalidaException;
 import dev.bryan.domain.exception.ViajeNoEncontradoException;
 import dev.bryan.domain.model.ConsultaPagina;
-import dev.bryan.domain.model.EstadoViaje;
 import dev.bryan.domain.model.FiltroPosiciones;
 import dev.bryan.domain.model.FiltroViajes;
 import dev.bryan.domain.model.Pagina;
@@ -17,108 +12,138 @@ import dev.bryan.domain.model.ResumenViaje;
 import dev.bryan.domain.model.ViajeDetalle;
 import dev.bryan.domain.model.ViajeVista;
 import dev.bryan.domain.service.ResumenViajeCalculador;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 
+/** Consultas de viajes con HQL: proyectan directo a los records de domain, sin cargar entities. */
 @ApplicationScoped
 class ViajesConsulta implements ViajesConsultaRepositorio {
-    @Inject DataSource ds;
-    @Override public ViajeDetalle detalle(UUID id){
-        try(var c=ds.getConnection()){
-            c.setReadOnly(true);c.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);c.setAutoCommit(false);
-            try{
-                var viaje=obtener(c,id);
-                ResumenViaje resumen;
-                try(var s=c.prepareStatement("SELECT * FROM tb_posicion_historial WHERE viaje_id=? ORDER BY ts,event_id")){
-                    s.setObject(1,id);s.setFetchSize(1000);
-                    try(var r=s.executeQuery()){
-                        Iterator<PosicionVista> iterador=new Iterator<>(){
-                            boolean cargado,hay;
-                            public boolean hasNext(){
-                                try{if(!cargado){hay=r.next();cargado=true;}return hay;}
-                                catch(SQLException ex){throw new IllegalStateException("No se pudieron leer muestras",ex);}
-                            }
-                            public PosicionVista next(){
-                                if(!hasNext())throw new NoSuchElementException();
-                                try{var p=posicion(r);cargado=false;return p;}
-                                catch(SQLException ex){throw new IllegalStateException("No se pudo leer muestra",ex);}
-                            }
-                        };
-                        resumen=ResumenViajeCalculador.calcular(viaje,iterador);
-                    }
-                }
-                c.commit();return new ViajeDetalle(viaje,resumen);
-            }catch(SQLException|RuntimeException ex){
-                try{c.rollback();}catch(SQLException rollback){ex.addSuppressed(rollback);}
-                throw ex;
+
+    private static final String SELECT_VIAJE = "select new dev.bryan.domain.model.ViajeVista("
+            + "v.viajeId, v.carreraId, v.carId, v.rutaId, v.companyId, v.fleetId, v.inicioViajeTs, v.finTs, "
+            + "v.estado, v.motivoFin, v.ultimoTs) from ViajeEntity v";
+    private static final String SELECT_POSICION = "select new dev.bryan.domain.model.PosicionVista("
+            + "p.eventId, p.viajeId, p.tipoEvento, p.receivedAt, p.carId, p.companyId, p.fleetId, p.lat, p.lon, "
+            + "p.heading, p.engine, p.battery, p.ts) from PosicionHistorialEntity p";
+
+    @Inject EntityManager em;
+
+    @Override
+    @Transactional
+    public ViajeDetalle detalle(UUID id) {
+        try {
+            // Una sola vista consistente del viaje y de sus muestras; vale solo para esta transacción
+            em.createNativeQuery("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY").executeUpdate();
+            ViajeVista viaje = obtener(id);
+            TypedQuery<PosicionVista> q = em.createQuery(
+                    SELECT_POSICION + " where p.viajeId = :viaje order by p.ts, p.eventId", PosicionVista.class)
+                    .setParameter("viaje", id)
+                    .setHint("org.hibernate.fetchSize", 1000);
+            ResumenViaje resumen;
+            try (Stream<PosicionVista> muestras = q.getResultStream()) {
+                resumen = ResumenViajeCalculador.calcular(viaje, muestras.iterator());
             }
-        }catch(SQLException ex){throw new IllegalStateException("No se pudo consultar detalle",ex);}
-    }
-    @Override public Pagina<ViajeVista> listar(FiltroViajes f,ConsultaPagina p){
-        rango(f.desde(),f.hasta());
-        var clave=CursorViajes.decodificar(p.cursor(),"viajes",f,null,p.limit());
-        StringBuilder sql=new StringBuilder("SELECT * FROM tb_viaje WHERE true");
-        List<Object> args=new ArrayList<>();
-        agregar(sql,args,"car_id = ?",f.carId());agregar(sql,args,"carrera_id = ?",f.carreraId());
-        agregar(sql,args,"inicio_viaje_ts >= ?",f.desde());agregar(sql,args,"inicio_viaje_ts < ?",f.hasta());
-        if(clave!=null){sql.append(" AND (inicio_viaje_ts,viaje_id) < (?,?)");args.add(clave.ts());args.add(clave.id());}
-        sql.append(" ORDER BY inicio_viaje_ts DESC,viaje_id DESC LIMIT ?");args.add(p.limit()+1);
-        try(var c=ds.getConnection();var s=c.prepareStatement(sql.toString())){
-            bind(s,args);List<ViajeVista> rows=new ArrayList<>();
-            try(var r=s.executeQuery()){while(r.next())rows.add(viaje(r));}
-            String cursor=null;
-            if(rows.size()>p.limit()){
-                rows.remove(p.limit());var last=rows.get(rows.size()-1);
-                cursor=CursorViajes.codificar("viajes",f,null,p.limit(),last.inicioViajeTs(),last.viajeId());
-            }
-            return new Pagina<>(rows,cursor);
-        }catch(SQLException ex){throw new IllegalStateException("No se pudieron consultar viajes",ex);}
-    }
-    @Override public Pagina<PosicionVista> posiciones(UUID id,FiltroPosiciones f,ConsultaPagina p){
-        rango(f.desde(),f.hasta());
-        var clave=CursorViajes.decodificar(p.cursor(),"posiciones",f,id,p.limit());
-        StringBuilder sql=new StringBuilder("SELECT * FROM tb_posicion_historial WHERE viaje_id=?");
-        List<Object> args=new ArrayList<>();args.add(id);
-        agregar(sql,args,"ts >= ?",f.desde());agregar(sql,args,"ts < ?",f.hasta());
-        if(clave!=null){sql.append(" AND (ts,event_id) > (?,?)");args.add(clave.ts());args.add(clave.id());}
-        sql.append(" ORDER BY ts,event_id LIMIT ?");args.add(p.limit()+1);
-        try(var c=ds.getConnection()){
-            obtener(c,id);
-            try(var s=c.prepareStatement(sql.toString())){
-                bind(s,args);List<PosicionVista> rows=new ArrayList<>();
-                try(var r=s.executeQuery()){while(r.next())rows.add(posicion(r));}
-                String cursor=null;
-                if(rows.size()>p.limit()){
-                    rows.remove(p.limit());var last=rows.get(rows.size()-1);
-                    cursor=CursorViajes.codificar("posiciones",f,id,p.limit(),last.ts(),last.eventId());
-                }
-                return new Pagina<>(rows,cursor);
-            }
-        }catch(SQLException ex){throw new IllegalStateException("No se pudieron consultar muestras",ex);}
-    }
-    static ViajeVista obtener(Connection c,UUID id)throws SQLException{
-        try(var s=c.prepareStatement("SELECT * FROM tb_viaje WHERE viaje_id=?")){
-            s.setObject(1,id);try(var r=s.executeQuery()){if(!r.next())throw new ViajeNoEncontradoException();return viaje(r);}
+            return new ViajeDetalle(viaje, resumen);
+        } catch (PersistenceException ex) {
+            throw new IllegalStateException("No se pudo consultar detalle", ex);
         }
     }
-    static ViajeVista viaje(ResultSet r)throws SQLException{
-        return new ViajeVista(r.getObject("viaje_id",UUID.class),r.getObject("carrera_id",UUID.class),
-            r.getString("car_id"),r.getString("ruta_id"),r.getString("company_id"),r.getString("fleet_id"),
-            r.getLong("inicio_viaje_ts"),r.getObject("fin_ts",Long.class),EstadoViaje.valueOf(r.getString("estado")),
-            r.getString("motivo_fin"),r.getLong("ultimo_ts"));
+
+    @Override
+    @Transactional
+    public Pagina<ViajeVista> listar(FiltroViajes f, ConsultaPagina p) {
+        rango(f.desde(), f.hasta());
+        var clave = CursorViajes.decodificar(p.cursor(), "viajes", f, null, p.limit());
+        StringBuilder hql = new StringBuilder(SELECT_VIAJE + " where 1 = 1");
+        Map<String, Object> args = new LinkedHashMap<>();
+        agregar(hql, args, " and v.carId = :carId", "carId", f.carId());
+        agregar(hql, args, " and v.carreraId = :carreraId", "carreraId", f.carreraId());
+        agregar(hql, args, " and v.inicioViajeTs >= :desde", "desde", f.desde());
+        agregar(hql, args, " and v.inicioViajeTs < :hasta", "hasta", f.hasta());
+        if (clave != null) {
+            hql.append(" and (v.inicioViajeTs, v.viajeId) < (:claveTs, :claveId)");
+            args.put("claveTs", clave.ts());
+            args.put("claveId", clave.id());
+        }
+        hql.append(" order by v.inicioViajeTs desc, v.viajeId desc");
+        try {
+            TypedQuery<ViajeVista> q = em.createQuery(hql.toString(), ViajeVista.class).setMaxResults(p.limit() + 1);
+            args.forEach(q::setParameter);
+            List<ViajeVista> rows = new ArrayList<>(q.getResultList());
+            String cursor = null;
+            if (rows.size() > p.limit()) {
+                rows.remove(p.limit());
+                var last = rows.get(rows.size() - 1);
+                cursor = CursorViajes.codificar("viajes", f, null, p.limit(), last.inicioViajeTs(), last.viajeId());
+            }
+            return new Pagina<>(rows, cursor);
+        } catch (PersistenceException ex) {
+            throw new IllegalStateException("No se pudieron consultar viajes", ex);
+        }
     }
-    static PosicionVista posicion(ResultSet r)throws SQLException{
-        return new PosicionVista(r.getObject("event_id",UUID.class),r.getObject("viaje_id",UUID.class),
-            r.getString("tipo_evento"),r.getTimestamp("received_at").toInstant(),r.getString("car_id"),
-            r.getString("company_id"),r.getString("fleet_id"),r.getDouble("lat"),r.getDouble("lon"),
-            r.getInt("heading"),r.getString("engine"),r.getInt("battery"),r.getLong("ts"));
+
+    @Override
+    @Transactional
+    public Pagina<PosicionVista> posiciones(UUID id, FiltroPosiciones f, ConsultaPagina p) {
+        rango(f.desde(), f.hasta());
+        var clave = CursorViajes.decodificar(p.cursor(), "posiciones", f, id, p.limit());
+        StringBuilder hql = new StringBuilder(SELECT_POSICION + " where p.viajeId = :viaje");
+        Map<String, Object> args = new LinkedHashMap<>();
+        args.put("viaje", id);
+        agregar(hql, args, " and p.ts >= :desde", "desde", f.desde());
+        agregar(hql, args, " and p.ts < :hasta", "hasta", f.hasta());
+        if (clave != null) {
+            hql.append(" and (p.ts, p.eventId) > (:claveTs, :claveId)");
+            args.put("claveTs", clave.ts());
+            args.put("claveId", clave.id());
+        }
+        hql.append(" order by p.ts, p.eventId");
+        try {
+            obtener(id);
+            TypedQuery<PosicionVista> q = em.createQuery(hql.toString(), PosicionVista.class).setMaxResults(p.limit() + 1);
+            args.forEach(q::setParameter);
+            List<PosicionVista> rows = new ArrayList<>(q.getResultList());
+            String cursor = null;
+            if (rows.size() > p.limit()) {
+                rows.remove(p.limit());
+                var last = rows.get(rows.size() - 1);
+                cursor = CursorViajes.codificar("posiciones", f, id, p.limit(), last.ts(), last.eventId());
+            }
+            return new Pagina<>(rows, cursor);
+        } catch (PersistenceException ex) {
+            throw new IllegalStateException("No se pudieron consultar muestras", ex);
+        }
     }
-    static void rango(Long desde,Long hasta){
-        if((desde!=null&&desde<0)||(hasta!=null&&hasta<0)||(desde!=null&&hasta!=null&&desde>hasta))
+
+    private ViajeVista obtener(UUID id) {
+        List<ViajeVista> r = em.createQuery(SELECT_VIAJE + " where v.viajeId = :id", ViajeVista.class)
+                .setParameter("id", id).getResultList();
+        if (r.isEmpty()) {
+            throw new ViajeNoEncontradoException();
+        }
+        return r.get(0);
+    }
+
+    static void rango(Long desde, Long hasta) {
+        if ((desde != null && desde < 0) || (hasta != null && hasta < 0) || (desde != null && hasta != null && desde > hasta)) {
             throw new ConsultaViajesInvalidaException();
+        }
     }
-    private static void agregar(StringBuilder sql,List<Object> args,String condicion,Object valor){
-        if(valor!=null){sql.append(" AND ").append(condicion);args.add(valor);}
-    }
-    private static void bind(PreparedStatement s,List<Object> args)throws SQLException{
-        for(int i=0;i<args.size();i++)s.setObject(i+1,args.get(i));
+
+    private static void agregar(StringBuilder hql, Map<String, Object> args, String condicion, String nombre, Object valor) {
+        if (valor != null) {
+            hql.append(condicion);
+            args.put(nombre, valor);
+        }
     }
 }

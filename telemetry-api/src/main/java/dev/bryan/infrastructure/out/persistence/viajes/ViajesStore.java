@@ -2,126 +2,179 @@ package dev.bryan.infrastructure.out.persistence.viajes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.bryan.application.port.out.ViajesRepositorio;
-import dev.bryan.infrastructure.in.messaging.viajes.EventoJson;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.*;
+import dev.bryan.domain.model.EstadoViaje;
 import dev.bryan.domain.model.EventoViaje;
 import dev.bryan.domain.model.ResultadoIngesta;
+import dev.bryan.infrastructure.in.messaging.viajes.EventoJson;
+import dev.bryan.infrastructure.out.persistence.NativoSql;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import org.hibernate.type.StandardBasicTypes;
 
-/** Ingesta idempotente: la transacción termina antes de entregar el resultado al consumidor. */
+/**
+ * Ingesta idempotente: la transacción termina al salir de {@link #guardarLote}, antes de que el consumidor
+ * confirme el offset. Los altas idempotentes son SQL nativo; el viaje se bloquea y se actualiza por entity.
+ */
 @ApplicationScoped
 public class ViajesStore implements ViajesRepositorio {
-    private static final ObjectMapper MAPPER=new ObjectMapper();
-    @Inject DataSource ds;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    @Override public ResultadoIngesta guardarLote(List<EventoViaje> eventos) {
-        List<EventoViaje> nuevos=new ArrayList<>();int legados=0;
-        for(var e:eventos) {
-            try{EventoJson.validar(MAPPER.valueToTree(e));}
-            catch(Exception ex){throw new IllegalArgumentException("Evento de viaje invalido",ex);}
-            if(e.schemaVersion()==null||e.schemaVersion()==1)legados++;else nuevos.add(e);
-        }
-        nuevos.sort(Comparator.comparing(e->e.viajeId().toString()));
-        int insertados=0,duplicados=0;
-        try(var c=ds.getConnection()){
-            c.setAutoCommit(false);
-            try{
-                for(var e:nuevos){
-                    crearViaje(c,e);
-                    try(var s=c.prepareStatement("SELECT * FROM tb_viaje WHERE viaje_id=? FOR UPDATE")){
-                        s.setObject(1,e.viajeId());
-                        try(var r=s.executeQuery()){
-                            if(!r.next())throw new IllegalStateException("Viaje ausente durante ingesta");
-                            comprobarContexto(r,e);
-                            var previo=buscarEvento(c,e.eventId());
-                            if(previo!=null){
-                                if(!previo.equals(e))throw conflicto(e);
-                                duplicados++;continue;
-                            }
-                            Long fin=r.getObject("fin_ts",Long.class);
-                            if(fin!=null&&e.ts()>fin)throw conflicto(e);
-                            if("FIN".equals(e.tipoEvento())){
-                                if(e.ts()<r.getLong("ultimo_ts"))throw conflicto(e);
-                                if(fin!=null&&(fin!=e.ts()||!Objects.equals(r.getString("motivo_fin"),e.motivoFin())))throw conflicto(e);
-                            }
-                        }
-                    }
-                    if(!insertarEvento(c,e)){
-                        if(!e.equals(buscarEvento(c,e.eventId())))throw conflicto(e);
-                        duplicados++;continue;
-                    }
-                    boolean cierre="FIN".equals(e.tipoEvento());
-                    String estado=cierre?("META".equals(e.motivoFin())?"FINALIZADO":e.motivoFin()):null;
-                    try(var s=c.prepareStatement("""
-                        UPDATE tb_viaje SET ultimo_ts=greatest(ultimo_ts,?),
-                        fin_ts=CASE WHEN ? THEN ? ELSE fin_ts END,
-                        estado=CASE WHEN ? THEN ? ELSE estado END,
-                        motivo_fin=CASE WHEN ? THEN ? ELSE motivo_fin END WHERE viaje_id=?
-                        """)){
-                        s.setLong(1,e.ts());s.setBoolean(2,cierre);s.setLong(3,e.ts());
-                        s.setBoolean(4,cierre);s.setString(5,estado);s.setBoolean(6,cierre);s.setString(7,e.motivoFin());
-                        s.setObject(8,e.viajeId());s.executeUpdate();
-                    }
-                    insertados++;
-                }
-                c.commit();
-            }catch(SQLException|RuntimeException ex){
-                try{c.rollback();}catch(SQLException rollback){ex.addSuppressed(rollback);}
-                throw ex;
+    @Inject ViajeRepository viajes;
+    @Inject EntityManager em;
+
+    @Override
+    @Transactional
+    public ResultadoIngesta guardarLote(List<EventoViaje> eventos) {
+        List<EventoViaje> nuevos = new ArrayList<>();
+        int legados = 0;
+        for (var e : eventos) {
+            try {
+                EventoJson.validar(MAPPER.valueToTree(e));
+            } catch (Exception ex) {
+                throw new IllegalArgumentException("Evento de viaje invalido", ex);
             }
-        }catch(SQLException ex){throw new IllegalStateException("No se pudo persistir historial",ex);}
-        return new ResultadoIngesta(insertados,duplicados,legados);
+            if (e.schemaVersion() == null || e.schemaVersion() == 1) {
+                legados++;
+            } else {
+                nuevos.add(e);
+            }
+        }
+        nuevos.sort(Comparator.comparing(e -> e.viajeId().toString()));
+        int insertados = 0, duplicados = 0;
+        try {
+            for (var e : nuevos) {
+                // El SQL nativo no actualiza las entities gestionadas: se vacía el contexto y se relee con bloqueo.
+                em.flush();
+                em.clear();
+                crearViaje(e);
+                ViajeEntity v = viajes.findById(e.viajeId(), LockModeType.PESSIMISTIC_WRITE);   // FOR UPDATE
+                if (v == null) {
+                    throw new IllegalStateException("Viaje ausente durante ingesta");
+                }
+                comprobarContexto(v, e);
+                var previo = buscarEvento(e.eventId());
+                if (previo != null) {
+                    if (!previo.equals(e)) {
+                        throw conflicto(e);
+                    }
+                    duplicados++;
+                    continue;
+                }
+                Long fin = v.finTs;
+                if (fin != null && e.ts() > fin) {
+                    throw conflicto(e);
+                }
+                if ("FIN".equals(e.tipoEvento())) {
+                    if (e.ts() < v.ultimoTs) {
+                        throw conflicto(e);
+                    }
+                    if (fin != null && (fin != e.ts() || !Objects.equals(v.motivoFin, e.motivoFin()))) {
+                        throw conflicto(e);
+                    }
+                }
+                if (!insertarEvento(e)) {
+                    if (!e.equals(buscarEvento(e.eventId()))) {
+                        throw conflicto(e);
+                    }
+                    duplicados++;
+                    continue;
+                }
+                boolean cierre = "FIN".equals(e.tipoEvento());
+                v.ultimoTs = Math.max(v.ultimoTs, e.ts());
+                if (cierre) {
+                    v.finTs = e.ts();
+                    v.estado = EstadoViaje.valueOf("META".equals(e.motivoFin()) ? "FINALIZADO" : e.motivoFin());
+                    v.motivoFin = e.motivoFin();
+                }
+                insertados++;
+            }
+            em.flush();
+        } catch (PersistenceException ex) {
+            throw new IllegalStateException("No se pudo persistir historial", ex);
+        }
+        return new ResultadoIngesta(insertados, duplicados, legados);
     }
-    private void crearViaje(Connection c,EventoViaje e)throws SQLException{
-        try(var s=c.prepareStatement("""
-            INSERT INTO tb_viaje(viaje_id,carrera_id,car_id,ruta_id,company_id,fleet_id,inicio_viaje_ts,ultimo_ts,estado)
-            VALUES(?,?,?,?,?,?,?,?,'SIN_CIERRE') ON CONFLICT(viaje_id) DO NOTHING
-            """)){
-            s.setObject(1,e.viajeId());s.setObject(2,e.carreraId());s.setString(3,e.carId());s.setString(4,e.rutaId());
-            s.setString(5,e.companyId());s.setString(6,e.fleetId());s.setLong(7,e.inicioViajeTs());s.setLong(8,e.ts());s.executeUpdate();
+
+    private void crearViaje(EventoViaje e) {
+        Query q = em.createNativeQuery("""
+                INSERT INTO tb_viaje(viaje_id,carrera_id,car_id,ruta_id,company_id,fleet_id,inicio_viaje_ts,ultimo_ts,estado)
+                VALUES(?1,?2,?3,?4,?5,?6,?7,?8,'SIN_CIERRE') ON CONFLICT(viaje_id) DO NOTHING
+                """);
+        NativoSql.parametro(q, 1, e.viajeId(), StandardBasicTypes.UUID);
+        NativoSql.parametro(q, 2, e.carreraId(), StandardBasicTypes.UUID);
+        NativoSql.parametro(q, 3, e.carId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 4, e.rutaId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 5, e.companyId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 6, e.fleetId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 7, e.inicioViajeTs(), StandardBasicTypes.LONG);
+        NativoSql.parametro(q, 8, e.ts(), StandardBasicTypes.LONG);
+        q.executeUpdate();
+    }
+
+    private void comprobarContexto(ViajeEntity v, EventoViaje e) {
+        if (!Objects.equals(v.carreraId, e.carreraId()) || !Objects.equals(v.carId, e.carId())
+                || !Objects.equals(v.rutaId, e.rutaId()) || !Objects.equals(v.companyId, e.companyId())
+                || !Objects.equals(v.fleetId, e.fleetId()) || v.inicioViajeTs != e.inicioViajeTs()) {
+            throw conflicto(e);
         }
     }
-    private void comprobarContexto(ResultSet r,EventoViaje e)throws SQLException{
-        if(!Objects.equals(r.getObject("carrera_id",UUID.class),e.carreraId())
-            ||!Objects.equals(r.getString("car_id"),e.carId())||!Objects.equals(r.getString("ruta_id"),e.rutaId())
-            ||!Objects.equals(r.getString("company_id"),e.companyId())||!Objects.equals(r.getString("fleet_id"),e.fleetId())
-            ||r.getLong("inicio_viaje_ts")!=e.inicioViajeTs())throw conflicto(e);
+
+    private EventoViaje buscarEvento(UUID id) {
+        PosicionHistorialEntity p = em.find(PosicionHistorialEntity.class, id);
+        return p == null ? null : new EventoViaje(p.carId, p.companyId, p.fleetId, p.lat, p.lon, p.heading,
+                p.engine, p.battery, p.ts, p.schemaVersion, p.eventId, p.carreraId, p.viajeId, p.rutaId,
+                p.inicioViajeTs, p.tipoEvento, p.motivoFin);
     }
-    private EventoViaje buscarEvento(Connection c,UUID id)throws SQLException{
-        try(var s=c.prepareStatement("SELECT * FROM tb_posicion_historial WHERE event_id=?")){
-            s.setObject(1,id);try(var r=s.executeQuery()){return r.next()?evento(r):null;}
+
+    /** @return {@code true} si se insertó; {@code false} si el {@code eventId} ya existía */
+    private boolean insertarEvento(EventoViaje e) {
+        Query q = em.createNativeQuery("""
+                INSERT INTO tb_posicion_historial(car_id,company_id,fleet_id,lat,lon,heading,engine,battery,ts,
+                schema_version,event_id,carrera_id,viaje_id,ruta_id,inicio_viaje_ts,tipo_evento,motivo_fin)
+                VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
+                ON CONFLICT(event_id) DO NOTHING
+                """);
+        NativoSql.parametro(q, 1, e.carId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 2, e.companyId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 3, e.fleetId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 4, e.lat(), StandardBasicTypes.DOUBLE);
+        NativoSql.parametro(q, 5, e.lon(), StandardBasicTypes.DOUBLE);
+        NativoSql.parametro(q, 6, e.heading(), StandardBasicTypes.INTEGER);
+        NativoSql.parametro(q, 7, e.engine(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 8, e.battery(), StandardBasicTypes.INTEGER);
+        NativoSql.parametro(q, 9, e.ts(), StandardBasicTypes.LONG);
+        NativoSql.parametro(q, 10, e.schemaVersion(), StandardBasicTypes.INTEGER);
+        NativoSql.parametro(q, 11, e.eventId(), StandardBasicTypes.UUID);
+        NativoSql.parametro(q, 12, e.carreraId(), StandardBasicTypes.UUID);
+        NativoSql.parametro(q, 13, e.viajeId(), StandardBasicTypes.UUID);
+        NativoSql.parametro(q, 14, e.rutaId(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 15, e.inicioViajeTs(), StandardBasicTypes.LONG);
+        NativoSql.parametro(q, 16, e.tipoEvento(), StandardBasicTypes.STRING);
+        NativoSql.parametro(q, 17, e.motivoFin(), StandardBasicTypes.STRING);
+        return q.executeUpdate() > 0;
+    }
+
+    @Transactional
+    public long sinCierre() {
+        try {
+            return viajes.count("estado", EstadoViaje.SIN_CIERRE);
+        } catch (PersistenceException ex) {
+            throw new IllegalStateException("No se pudieron contar viajes sin cierre", ex);
         }
     }
-    private boolean insertarEvento(Connection c,EventoViaje e)throws SQLException{
-        try(var s=c.prepareStatement("""
-            INSERT INTO tb_posicion_historial(car_id,company_id,fleet_id,lat,lon,heading,engine,battery,ts,
-            schema_version,event_id,carrera_id,viaje_id,ruta_id,inicio_viaje_ts,tipo_evento,motivo_fin)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            ON CONFLICT(event_id) DO NOTHING RETURNING event_id
-            """)){
-            s.setString(1,e.carId());s.setString(2,e.companyId());s.setString(3,e.fleetId());
-            s.setDouble(4,e.lat());s.setDouble(5,e.lon());s.setInt(6,e.heading());s.setString(7,e.engine());s.setInt(8,e.battery());s.setLong(9,e.ts());
-            s.setInt(10,e.schemaVersion());s.setObject(11,e.eventId());s.setObject(12,e.carreraId());s.setObject(13,e.viajeId());
-            s.setString(14,e.rutaId());s.setLong(15,e.inicioViajeTs());s.setString(16,e.tipoEvento());s.setString(17,e.motivoFin());
-            try(var r=s.executeQuery()){return r.next();}
-        }
-    }
-    private static EventoViaje evento(ResultSet r)throws SQLException{
-        return new EventoViaje(r.getString("car_id"),r.getString("company_id"),r.getString("fleet_id"),r.getDouble("lat"),r.getDouble("lon"),
-            r.getInt("heading"),r.getString("engine"),r.getInt("battery"),r.getLong("ts"),r.getInt("schema_version"),
-            r.getObject("event_id",UUID.class),r.getObject("carrera_id",UUID.class),r.getObject("viaje_id",UUID.class),
-            r.getString("ruta_id"),r.getLong("inicio_viaje_ts"),r.getString("tipo_evento"),r.getString("motivo_fin"));
-    }
-    public long sinCierre(){
-        try(var c=ds.getConnection();var s=c.createStatement();var r=s.executeQuery("SELECT count(*) FROM tb_viaje WHERE estado='SIN_CIERRE'")){
-            r.next();return r.getLong(1);
-        }catch(SQLException ex){throw new IllegalStateException("No se pudieron contar viajes sin cierre",ex);}
-    }
+
     /** Solo identificadores: el payload y los datos de conexión no van al mensaje ni a los logs. */
-    private static IllegalStateException conflicto(EventoViaje e){
-        return new IllegalStateException("Conflicto de integridad en historial eventId="+e.eventId()+" viajeId="+e.viajeId());
+    private static IllegalStateException conflicto(EventoViaje e) {
+        return new IllegalStateException("Conflicto de integridad en historial eventId=" + e.eventId() + " viajeId=" + e.viajeId());
     }
 }
