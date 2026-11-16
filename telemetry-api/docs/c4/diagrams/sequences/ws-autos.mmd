@@ -1,0 +1,34 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant W as Navegador WebSocket
+  participant WS as AutosWs
+  participant KF as Kafka ultima-posicion
+  participant R as AutosConsumer · foco
+  participant U as IngestaAutosService
+  participant A as AutosStore
+  participant PG as PostgreSQL
+  participant D as AutosCambios
+  participant B as AutosBroadcaster
+  participant M as MetricasMicrometer
+  W->>WS: abre /ws/autos
+  KF->>R: lote de AutoEvento
+  R->>U: ingestar(lote)
+  U->>A: guardarLote(lote)
+  A->>PG: BEGIN, upsert nativo por auto solo si ts mayor, RETURNING
+  PG-->>A: filas que cambiaron
+  A->>PG: COMMIT
+  A-->>U: autos que cambiaron
+  U->>D: registrar(cambios)
+  R-->>KF: confirma el offset tras el commit
+  loop cada 500 ms
+    B->>D: drenar()
+    alt hay cambios y conexiones abiertas
+      B-->>W: un mensaje con el arreglo de autos
+    end
+  end
+  alt falla la persistencia
+    A-->>U: IllegalStateException
+    U->>M: autosFalloPersistencia()
+    U-->>R: propaga el error
+    R-->>KF: failure-strategy fail: el canal se detiene y readiness queda en DOWN
+  end

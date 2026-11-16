@@ -1,0 +1,47 @@
+flowchart TB
+  web["dashboard en el navegador"]
+  subgraph IN["infrastructure/in"]
+    rest["rest<br/>SimulacionResource · RutasResource<br/>AutosResource · ViajesResource<br/>GlobalExceptionMapper"]
+    ws["ws<br/>AutosWs"]
+    msg["messaging<br/>AutosConsumer · ViajesConsumer<br/>deserializadores · EventoJson"]
+  end
+  subgraph APP["application"]
+    pin["port/in<br/>GestionarSimulacion · ConsultarRutas<br/>ConsultarAutos · ConsultarViajes<br/>IngestarUltimasPosiciones<br/>IngestarHistorialViajes"]
+    svc["service<br/>SimulacionService · RutasService · AutosService<br/>ViajesService · IngestaAutosService<br/>IngestaViajesService"]
+    pout["port/out<br/>AutosRepositorio · ViajesRepositorio<br/>ViajesConsultaRepositorio · CatalogoRutas<br/>PublicadorTelemetria · DifusionAutos<br/>Temporizador · MetricasIngesta"]
+  end
+  dom["domain<br/>model: records del negocio<br/>service: AutoCorredor · RelojEventos · ResumenViajeCalculador<br/>exception: NegocioException"]
+  subgraph OUT["infrastructure/out"]
+    per["persistence<br/>AutosStore · ViajesStore · ViajesConsulta<br/>entities y repositories Panache"]
+    kaf["kafka<br/>PublicadorTelemetriaKafka"]
+    wso["ws<br/>AutosCambios · AutosBroadcaster"]
+    otr["classpath · vertx · metrics<br/>CatalogoRutasClasspath · TemporizadorVertx<br/>MetricasMicrometer"]
+  end
+  cfg["infrastructure/config<br/>ServiciosConfig · ApagadoSimulacion"]
+  fl["infrastructure/flink<br/>FlinkJobRunner · UltimaPosicionJob<br/>UltimaPosicionFunction · Posicion"]
+  tel["topic telemetria"]
+  up["topic ultima-posicion"]
+  pg["PostgreSQL"]
+  web -->|"REST"| rest
+  web -->|"WS /ws/autos"| ws
+  tel --> msg
+  up --> msg
+  rest --> pin
+  msg --> pin
+  pin --> svc
+  svc --> pout
+  svc --> dom
+  per -.->|"implementa"| pout
+  kaf -.->|"implementa"| pout
+  wso -.->|"implementa"| pout
+  otr -.->|"implementa"| pout
+  cfg -.->|"crea los servicios"| svc
+  per --> pg
+  kaf --> tel
+  wso -->|"WebSocket"| web
+  tel --> fl
+  fl --> up
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class web,rest,ws,msg,pin,pout,dom,per,kaf,wso,otr,cfg,fl,tel,up,pg other
+  class svc focus

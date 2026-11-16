@@ -1,0 +1,36 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant R as ViajesResource · foco
+  participant U as ViajesService
+  participant Q as ViajesConsulta
+  participant RC as ResumenViajeCalculador
+  participant PG as PostgreSQL
+  participant E as GlobalExceptionMapper
+  C->>R: GET /viajes/viajeId
+  alt viajeId no es UUID
+    R-->>E: ConsultaViajesInvalidaException
+    E-->>C: 400 CONSULTA_VIAJES_INVALIDA con requestId
+  else UUID válido
+    R->>U: detalle(viajeId)
+    U->>Q: detalle(viajeId)
+    Q->>PG: BEGIN, SET TRANSACTION REPEATABLE READ, READ ONLY
+    Q->>PG: SELECT ViajeEntity por viaje_id
+    alt el viaje no existe
+      Q-->>E: ViajeNoEncontradoException
+      E-->>C: 404 VIAJE_NO_ENCONTRADO con requestId
+    else existe
+      Q->>PG: SELECT tb_posicion_historial ORDER BY ts, event_id con fetchSize 1000
+      PG-->>Q: cursor de filas
+      Q->>RC: calcular(viaje, iterador de muestras)
+      RC-->>Q: ResumenViaje
+      Q->>PG: COMMIT
+      Q-->>U: ViajeDetalle
+      U-->>R: ViajeDetalle
+      R-->>C: 200 application/json
+    end
+  end
+  alt PostgreSQL falla
+    Q-->>E: IllegalStateException
+    E-->>C: 500 INTERNAL_ERROR sin detalles de BD
+  end

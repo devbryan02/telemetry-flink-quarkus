@@ -1,0 +1,36 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant R as AutosResource · foco
+  participant B as Bbox (domain)
+  participant U as AutosService
+  participant A as AutosStore
+  participant PG as PostgreSQL
+  participant E as GlobalExceptionMapper
+  C->>R: GET /autos con bbox opcional
+  alt bbox ausente o vacío
+    R->>U: todos()
+    U->>A: todos()
+    A->>PG: SELECT tb_ultima_posicion ORDER BY car_id
+    PG-->>A: filas
+    A-->>U: lista de Auto
+    U-->>R: lista de Auto
+    R-->>C: 200 application/json
+  else bbox presente
+    R->>B: Bbox.parse(texto)
+    alt formato o rango inválido
+      B-->>E: NegocioException INVALID_BBOX
+      E-->>C: 400 con requestId
+    else bbox válido
+      R->>U: enBbox(bbox)
+      U->>A: enBbox(bbox)
+      A->>PG: SELECT con lon y lat dentro de la caja
+      PG-->>A: filas
+      A-->>R: lista de Auto
+      R-->>C: 200 application/json
+    end
+  end
+  alt PostgreSQL falla
+    A-->>E: IllegalStateException
+    E-->>C: 500 INTERNAL_ERROR sin detalles de BD
+  end

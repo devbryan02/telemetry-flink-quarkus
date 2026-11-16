@@ -1,0 +1,25 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant R as RutasResource · foco
+  participant U as RutasService
+  participant K as CatalogoRutasClasspath
+  participant FS as Recurso rutas/indice.json
+  participant E as GlobalExceptionMapper
+  C->>R: GET /rutas
+  R->>U: listar()
+  U->>K: listar()
+  K->>FS: abre rutas/indice.json del classpath
+  alt el recurso no existe
+    K-->>E: NegocioException RUTA_NO_ENCONTRADA
+    E-->>C: 404 con requestId
+  else existe
+    FS-->>K: JSON con id, nombre, desde, hasta y km
+    K-->>U: lista de ResumenRuta
+    U-->>R: lista de ResumenRuta
+    R-->>C: 200 application/json
+  end
+  alt la lectura falla
+    K-->>E: UncheckedIOException
+    E-->>C: 500 INTERNAL_ERROR
+  end

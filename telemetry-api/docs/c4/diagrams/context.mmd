@@ -1,0 +1,16 @@
+flowchart TB
+  usuario["Usuario<br/>sigue la carrera en el navegador"]
+  operador["Desarrollador u operador<br/>levanta el sistema, observa Flink<br/>y consulta salud, métricas e historial"]
+  dash["Dashboard Next.js<br/>mapa, clasificación, viajes y operación"]
+  api["telemetry-api<br/>simulación, Flink embebido,<br/>ingesta por Kafka, REST y WebSocket"]
+  kafka["Apache Kafka 4.2.1<br/>topics telemetria y ultima-posicion"]
+  pg["PostgreSQL 17<br/>última posición e historial de viajes"]
+  usuario -->|"elige ruta, inicia, ajusta velocidades"| dash
+  dash -->|"REST y WebSocket :8080"| api
+  operador -->|"UI de Flink :8081, /q/health y /q/metrics"| api
+  api -->|"publica y consume eventos v2"| kafka
+  api -->|"Hibernate y Panache, Flyway al arrancar"| pg
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class usuario,operador,dash,kafka,pg other
+  class api focus

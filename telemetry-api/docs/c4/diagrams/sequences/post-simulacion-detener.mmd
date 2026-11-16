@@ -1,0 +1,20 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant X as SimulacionResource
+  participant R as SimulacionService · foco
+  participant P as PublicadorTelemetriaKafka
+  participant KF as Kafka telemetria
+  participant T as TemporizadorVertx
+  C->>X: POST /simulacion/detener
+  X->>R: detener()
+  alt la carrera está EN_CURSO
+    R->>P: publicar FIN con motivo DETENIDO de los viajes abiertos
+    P->>KF: send con key carId
+    R->>T: cancelar(temporizador)
+    R->>R: estado = LISTA
+  else no hay carrera en curso
+    R->>R: no hace nada
+  end
+  R-->>X: EstadoSimulacion
+  X-->>C: 200 application/json

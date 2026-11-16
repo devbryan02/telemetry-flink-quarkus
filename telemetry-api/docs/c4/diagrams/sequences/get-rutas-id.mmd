@@ -1,0 +1,26 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant R as RutasResource · foco
+  participant U as RutasService
+  participant K as CatalogoRutasClasspath
+  participant FS as Recurso rutas/id.geojson
+  participant E as GlobalExceptionMapper
+  C->>R: GET /rutas/id
+  R->>U: geojson(id)
+  U->>K: geojson(id)
+  alt id no cumple a-z, 0-9 y guion, máximo 40
+    K-->>E: NegocioException RUTA_NO_ENCONTRADA
+    E-->>C: 404 con requestId
+  else id válido
+    K->>FS: abre rutas/id.geojson
+    alt el recurso no existe
+      K-->>E: NegocioException RUTA_NO_ENCONTRADA
+      E-->>C: 404 con requestId
+    else existe
+      FS-->>K: bytes del GeoJSON
+      K-->>U: bytes
+      U-->>R: bytes
+      R-->>C: 200 application/geo+json
+    end
+  end

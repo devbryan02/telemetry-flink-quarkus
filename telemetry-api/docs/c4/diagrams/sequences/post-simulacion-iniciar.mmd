@@ -1,0 +1,37 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant C as Cliente REST
+  participant X as SimulacionResource
+  participant R as SimulacionService · foco
+  participant K as CatalogoRutasClasspath
+  participant D as AutoCorredor y RelojEventos
+  participant P as PublicadorTelemetriaKafka
+  participant KF as Kafka telemetria
+  participant T as TemporizadorVertx
+  participant E as GlobalExceptionMapper
+  C->>X: POST /simulacion/iniciar con ruta
+  alt ruta ausente o en blanco
+    X-->>E: NegocioException RUTA_REQUERIDA
+    E-->>C: 400 con requestId
+  else ruta informada
+    X->>R: iniciar(idRuta)
+    R->>K: ruta(idRuta)
+    alt la ruta no existe
+      K-->>E: NegocioException RUTA_NO_ENCONTRADA
+      E-->>C: 404 con requestId
+    else existe
+      K-->>R: Ruta con distancias acumuladas
+      R->>P: publicar FIN con motivo REEMPLAZADO de los viajes abiertos
+      P->>KF: send con key carId
+      R->>T: cancelar temporizador previo
+      R->>D: crea un AutoCorredor por auto y pide el primer ts
+      R->>P: publicar INICIO de cada auto con viajeId nuevo
+      P->>KF: send con key carId
+      R->>T: cadaMs(intervalo-ms, avanzar)
+      R-->>X: EstadoSimulacion EN_CURSO
+      X-->>C: 200 application/json
+    end
+  end
+  alt el broker no confirma una publicación
+    P-->>R: CompletionStage fallido, solo se registra en el log
+  end
