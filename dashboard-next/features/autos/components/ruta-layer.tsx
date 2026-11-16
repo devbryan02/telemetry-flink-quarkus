@@ -68,8 +68,8 @@ export function RutaLayer({ ruta, progreso }: { ruta: FeatureCollection<LineStri
       antes,
     )
     for (const [id, tramo, token, porDefecto] of [
-      [CAPA_PENDIENTE, "pendiente", "--ruta-pendiente", "#a6c8ff"],
-      [CAPA_RECORRIDO, "recorrido", "--ruta-recorrido", "#0f62fe"],
+      [CAPA_PENDIENTE, "pendiente", "--ruta-pendiente", "#a8a8a8"],
+      [CAPA_RECORRIDO, "recorrido", "--ruta-recorrido", "#161616"],
     ] as const) {
       map.addLayer(
         {
@@ -78,7 +78,7 @@ export function RutaLayer({ ruta, progreso }: { ruta: FeatureCollection<LineStri
           source: FUENTE_TRAMOS,
           filter: ["==", ["get", "tramo"], tramo],
           layout: linea,
-          paint: { "line-color": leerToken(token, porDefecto), "line-width": ancho(3, 6, 10) },
+          paint: { "line-color": leerToken(token, porDefecto), "line-width": ancho(3, 6, 10), ...(tramo === "pendiente" ? { "line-dasharray": [0.1, 2] } : {}) },
         },
         antes,
       )

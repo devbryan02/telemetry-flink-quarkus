@@ -12,8 +12,10 @@ WORKDIR /app
 # por eso apuntan a la API tal como se ve desde el host, no al nombre del servicio en la red de Docker.
 ARG NEXT_PUBLIC_API_URL=http://localhost:8080
 ARG NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws/autos
+ARG NEXT_PUBLIC_FLINK_UI_URL=http://localhost:8081
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL \
+    NEXT_PUBLIC_FLINK_UI_URL=$NEXT_PUBLIC_FLINK_UI_URL \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

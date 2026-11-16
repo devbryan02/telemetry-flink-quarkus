@@ -1,7 +1,7 @@
 "use client"
 
 import type { FeatureCollection, LineString } from "geojson"
-import { Flag, Play } from "lucide-react"
+import { Flag, PlayFilledAlt } from "@carbon/icons-react"
 import type { ReactNode } from "react"
 
 import { MapMarker, MarkerContent } from "@/components/ui/map"
@@ -42,7 +42,7 @@ export function SalidaMeta({
       <MapMarker longitude={salida[0]} latitude={salida[1]} anchor="left" offset={[14, 0]}>
         <MarkerContent>
           <Extremo
-            icono={<Play className="size-3 fill-current" />}
+            icono={<PlayFilledAlt className="size-3 fill-current" />}
             circulo="border-foreground bg-card text-foreground"
             titulo="Salida"
             lugar={desde}

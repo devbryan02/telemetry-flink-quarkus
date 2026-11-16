@@ -13,7 +13,7 @@ Definido en [`ADR-003`](adrs/ADR-003-stack-quarkus-flink-embebido-nextjs.md), co
 | Backend | Java 17 + Quarkus 3.40 LTS (sin Spring) |
 | Procesamiento | Apache Flink 2.2.1 embebido en Quarkus (sin clúster) |
 | Mensajería | Apache Kafka en Docker (KRaft) |
-| Frontend | React 19 + Next.js 16 + shadcn/ui + mapcn (MapLibre), axios + WebSocket |
+| Frontend | React 19 + Next.js 16 + Carbon Design System (flag v12) + mapcn ([ADR-005](adrs/ADR-005-ui-carbon-v12.md)), axios + WebSocket |
 | Simulación | Quarkus (feature `simulacion`), controlada desde el dashboard |
 | Persistencia | PostgreSQL 17 con JDBC (Agroal) y Flyway, sin ORM ([`ADR-004`](adrs/ADR-004-persistencia-postgresql-jdbc.md)) |
 
@@ -37,8 +37,9 @@ Decisiones de arquitectura puntuales, declaradas de forma directa (sin opciones 
 |---|---|---|
 | [`ADR-001-graphify-knowledge-graph-memory.md`](adrs/ADR-001-graphify-knowledge-graph-memory.md) | Grafo de conocimiento local con `graphify`, para ahorrar tokens al consultar código. | Aceptado |
 | [`ADR-002-nomenclatura-tablas-bd.md`](adrs/ADR-002-nomenclatura-tablas-bd.md) | Tablas de BD con prefijo `tb_` y `snake_case`; `@Table(name)` explícito en las entities. | Aceptado |
-| [`ADR-003-stack-quarkus-flink-embebido-nextjs.md`](adrs/ADR-003-stack-quarkus-flink-embebido-nextjs.md) | Stack del MVP: Java 17 + Quarkus 3.40 LTS con Flink 2.2.1 embebido, Kafka en Docker, React 19 + Next.js 16 + shadcn/ui + mapcn. | Aceptado (su punto «sin persistencia» lo reemplaza ADR-004) |
+| [`ADR-003-stack-quarkus-flink-embebido-nextjs.md`](adrs/ADR-003-stack-quarkus-flink-embebido-nextjs.md) | Stack del MVP: Java 17 + Quarkus 3.40 LTS con Flink 2.2.1 embebido, Kafka en Docker, React 19 + Next.js 16 + shadcn/ui + mapcn. | Aceptado (sin persistencia → ADR-004; shadcn/ui → ADR-005) |
 | [`ADR-004-persistencia-postgresql-jdbc.md`](adrs/ADR-004-persistencia-postgresql-jdbc.md) | Última posición e historial de viajes en PostgreSQL 17 con JDBC y Flyway; consumidores que confirman offsets después del commit. | Aceptado |
+| [`ADR-005-ui-carbon-v12.md`](adrs/ADR-005-ui-carbon-v12.md) | UI con `@carbon/react`, flag `enable-v12-release`, temas White/G100, acción principal gris y mapa base gris. | Aceptado |
 
 ## Grafo de conocimiento (`graphify-out/`, raíz del repo)
 

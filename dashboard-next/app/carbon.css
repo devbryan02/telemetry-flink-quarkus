@@ -1,0 +1,3 @@
+/* El reset de Carbon precede a las utilidades de la app en la cascada. */
+@layer theme, base, carbon, components, utilities;
+@import "./carbon.generated.css" layer(carbon);

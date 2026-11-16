@@ -1,0 +1,25 @@
+// Carbon Design System con el flag de v12: esquinas redondeadas, campos con borde y botones de ícono
+// circulares. El flag se configura antes del primer @use de Carbon; si no, Sass ya cargó el módulo.
+@use '@carbon/react/scss/feature-flags' with (
+  $feature-flags: (
+    'enable-v12-release': true,
+  )
+);
+// Las fuentes las aporta Fontsource (layout.tsx): sin @font-face de Carbon, cuyas rutas '~@ibm/plex' Turbopack no resuelve.
+@use '@carbon/react/scss/config' with (
+  $css--font-face: false
+);
+@use '@carbon/react';
+
+@use '@carbon/react/scss/themes';
+@use '@carbon/react/scss/theme';
+
+// Claro = White y oscuro = G100 (la dirección de v12: dos temas). next-themes pone `dark` en <html>
+// y mapcn observa la misma clase, así que Carbon, Tailwind y el mapa cambian juntos.
+:root {
+  @include theme.theme(themes.$white);
+}
+
+.dark {
+  @include theme.theme(themes.$g100);
+}

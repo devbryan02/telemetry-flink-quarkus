@@ -101,4 +101,4 @@ Solo Kafka en Docker; la API y el dashboard corren en el host con recarga en cal
 - **Estado del backend:** la última posición (`tb_ultima_posicion`) y el historial (`tb_viaje`, `tb_posicion_historial`) viven en PostgreSQL y sobreviven a reinicios. Los consumidores `quarkus-dash-postgres` y `quarkus-viajes-postgres` confirman offsets después del commit. Si fallan, detienen su canal y ponen la readiness en DOWN: corrige la causa y reinicia la API ([runbook](docs/test-cases/persistencia-posiciones-viajes.md#recuperación)).
 - **Credenciales:** `.env` no se versiona. `.env.example` trae valores solo para desarrollo local.
 - **Autos y rutas:** los autos (empresa, flota, velocidad inicial) están en `telemetry-api/src/main/resources/escenarios/carrera.json`; las rutas, en `resources/rutas/` (`indice.json` y un GeoJSON por ruta).
-- **Código generado:** `dashboard-next/components/ui/` lo generan las CLIs de shadcn/mapcn y no pasa por el lint.
+- **Código generado:** `dashboard-next/components/ui/map.tsx` lo genera mapcn y no pasa por el lint. La interfaz usa Carbon v12 (ADR-005).
