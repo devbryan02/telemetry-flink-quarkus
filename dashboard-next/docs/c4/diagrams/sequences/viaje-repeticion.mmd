@@ -1,0 +1,39 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant R as RepeticionPantalla · foco
+  participant H as useRepeticion
+  participant A as viajes/api
+  participant API as telemetry-api
+  participant P as prepararRecorrido
+  U->>R: abre /viajes/viajeId
+  R->>H: useRepeticion(viajeId)
+  H->>A: obtenerViaje y listarPosiciones en paralelo
+  A->>API: GET /viajes/viajeId
+  loop páginas de 1000 hasta que no haya nextCursor, máximo 50
+    A->>API: GET /viajes/viajeId/posiciones con cursor
+    API-->>A: Pagina de PosicionVista
+  end
+  alt 200
+    API-->>H: ViajeDetalle y todas las muestras
+    H->>P: ordena por ts, quita ts repetidos y acumula metros
+    P-->>H: Recorrido
+    opt el viaje tiene carreraId
+      H->>A: listarViajes con carreraId
+      A->>API: GET /viajes con carreraId
+      API-->>H: viajes hermanos sin los REEMPLAZADO
+    end
+    H-->>R: detalle, recorrido, huecos y velocidades
+    R-->>U: mapa, resumen, gráfico y reproductor
+  else 404
+    H-->>R: El viaje no existe.
+  else más de 50 páginas u otro error
+    H-->>R: mensaje de error
+  end
+  U->>R: Reproducir con factor 1, 4 o 16
+  loop cada frame mientras reproduce
+    H->>H: avanza ts por el tiempo real multiplicado por el factor
+    H-->>R: instante interpolado con estadoEn
+  end
+  U->>R: elige otro auto de la carrera
+  Note over R: key=viajeId monta un reproductor, mapa y solicitudes nuevos

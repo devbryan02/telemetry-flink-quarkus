@@ -1,0 +1,50 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario en el navegador
+  participant N as Servidor Next.js
+  participant R as AutosMap · foco
+  participant E as useEstilosMapa
+  participant OF as OpenFreeMap
+  participant S as useAutosSocket
+  participant A as autos/api
+  participant API as telemetry-api
+  U->>N: GET /
+  N-->>U: HTML del layout con AutosDashboard
+  Note over U,R: AutosDashboard carga AutosMap solo en el cliente con dynamic y ssr false
+  U->>R: monta AutosMap
+  R->>E: useEstilosMapa()
+  E->>OF: GET styles/positron
+  alt estilo disponible
+    OF-->>E: estilo base
+    E-->>R: estilos claro y oscuro recoloreados
+  else falla
+    E-->>R: undefined y mapcn usa su estilo de Carto
+  end
+  R->>S: useAutosSocket(NEXT_PUBLIC_WS_URL)
+  S->>API: abre WS /ws/autos
+  API-->>S: conexión abierta
+  S-->>R: estado abierta
+  R->>A: obtenerAutos()
+  A->>API: GET /autos
+  API-->>A: lista de Auto
+  A-->>R: fusionar en el Map de autos y animar
+  R->>A: listarRutas() y obtenerSimulacion() en paralelo
+  A->>API: GET /rutas y GET /simulacion
+  API-->>A: rutas y EstadoSimulacion
+  A-->>R: rutas, simulación y ruta seleccionada
+  R->>A: obtenerRuta(rutaSeleccionada)
+  A->>API: GET /rutas/id
+  API-->>A: GeoJSON de la ruta
+  A-->>R: geometría, dibujo y encuadre del mapa
+  loop cada 5 s en reposo o cada 1 s en curso
+    R->>A: obtenerSimulacion()
+    A->>API: GET /simulacion
+    API-->>R: EstadoSimulacion
+  end
+  alt falla GET /autos
+    R-->>U: error No se pudo cargar la flota
+  else fallan rutas o simulación
+    R-->>U: error No se pudieron cargar las rutas
+  else falla GET /rutas/id
+    R-->>U: error No se pudo cargar la ruta
+  end

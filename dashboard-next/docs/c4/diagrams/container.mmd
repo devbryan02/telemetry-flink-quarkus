@@ -1,0 +1,19 @@
+flowchart TB
+  navegador["Navegador del usuario"]
+  subgraph dashBox["dashboard · Next.js 16 standalone · node:24-alpine · :3000"]
+    srv["Servidor Next.js<br/>server.js: sirve las páginas<br/>sin llamar a la API"]
+    spa["Aplicación en el navegador<br/>componentes de cliente de React<br/>axios, WebSocket y MapLibre"]
+  end
+  api["telemetry-api<br/>:8080 REST y WebSocket"]
+  of["OpenFreeMap<br/>estilo y teselas"]
+  carto["CARTO Basemaps<br/>respaldo"]
+  navegador -->|"GET páginas y recursos"| srv
+  srv -->|"HTML y JavaScript"| spa
+  spa -->|"REST con NEXT_PUBLIC_API_URL"| api
+  spa -->|"WS con NEXT_PUBLIC_WS_URL"| api
+  spa -->|"estilo positron y teselas"| of
+  spa -.->|"respaldo"| carto
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class navegador,srv,api,of,carto other
+  class spa focus

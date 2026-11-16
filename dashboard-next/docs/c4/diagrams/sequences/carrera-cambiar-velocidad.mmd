@@ -1,0 +1,26 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant F as FilaCorredor
+  participant R as AutosMap · foco
+  participant A as autos/api
+  participant API as telemetry-api
+  participant Z as Notificación de error
+  U->>F: arrastra el slider
+  F->>F: guarda el borrador local sin llamar a la API
+  U->>F: suelta el slider
+  F->>F: acota el valor entre 10 y 500 km/h
+  F->>R: onVelocidad(carId, kmh)
+  R->>R: ejecutar con ocupado=true
+  R->>A: cambiarVelocidad(carId, kmh)
+  A->>API: PUT /simulacion/autos/carId/velocidad con kmh
+  alt 200
+    API-->>A: EstadoSimulacion con la nueva velocidad
+    A-->>R: setSimulacion
+    R-->>F: la clasificación muestra la velocidad confirmada
+  else 400 VELOCIDAD_INVALIDA o 404 AUTO_NO_ENCONTRADO
+    API-->>A: error con requestId
+    A-->>R: excepción de axios
+    R->>Z: No se pudo cambiar la velocidad
+  end
+  R->>R: ocupado=false

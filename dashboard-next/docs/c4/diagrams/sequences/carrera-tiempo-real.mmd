@@ -1,0 +1,32 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant API as telemetry-api
+  participant S as useAutosSocket
+  participant R as AutosMap · foco
+  participant M as Metricas
+  participant AN as Animador
+  participant L as AutosLayer
+  participant MP as MapLibre
+  participant PV as PanelVivo
+  API-->>S: mensaje con el arreglo de autos cada 500 ms
+  S->>R: alRecibirLote(lote)
+  R->>M: registrarLote(lote)
+  R->>R: fusionar solo si el ts es mayor al guardado
+  R->>AN: actualizar(auto, ahora)
+  R->>R: animar() pide un frame
+  loop mientras algún auto está en camino
+    R->>AN: posiciones(ahora)
+    AN-->>R: posiciones interpoladas
+    R->>L: pintar(aGeoJSON(posiciones))
+    L->>MP: setData de la fuente de autos
+  end
+  loop cada 1 s
+    PV->>R: resumir() y opciones()
+    R-->>PV: total, mostrados, edad del último dato y latencia p95
+  end
+  alt el mensaje no es JSON válido
+    S->>S: se ignora y la conexión sigue
+  else la conexión se cierra
+    S->>S: estado reconectando
+    S->>API: reintenta con espera de 1 s hasta 10 s
+  end

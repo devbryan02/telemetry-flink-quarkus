@@ -1,0 +1,16 @@
+flowchart TB
+  usuario["Usuario<br/>sigue y controla la carrera, revisa viajes<br/>y consulta la operación"]
+  dash["dashboard-next<br/>Next.js 16 · React 19 · Carbon v12 · MapLibre"]
+  api["telemetry-api<br/>REST /autos /rutas /simulacion /viajes /q/*<br/>y WebSocket /ws/autos"]
+  of["OpenFreeMap<br/>estilo vectorial positron"]
+  carto["CARTO Basemaps<br/>estilo de respaldo de mapcn"]
+  flink["UI de Flink :8081<br/>enlace externo"]
+  usuario -->|"navega por el navegador"| dash
+  dash -->|"axios y WebSocket directos, sin BFF"| api
+  dash -->|"GET del estilo y teselas desde el navegador"| of
+  dash -.->|"solo si falla OpenFreeMap"| carto
+  usuario -.->|"abre el enlace desde Operación"| flink
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class usuario,api,of,carto,flink other
+  class dash focus

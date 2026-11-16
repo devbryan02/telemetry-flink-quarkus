@@ -1,0 +1,31 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant R as OperacionPantalla · foco
+  participant A as operacion/api
+  participant API as telemetry-api
+  participant S as interpretarSalud
+  participant PR as parsearPrometheus
+  U->>R: abre /operacion
+  loop al montar y cada 5 s
+    R->>A: obtenerSalud() y obtenerMetricas() en paralelo
+    A->>API: GET /q/health/ready aceptando 200 y 503
+    A->>API: GET /q/metrics como texto
+    API-->>A: JSON de salud y texto de Prometheus
+    A->>S: interpretarSalud(status, cuerpo)
+    A->>PR: parsearPrometheus(texto)
+    A-->>R: Salud y muestras
+    R->>R: tasaPorSegundo con el contador de eventos insertados
+    R-->>U: salud por componente y canal, indicadores y lag por canal
+  end
+  alt la API no responde
+    A-->>R: excepción
+    R-->>U: No se pudo leer la API
+  else 503 con cuerpo de salud
+    S-->>R: Salud DOWN
+    R-->>U: Readiness DOWN con el canal afectado
+  else cuerpo inesperado
+    S-->>R: Salud DOWN con error
+  end
+  U->>R: clic en Abrir Flink UI
+  Note over U,R: enlace externo a NEXT_PUBLIC_FLINK_UI_URL, no pasa por el cliente HTTP

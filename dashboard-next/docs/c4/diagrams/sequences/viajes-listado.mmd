@@ -1,0 +1,44 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant R as ViajesPantalla · foco
+  participant H as useCarreras
+  participant A as viajes/api
+  participant API as telemetry-api
+  participant D as agruparPorCarrera
+  U->>R: abre /viajes
+  R->>H: useCarreras(fecha de hoy)
+  H->>A: listarViajes con desde, hasta y limit 100
+  A->>API: GET /viajes
+  alt 200
+    API-->>A: Pagina con items y nextCursor
+    H->>A: obtenerResumenes de 6 en 6
+    A->>API: GET /viajes/viajeId por cada viaje
+    API-->>A: ViajeDetalle con el resumen
+    H->>D: agrupa por carreraId y clasifica
+    D-->>R: carreras con participantes
+    R-->>U: tarjetas de carrera
+  else 400 o fallo de red
+    A-->>H: excepción de axios
+    H-->>R: error
+    R-->>U: No se pudieron cargar los viajes
+  end
+  R->>A: listarRutas()
+  A->>API: GET /rutas
+  R->>A: obtenerGeometria(rutaId) una vez por ruta presente
+  A->>API: GET /rutas/id
+  API-->>R: trazos para el mini mapa SVG
+  opt hay una carrera EN_CURSO en la primera página
+    loop cada 5 s
+      H->>A: refresco de la primera página
+      A->>API: GET /viajes y GET /viajes/viajeId
+    end
+  end
+  opt el usuario pulsa Cargar más carreras
+    U->>R: clic
+    H->>A: listarViajes con cursor
+    A->>API: GET /viajes con cursor
+    API-->>H: siguiente página que se agrega
+  end
+  U->>R: cambia fecha, estado o ruta
+  Note over R,H: la fecha cancela la carga anterior; estado y ruta filtran en el cliente
