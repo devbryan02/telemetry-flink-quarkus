@@ -25,7 +25,7 @@ Reglas obligatorias, transversales a todo el proyecto. No son opcionales salvo e
 
 | Archivo | Tema |
 |---|---|
-| [`STD-ARCH-001-arquitectura-por-features.md`](standards/STD-ARCH-001-arquitectura-por-features.md) | Organización por feature (backend Quarkus y frontend Next.js), `shared/` mínimo, DTOs `record` escritos a mano, prohibiciones. |
+| [`STD-ARCH-001-arquitectura-por-features.md`](standards/STD-ARCH-001-arquitectura-por-features.md) | Frontend Next.js por feature; backend hexagonal según `ADR-006`, DTOs `record` escritos a mano, prohibiciones. |
 | [`STD-GIT-001-git-flow-ramas-features.md`](standards/STD-GIT-001-git-flow-ramas-features.md) | Ramas y commits (sin Pull Request/Merge Request), Definition of Done. |
 | [`STD-ERR-001-manejo-de-errores-http.md`](standards/STD-ERR-001-manejo-de-errores-http.md) | Contrato de error HTTP, códigos 400/500, sanitización de logs. |
 
@@ -40,6 +40,7 @@ Decisiones de arquitectura puntuales, declaradas de forma directa (sin opciones 
 | [`ADR-003-stack-quarkus-flink-embebido-nextjs.md`](adrs/ADR-003-stack-quarkus-flink-embebido-nextjs.md) | Stack del MVP: Java 17 + Quarkus 3.40 LTS con Flink 2.2.1 embebido, Kafka en Docker, React 19 + Next.js 16 + shadcn/ui + mapcn. | Aceptado (sin persistencia → ADR-004; shadcn/ui → ADR-005) |
 | [`ADR-004-persistencia-postgresql-jdbc.md`](adrs/ADR-004-persistencia-postgresql-jdbc.md) | Última posición e historial de viajes en PostgreSQL 17 con JDBC y Flyway; consumidores que confirman offsets después del commit. | Aceptado |
 | [`ADR-005-ui-carbon-v12.md`](adrs/ADR-005-ui-carbon-v12.md) | UI con `@carbon/react`, flag `enable-v12-release`, temas White/G100, acción principal gris y mapa base gris. | Aceptado |
+| [`ADR-006-arquitectura-hexagonal-backend.md`](adrs/ADR-006-arquitectura-hexagonal-backend.md) | Backend en capas hexagonales (`domain`, `application`, `infrastructure`) con puertos y adaptadores; reemplaza la sección Backend de `STD-ARCH-001`. Sin Lombok. | Aceptado |
 
 ## Grafo de conocimiento (`graphify-out/`, raíz del repo)
 

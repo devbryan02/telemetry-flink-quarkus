@@ -1,42 +1,15 @@
-# STD-ARCH-001: Arquitectura por features
+# STD-ARCH-001: Arquitectura por features (frontend) y hexagonal (backend)
 
-El código se organiza **por feature (capacidad de negocio)**, no por capa técnica. Todo lo que necesita una feature (recurso REST, WebSocket, consumidor Kafka, estado, modelos, lógica) vive junto en su paquete o carpeta.
+El **frontend** se organiza **por feature (capacidad de negocio)**, no por capa técnica: todo lo que necesita una feature vive junto en su carpeta. El **backend** sigue arquitectura hexagonal desde `ADR-006` (que reemplaza la antigua sección Backend de este estándar).
 
 ## Backend (Quarkus)
 
-```text
-dev.bryan
-├── simulacion/             feature: autos que recorren una ruta y publican en telemetria
-│   ├── Simulador.java      carrera: timer Vert.x de 1 s, iniciar/detener, clasificación
-│   ├── AutoCorredor.java   avance de salida a meta, velocidad ajustable, llegada
-│   ├── Ruta.java           polilínea con distancias acumuladas
-│   ├── CatalogoRutas.java  lee rutas/indice.json, rutas/*.geojson y escenarios/*.json
-│   ├── TelemetriaEvento.java  record del evento publicado
-│   ├── SimulacionResource.java  POST /simulacion/iniciar|detener, GET /simulacion, PUT velocidad
-│   └── RutasResource.java  GET /rutas, GET /rutas/{id}
-├── autos/                  feature: estado y difusión de la última posición
-│   ├── Auto.java           record del evento (esquema de la spec §4)
-│   ├── AutosStore.java     ConcurrentHashMap + set de "sucios"
-│   ├── AutosConsumer.java  @Incoming ultima-posicion
-│   ├── AutosResource.java  GET /autos
-│   ├── AutosWs.java        endpoint /ws/autos
-│   └── AutosBroadcaster.java  timer Vert.x de 500 ms que envía los lotes
-├── flink/                  feature: job Flink embebido
-│   ├── FlinkJobRunner.java
-│   ├── UltimaPosicionJob.java
-│   ├── UltimaPosicionFunction.java
-│   └── Posicion.java       record del evento que ve el job
-└── shared/                 solo lo transversal de verdad
-    └── error/              NegocioException, GlobalExceptionMapper (ver STD-ERR-001)
-```
-
-Reglas:
-- **Una feature = un paquete.** Las clases son *package-private* por defecto. Solo es `public` lo que otra feature o Quarkus necesita ver.
-- **Las features no se llaman entre sí por dentro.** `simulacion`, `flink` y `autos` se comunican por topics de Kafka (`telemetria`, `ultima-posicion`), cada una con su propio record del evento; si hiciera falta otra vía, una clase `public` documentada. Nunca se accede a los detalles internos de otra feature.
-- **`shared/` es para lo transversal:** manejo de errores y configuración común. No es un cajón de sastre. Si algo solo lo usa una feature, va en esa feature.
-- **Sin capas ceremoniales:** no se crean interfaces, puertos, mappers ni `service`/`repository` "por si acaso". Se introduce una abstracción solo cuando hay dos implementaciones reales o se necesita para probar.
-- **Los DTOs se escriben a mano**, como `record` de Java, dentro de la feature que los expone. El contrato JSON es el de `docs/specs/telemetria.md` (§4).
-- **Código Flink:** las clases que se serializan (funciones, esquemas) viven en `flink/`. No dependen de beans CDI ni de clases de otras features que no sean serializables.
+Ver [`ADR-006`](../adrs/ADR-006-arquitectura-hexagonal-backend.md): `domain/`, `application/` (`port/in`, `port/out`, `service`) e `infrastructure/` (`in`, `out`, `flink`). Resumen de reglas:
+- Dependencias hacia adentro (`infrastructure` → `application` → `domain`); el núcleo no importa Quarkus, Vert.x, Flink ni JDBC.
+- Las features no se llaman por dentro: se comunican por los topics `telemetria` y `ultima-posicion`, cada una con su propio record del evento.
+- Los DTOs se escriben a mano como `record`; sin Lombok ni generadores.
+- Las clases que se serializan en Flink viven en `infrastructure/flink`, sin CDI.
+- `ArquitecturaHexagonalTest` (ArchUnit) hace cumplir la dirección de las dependencias.
 
 ## Frontend (Next.js)
 
@@ -64,7 +37,7 @@ Reglas:
 
 ## Prohibido
 
-- Organizar por capa técnica (`controller/`, `service/`, `repository/`, `dto/`) en la raíz del proyecto.
+- Organizar el frontend por capa técnica (`controller/`, `service/`, `dto/`) en lugar de por feature.
 - Generar DTOs con herramientas de generación de código.
 - Acceder a los detalles internos de otra feature.
 - Poner credenciales o secretos en el repositorio.
@@ -74,4 +47,4 @@ Reglas:
 
 - ¿Se puede borrar o mover la feature cambiando un solo paquete o carpeta?
 - ¿Las dependencias entre features pasan por un contrato explícito (topic o API pública)?
-- ¿Cada abstracción tiene más de una implementación o una razón de prueba concreta?
+- ¿Cada puerto aísla I/O real o permite probar el núcleo sin infraestructura?
