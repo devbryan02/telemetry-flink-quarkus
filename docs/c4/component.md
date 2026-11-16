@@ -6,11 +6,9 @@ human-reviewed: false
 status: REQUIRES_REVIEW
 provenance: agent-generated
 sources:
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/
-  - ../../telemetry-api/src/main/java/dev/bryan/flink/
-  - ../../telemetry-api/src/main/java/dev/bryan/autos/
-  - ../../telemetry-api/src/main/java/dev/bryan/viajes/
-  - ../../telemetry-api/src/main/java/dev/bryan/shared/error/
+  - ../../telemetry-api/src/main/java/dev/bryan/domain/
+  - ../../telemetry-api/src/main/java/dev/bryan/application/
+  - ../../telemetry-api/src/main/java/dev/bryan/infrastructure/
   - ../../telemetry-api/src/main/resources/application.properties
   - ../../telemetry-api/src/main/resources/db/migration/V1__posiciones_y_viajes.sql
   - ../../dashboard-next/features/autos/
@@ -79,6 +77,43 @@ flowchart TB
 | autos | Proyección persistente de la última posición (`tb_ultima_posicion`); `GET /autos` consulta PostgreSQL y los cambios confirmados salen por WebSocket cada 500 ms. | Topic `ultima-posicion`, `GET /autos`, `WS /ws/autos` | PostgreSQL, JSON REST y WebSocket |
 | viajes | Historial de viajes y muestras (`tb_viaje`, `tb_posicion_historial`) leído directamente de `telemetria`, con ingesta idempotente por `eventId`; consultas paginadas y resumen del viaje. | Topic `telemetria`, `GET /viajes…` | PostgreSQL, JSON REST, métricas |
 | shared/error | Convierte excepciones en `ErrorResponse` con `requestId`, sin stack traces ni detalles de BD (`STD-ERR-001`). | `NegocioException`, `WebApplicationException`, `Throwable` | JSON de error |
+
+## Estructura hexagonal del backend (ADR-006)
+
+Desde `ADR-006` el backend se organiza en capas; las secciones «Detalle» de abajo siguen describiendo cada capacidad (feature) y sus clases, que ahora viven en estas capas. Los nombres de feature (`simulacion`, `flink`, `autos`, `viajes`) se conservan como subpaquetes de los adaptadores.
+
+```mermaid
+flowchart LR
+  subgraph IN["infrastructure/in"]
+    rest["rest · SimulacionResource, RutasResource, AutosResource, ViajesResource, GlobalExceptionMapper"]
+    ws["ws · AutosWs"]
+    msg["messaging · AutosConsumer, ViajesConsumer"]
+  end
+  subgraph APP["application"]
+    pin["port/in · GestionarSimulacion, ConsultarRutas, ConsultarAutos, ConsultarViajes, IngestarUltimasPosiciones, IngestarHistorialViajes"]
+    svc["service · SimulacionService, RutasService, AutosService, ViajesService, IngestaAutosService, IngestaViajesService"]
+    pout["port/out · AutosRepositorio, ViajesRepositorio, ViajesConsultaRepositorio, CatalogoRutas, PublicadorTelemetria, DifusionAutos, Temporizador, MetricasIngesta"]
+  end
+  DOM["domain · model (records), service (AutoCorredor, RelojEventos, ResumenViajeCalculador), exception (NegocioException)"]
+  subgraph OUT["infrastructure/out"]
+    jdbc["jdbc · AutosStore, ViajesStore, ViajesConsulta"]
+    kafka["kafka · PublicadorTelemetriaKafka"]
+    wsout["ws · AutosCambios, AutosBroadcaster"]
+    otros["classpath · CatalogoRutasClasspath | vertx · TemporizadorVertx | metrics · MetricasMicrometer"]
+  end
+  FL["infrastructure/flink · FlinkJobRunner, UltimaPosicionJob (autocontenido, sin CDI)"]
+  IN --> pin --> svc --> pout
+  svc --> DOM
+  OUT -. implementa .-> pout
+```
+
+| Capa | Regla |
+|---|---|
+| `domain` | Sin Quarkus, Vert.x, Flink, Kafka, JDBC ni Jackson. |
+| `application` | Solo puertos y servicios; no importa `infrastructure`. Los servicios no llevan anotaciones de CDI: los crea `infrastructure/config/ServiciosConfig`. |
+| `infrastructure` | Adaptadores. `in` no usa `out`. `flink` no depende del núcleo. |
+
+`ArquitecturaHexagonalTest` (ArchUnit) hace cumplir estas reglas. Equivalencias de nombres: `Simulador` → `SimulacionService`, `PublicadorTelemetria` → `PublicadorTelemetriaKafka`, `CatalogoRutas` → `CatalogoRutasClasspath`, `ViajesMetricas` → `MetricasMicrometer`.
 
 ## Detalle: simulacion
 

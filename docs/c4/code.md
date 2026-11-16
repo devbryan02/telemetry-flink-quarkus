@@ -6,16 +6,16 @@ human-reviewed: false
 status: REQUIRES_REVIEW
 provenance: agent-generated
 sources:
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/Simulador.java
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/SimulacionResource.java
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/AutoCorredor.java
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/Ruta.java
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/CatalogoRutas.java
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/PublicadorTelemetria.java
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/RelojEventos.java
-  - ../../telemetry-api/src/main/java/dev/bryan/flink/
-  - ../../telemetry-api/src/main/java/dev/bryan/autos/
-  - ../../telemetry-api/src/main/java/dev/bryan/viajes/
+  - ../../telemetry-api/src/main/java/dev/bryan/application/service/SimulacionService.java
+  - ../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/SimulacionResource.java
+  - ../../telemetry-api/src/main/java/dev/bryan/domain/service/AutoCorredor.java
+  - ../../telemetry-api/src/main/java/dev/bryan/domain/model/Ruta.java
+  - ../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/classpath/CatalogoRutasClasspath.java
+  - ../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/kafka/PublicadorTelemetriaKafka.java
+  - ../../telemetry-api/src/main/java/dev/bryan/domain/service/RelojEventos.java
+  - ../../telemetry-api/src/main/java/dev/bryan/domain/
+  - ../../telemetry-api/src/main/java/dev/bryan/application/
+  - ../../telemetry-api/src/main/java/dev/bryan/infrastructure/
   - ../../telemetry-api/src/main/resources/db/migration/V1__posiciones_y_viajes.sql
   - ../../dashboard-next/features/autos/
 c4_level: Code
@@ -64,7 +64,7 @@ flowchart TB
 
 ## Simulador
 
-[`Simulador.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/Simulador.java) · `@ApplicationScoped`, métodos públicos `synchronized`.
+[`SimulacionService.java`](../../telemetry-api/src/main/java/dev/bryan/application/service/SimulacionService.java) · `@ApplicationScoped`, métodos públicos `synchronized`.
 
 | Método | Qué hace |
 |---|---|
@@ -95,44 +95,44 @@ stateDiagram-v2
 ### simulacion
 | Clase | Rol | Pruebas |
 |---|---|---|
-| [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/SimulacionResource.java) | Entrada REST `/simulacion`; valida el cuerpo y delega en `Simulador`. Records `Inicio(ruta)` y `Velocidad(kmh)`. | `SimulacionResourceTest` |
-| [`RutasResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/RutasResource.java) | Entrada REST `/rutas` y `/rutas/{id}` (`application/geo+json`). | `SimulacionResourceTest` |
-| [`CatalogoRutas.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/CatalogoRutas.java) | Lee `rutas/indice.json`, `rutas/<id>.geojson` y `escenarios/<nombre>.json` del classpath; valida el nombre con `[a-z0-9-]{1,40}`. | `SimulacionResourceTest` |
-| [`AutoCorredor.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/AutoCorredor.java) | Avance a velocidad constante e interpolación del instante de llegada; genera la posición y tiene su propio `viajeId`. | `AutoCorredorTest` |
-| [`Ruta.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/Ruta.java) | Distancias acumuladas de la polilínea; `posicionEn(m)` devuelve lat, lon y rumbo del tramo. | `RutaTest` |
-| [`RelojEventos.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/RelojEventos.java) | `ts` en ms UTC, estrictamente creciente por auto aunque el reloj no avance. | `RelojEventosTest` |
-| [`PublicadorTelemetria.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/PublicadorTelemetria.java) | `Emitter<Record<String,String>>` en `telemetria-out` (key `carId`); serializa una vez, encadena los envíos de cada auto y registra los fallos de Kafka con `eventId` y `viajeId`. | `PublicadorTelemetriaTest` |
-| [`Escenario.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/Escenario.java) · [`TelemetriaEvento.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/TelemetriaEvento.java) | Escenario de autos y copia propia del contrato del evento v2 (spec de persistencia §4). | `SimuladorViajesTest` |
+| [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/SimulacionResource.java) | Entrada REST `/simulacion`; valida el cuerpo y delega en `Simulador`. Records `Inicio(ruta)` y `Velocidad(kmh)`. | `SimulacionResourceTest` |
+| [`RutasResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/RutasResource.java) | Entrada REST `/rutas` y `/rutas/{id}` (`application/geo+json`). | `SimulacionResourceTest` |
+| [`CatalogoRutasClasspath.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/classpath/CatalogoRutasClasspath.java) | Lee `rutas/indice.json`, `rutas/<id>.geojson` y `escenarios/<nombre>.json` del classpath; valida el nombre con `[a-z0-9-]{1,40}`. | `SimulacionResourceTest` |
+| [`AutoCorredor.java`](../../telemetry-api/src/main/java/dev/bryan/domain/service/AutoCorredor.java) | Avance a velocidad constante e interpolación del instante de llegada; genera la posición y tiene su propio `viajeId`. | `AutoCorredorTest` |
+| [`Ruta.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/Ruta.java) | Distancias acumuladas de la polilínea; `posicionEn(m)` devuelve lat, lon y rumbo del tramo. | `RutaTest` |
+| [`RelojEventos.java`](../../telemetry-api/src/main/java/dev/bryan/domain/service/RelojEventos.java) | `ts` en ms UTC, estrictamente creciente por auto aunque el reloj no avance. | `RelojEventosTest` |
+| [`PublicadorTelemetriaKafka.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/kafka/PublicadorTelemetriaKafka.java) | `Emitter<Record<String,String>>` en `telemetria-out` (key `carId`); serializa una vez, encadena los envíos de cada auto y registra los fallos de Kafka con `eventId` y `viajeId`. | `PublicadorTelemetriaTest` |
+| [`Escenario.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/Escenario.java) · [`TelemetriaEvento.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/TelemetriaEvento.java) | Escenario de autos y copia propia del contrato del evento v2 (spec de persistencia §4). | `SimuladorViajesTest` |
 
 ### flink
 | Clase | Rol | Pruebas |
 |---|---|---|
-| [`FlinkJobRunner.java`](../../telemetry-api/src/main/java/dev/bryan/flink/FlinkJobRunner.java) | En `StartupEvent` crea el MiniCluster con UI, `pipeline.classpaths` y `parent-first`, reinicio `exponential-delay` y heartbeat de 3 min; `executeAsync`. Lo cancela en `ShutdownEvent`. | — |
-| [`UltimaPosicionJob.java`](../../telemetry-api/src/main/java/dev/bryan/flink/UltimaPosicionJob.java) | `KafkaSource` (`latest`, auto-commit 100 ms, sin checkpoints) → `keyBy(carId)` → función → `KafkaSink` at-least-once. | `UltimaPosicionJobTest` |
-| [`UltimaPosicionFunction.java`](../../telemetry-api/src/main/java/dev/bryan/flink/UltimaPosicionFunction.java) | `KeyedProcessFunction` con `ValueState<Long>`; emite solo si el `ts` es mayor (RF-F3). | `UltimaPosicionJobTest` |
-| [`PosicionJson.java`](../../telemetry-api/src/main/java/dev/bryan/flink/PosicionJson.java) · [`EventoJson.java`](../../telemetry-api/src/main/java/dev/bryan/flink/EventoJson.java) · [`Posicion.java`](../../telemetry-api/src/main/java/dev/bryan/flink/Posicion.java) | (De)serialización JSON propia: un mensaje inválido lanza `IOException`, el job falla y se reinicia. `Posicion` es el record con el contexto v2, que se conserva hacia `ultima-posicion`. | `PosicionJsonTest`, `PosicionV2Test` |
+| [`FlinkJobRunner.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/flink/FlinkJobRunner.java) | En `StartupEvent` crea el MiniCluster con UI, `pipeline.classpaths` y `parent-first`, reinicio `exponential-delay` y heartbeat de 3 min; `executeAsync`. Lo cancela en `ShutdownEvent`. | — |
+| [`UltimaPosicionJob.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/flink/UltimaPosicionJob.java) | `KafkaSource` (`latest`, auto-commit 100 ms, sin checkpoints) → `keyBy(carId)` → función → `KafkaSink` at-least-once. | `UltimaPosicionJobTest` |
+| [`UltimaPosicionFunction.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/flink/UltimaPosicionFunction.java) | `KeyedProcessFunction` con `ValueState<Long>`; emite solo si el `ts` es mayor (RF-F3). | `UltimaPosicionJobTest` |
+| [`PosicionJson.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/flink/PosicionJson.java) · [`EventoJson.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/flink/EventoJson.java) · [`Posicion.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/flink/Posicion.java) | (De)serialización JSON propia: un mensaje inválido lanza `IOException`, el job falla y se reinicia. `Posicion` es el record con el contexto v2, que se conserva hacia `ultima-posicion`. | `PosicionJsonTest`, `PosicionV2Test` |
 
 ### autos
 | Clase | Rol | Pruebas |
 |---|---|---|
-| [`AutosConsumer.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosConsumer.java) | `@Incoming("ultima-posicion")`, `@Blocking`, `@Acknowledgment(POST_PROCESSING)`, lotes `List<AutoEvento>` → `store.guardarLote` → `cambios.registrar`. Ante un fallo cuenta `autos.persistencia.fallos` y relanza. | `AutosConsumerTest` |
-| [`AutosStore.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosStore.java) | JDBC sobre `tb_ultima_posicion`: consolida el lote por `carId`, upsert `ON CONFLICT(car_id) … WHERE excluded.ts > tb_ultima_posicion.ts RETURNING *` en una transacción; `todos()` y `enBbox()` consultan la BD. | `AutosStoreTest` |
-| [`AutosCambios.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosCambios.java) | Pendientes de difusión por `carId` (gana el `ts` mayor); `drenar()` los entrega una sola vez. | `AutosCambiosTest` |
-| [`AutosResource.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosResource.java) · [`Bbox.java`](../../telemetry-api/src/main/java/dev/bryan/autos/Bbox.java) | `GET /autos` (`@Blocking`) con filtro opcional `bbox` (400 `INVALID_BBOX`). | `AutosResourceTest`, `BboxTest` |
-| [`AutosBroadcaster.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosBroadcaster.java) · [`AutosWs.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosWs.java) | Temporizador Vert.x de 500 ms que drena `AutosCambios` y envía un único arreglo a todas las conexiones de `/ws/autos`. | `AutosWsTest` |
-| [`AutoEvento.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutoEvento.java) · [`AutoEventoDeserializer.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutoEventoDeserializer.java) · [`EventoJson.java`](../../telemetry-api/src/main/java/dev/bryan/autos/EventoJson.java) | Record de entrada con contexto v2 opcional, deserializador del canal y validación local (v1 y v2). | `ContratoV2Test` |
-| [`Auto.java`](../../telemetry-api/src/main/java/dev/bryan/autos/Auto.java) · [`AutoDeserializer.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutoDeserializer.java) | JSON público de 9 campos (REST y WebSocket). `AutoDeserializer` ya no lo usa el canal; solo queda su prueba. | `AutoDeserializerTest` |
+| [`AutosConsumer.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/autos/AutosConsumer.java) | `@Incoming("ultima-posicion")`, `@Blocking`, `@Acknowledgment(POST_PROCESSING)`, lotes `List<AutoEvento>` → `store.guardarLote` → `cambios.registrar`. Ante un fallo cuenta `autos.persistencia.fallos` y relanza. | `AutosConsumerTest` |
+| [`AutosStore.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/jdbc/autos/AutosStore.java) | JDBC sobre `tb_ultima_posicion`: consolida el lote por `carId`, upsert `ON CONFLICT(car_id) … WHERE excluded.ts > tb_ultima_posicion.ts RETURNING *` en una transacción; `todos()` y `enBbox()` consultan la BD. | `AutosStoreTest` |
+| [`AutosCambios.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/ws/AutosCambios.java) | Pendientes de difusión por `carId` (gana el `ts` mayor); `drenar()` los entrega una sola vez. | `AutosCambiosTest` |
+| [`AutosResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/AutosResource.java) · [`Bbox.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/Bbox.java) | `GET /autos` (`@Blocking`) con filtro opcional `bbox` (400 `INVALID_BBOX`). | `AutosResourceTest`, `BboxTest` |
+| [`AutosBroadcaster.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/ws/AutosBroadcaster.java) · [`AutosWs.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/ws/AutosWs.java) | Temporizador Vert.x de 500 ms que drena `AutosCambios` y envía un único arreglo a todas las conexiones de `/ws/autos`. | `AutosWsTest` |
+| [`AutoEvento.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/AutoEvento.java) · [`AutoEventoDeserializer.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/autos/AutoEventoDeserializer.java) · [`EventoJson.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/autos/EventoJson.java) | Record de entrada con contexto v2 opcional, deserializador del canal y validación local (v1 y v2). | `ContratoV2Test` |
+| [`Auto.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/Auto.java) · [`AutoDeserializer.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/autos/AutoDeserializer.java) | JSON público de 9 campos (REST y WebSocket). `AutoDeserializer` ya no lo usa el canal; solo queda su prueba. | `AutoDeserializerTest` |
 
 ### viajes
 | Clase | Rol | Pruebas |
 |---|---|---|
-| [`ViajesConsumer.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesConsumer.java) | `@Incoming("historial-telemetria")` (topic `telemetria`), `@Blocking`, `POST_PROCESSING`, lotes `List<EventoViaje>`; registra métricas y relanza los fallos. | `ViajesConsumerTest` |
-| [`ViajesStore.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesStore.java) | Ingesta transaccional e idempotente por `eventId` en `tb_viaje` y `tb_posicion_historial`; detecta conflictos de contenido, identidad, intervalo y cierre; excluye legados. Devuelve `ResultadoIngesta`. | `ViajesStoreTest`, `RecuperacionTest` |
-| [`ViajesConsulta.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesConsulta.java) · [`CursorViajes.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/CursorViajes.java) | Listado `(inicio_viaje_ts DESC, viaje_id DESC)`, posiciones `(ts, event_id)`, detalle en una transacción de solo lectura `REPEATABLE READ`; cursor opaco Base64 validado contra tipo, filtros y `limit`. | `ViajesResourceTest`, `CursorViajesTest` |
-| [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesResource.java) | `GET /viajes`, `/viajes/{viajeId}`, `/viajes/{viajeId}/posiciones` (`@Blocking`); valida UUID, números y `limit` (400 `CONSULTA_VIAJES_INVALIDA`, 404 `VIAJE_NO_ENCONTRADO`). | `ViajesResourceTest` |
-| [`ResumenViajeCalculador.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ResumenViajeCalculador.java) · [`ResumenViaje.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ResumenViaje.java) · [`ViajeDetalle.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajeDetalle.java) | Resumen del viaje (spec de persistencia §7) con Haversine y radio 6.371.000 m. | `ResumenViajeTest`, `ViajeDetalleTest` |
-| [`ViajesMetricas.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesMetricas.java) | Contadores Micrometer sin etiquetas por auto ni viaje y gauge `viajes.sin_cierre`. | `ViajesMetricasTest` |
-| [`EventoViaje.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/EventoViaje.java) · [`EventoViajeDeserializer.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/EventoViajeDeserializer.java) · [`EventoViajeFailureHandler.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/EventoViajeFailureHandler.java) · [`EventoJson.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/EventoJson.java) | Record de entrada, deserializador, handler `historial-invalido` (cuenta y relanza) y validación local. | `ViajesConsumerTest` |
+| [`ViajesConsumer.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/viajes/ViajesConsumer.java) | `@Incoming("historial-telemetria")` (topic `telemetria`), `@Blocking`, `POST_PROCESSING`, lotes `List<EventoViaje>`; registra métricas y relanza los fallos. | `ViajesConsumerTest` |
+| [`ViajesStore.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/jdbc/viajes/ViajesStore.java) | Ingesta transaccional e idempotente por `eventId` en `tb_viaje` y `tb_posicion_historial`; detecta conflictos de contenido, identidad, intervalo y cierre; excluye legados. Devuelve `ResultadoIngesta`. | `ViajesStoreTest`, `RecuperacionTest` |
+| [`ViajesConsulta.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/jdbc/viajes/ViajesConsulta.java) · [`CursorViajes.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/jdbc/viajes/CursorViajes.java) | Listado `(inicio_viaje_ts DESC, viaje_id DESC)`, posiciones `(ts, event_id)`, detalle en una transacción de solo lectura `REPEATABLE READ`; cursor opaco Base64 validado contra tipo, filtros y `limit`. | `ViajesResourceTest`, `CursorViajesTest` |
+| [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/ViajesResource.java) | `GET /viajes`, `/viajes/{viajeId}`, `/viajes/{viajeId}/posiciones` (`@Blocking`); valida UUID, números y `limit` (400 `CONSULTA_VIAJES_INVALIDA`, 404 `VIAJE_NO_ENCONTRADO`). | `ViajesResourceTest` |
+| [`ResumenViajeCalculador.java`](../../telemetry-api/src/main/java/dev/bryan/domain/service/ResumenViajeCalculador.java) · [`ResumenViaje.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/ResumenViaje.java) · [`ViajeDetalle.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/ViajeDetalle.java) | Resumen del viaje (spec de persistencia §7) con Haversine y radio 6.371.000 m. | `ResumenViajeTest`, `ViajeDetalleTest` |
+| [`MetricasMicrometer.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/out/metrics/MetricasMicrometer.java) | Contadores Micrometer sin etiquetas por auto ni viaje y gauge `viajes.sin_cierre`. | `ViajesMetricasTest` |
+| [`EventoViaje.java`](../../telemetry-api/src/main/java/dev/bryan/domain/model/EventoViaje.java) · [`EventoViajeDeserializer.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/viajes/EventoViajeDeserializer.java) · [`EventoViajeFailureHandler.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/viajes/EventoViajeFailureHandler.java) · [`EventoJson.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/messaging/viajes/EventoJson.java) | Record de entrada, deserializador, handler `historial-invalido` (cuenta y relanza) y validación local. | `ViajesConsumerTest` |
 | `ViajeVista`, `PosicionVista`, `Pagina`, `ConsultaPagina`, `FiltroViajes`, `FiltroPosiciones`, `EstadoViaje`, `ResultadoIngesta` y excepciones | DTOs `record` de la API (`{items, nextCursor}`) y estados `SIN_CIERRE`, `FINALIZADO`, `DETENIDO`, `REEMPLAZADO`. | `ViajesResourceTest` |
 
 ### Esquema PostgreSQL
@@ -148,8 +148,8 @@ stateDiagram-v2
 ### shared/error
 | Clase | Rol |
 |---|---|
-| [`GlobalExceptionMapper.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/GlobalExceptionMapper.java) | `@ServerExceptionMapper` para `NegocioException` (status y código propios), `WebApplicationException` (`HTTP_<status>`) y `Throwable` (500 `INTERNAL_ERROR`, sin SQL ni detalles de BD). |
-| [`ErrorResponse.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/ErrorResponse.java) · [`NegocioException.java`](../../telemetry-api/src/main/java/dev/bryan/shared/error/NegocioException.java) | Contrato `timestamp, status, code, message, path, requestId` y excepción de negocio. |
+| [`GlobalExceptionMapper.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/GlobalExceptionMapper.java) | `@ServerExceptionMapper` para `NegocioException` (status y código propios), `WebApplicationException` (`HTTP_<status>`) y `Throwable` (500 `INTERNAL_ERROR`, sin SQL ni detalles de BD). |
+| [`ErrorResponse.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/ErrorResponse.java) · [`NegocioException.java`](../../telemetry-api/src/main/java/dev/bryan/domain/exception/NegocioException.java) | Contrato `timestamp, status, code, message, path, requestId` y excepción de negocio. |
 
 ### dashboard (`features/autos`)
 | Módulo | Rol |

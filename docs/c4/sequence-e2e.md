@@ -6,10 +6,9 @@ human-reviewed: false
 status: REQUIRES_REVIEW
 provenance: agent-generated
 sources:
-  - ../../telemetry-api/src/main/java/dev/bryan/simulacion/
-  - ../../telemetry-api/src/main/java/dev/bryan/flink/
-  - ../../telemetry-api/src/main/java/dev/bryan/autos/
-  - ../../telemetry-api/src/main/java/dev/bryan/viajes/
+  - ../../telemetry-api/src/main/java/dev/bryan/domain/
+  - ../../telemetry-api/src/main/java/dev/bryan/application/
+  - ../../telemetry-api/src/main/java/dev/bryan/infrastructure/
   - ../../telemetry-api/src/main/resources/application.properties
   - ../../dashboard-next/features/autos/
   - ../../docker-compose.yml
@@ -180,17 +179,17 @@ sequenceDiagram
 
 | # | Endpoint | operationId (inferido) | Implementación | Secuencia | Diagrama |
 |---|---|---|---|---|---|
-| 1 | `GET /rutas` | `RutasResource.listar` | [`RutasResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/RutasResource.java) | [get-rutas.md](sequences/get-rutas.md) | [get-rutas.mmd](diagrams/sequences/get-rutas.mmd) |
-| 2 | `GET /rutas/{id}` | `RutasResource.ruta` | [`RutasResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/RutasResource.java) | [get-rutas-id.md](sequences/get-rutas-id.md) | [get-rutas-id.mmd](diagrams/sequences/get-rutas-id.mmd) |
-| 3 | `GET /simulacion` | `SimulacionResource.estado` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/SimulacionResource.java) | [get-simulacion.md](sequences/get-simulacion.md) | [get-simulacion.mmd](diagrams/sequences/get-simulacion.mmd) |
-| 4 | `POST /simulacion/iniciar` | `SimulacionResource.iniciar` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/SimulacionResource.java) | [post-simulacion-iniciar.md](sequences/post-simulacion-iniciar.md) | [post-simulacion-iniciar.mmd](diagrams/sequences/post-simulacion-iniciar.mmd) |
-| 5 | `POST /simulacion/detener` | `SimulacionResource.detener` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/SimulacionResource.java) | [post-simulacion-detener.md](sequences/post-simulacion-detener.md) | [post-simulacion-detener.mmd](diagrams/sequences/post-simulacion-detener.mmd) |
-| 6 | `PUT /simulacion/autos/{carId}/velocidad` | `SimulacionResource.velocidad` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/simulacion/SimulacionResource.java) | [put-simulacion-autos-carid-velocidad.md](sequences/put-simulacion-autos-carid-velocidad.md) | [put-simulacion-autos-carid-velocidad.mmd](diagrams/sequences/put-simulacion-autos-carid-velocidad.mmd) |
-| 7 | `GET /autos` | `AutosResource.listar` | [`AutosResource.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosResource.java) | [get-autos.md](sequences/get-autos.md) | [get-autos.mmd](diagrams/sequences/get-autos.mmd) |
-| 8 | `GET /viajes` | `ViajesResource.listar` | [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesResource.java) | [get-viajes.md](sequences/get-viajes.md) | [get-viajes.mmd](diagrams/sequences/get-viajes.mmd) |
-| 9 | `GET /viajes/{viajeId}` | `ViajesResource.detalle` | [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesResource.java) | [get-viajes-viajeid.md](sequences/get-viajes-viajeid.md) | [get-viajes-viajeid.mmd](diagrams/sequences/get-viajes-viajeid.mmd) |
-| 10 | `GET /viajes/{viajeId}/posiciones` | `ViajesResource.posiciones` | [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/viajes/ViajesResource.java) | [get-viajes-viajeid-posiciones.md](sequences/get-viajes-viajeid-posiciones.md) | [get-viajes-viajeid-posiciones.mmd](diagrams/sequences/get-viajes-viajeid-posiciones.mmd) |
-| 11 | `WS /ws/autos` | `AutosWs y AutosBroadcaster.emitir` | [`AutosWs.java`](../../telemetry-api/src/main/java/dev/bryan/autos/AutosWs.java) | [ws-autos.md](sequences/ws-autos.md) | [ws-autos.mmd](diagrams/sequences/ws-autos.mmd) |
+| 1 | `GET /rutas` | `RutasResource.listar` | [`RutasResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/RutasResource.java) | [get-rutas.md](sequences/get-rutas.md) | [get-rutas.mmd](diagrams/sequences/get-rutas.mmd) |
+| 2 | `GET /rutas/{id}` | `RutasResource.ruta` | [`RutasResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/RutasResource.java) | [get-rutas-id.md](sequences/get-rutas-id.md) | [get-rutas-id.mmd](diagrams/sequences/get-rutas-id.mmd) |
+| 3 | `GET /simulacion` | `SimulacionResource.estado` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/SimulacionResource.java) | [get-simulacion.md](sequences/get-simulacion.md) | [get-simulacion.mmd](diagrams/sequences/get-simulacion.mmd) |
+| 4 | `POST /simulacion/iniciar` | `SimulacionResource.iniciar` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/SimulacionResource.java) | [post-simulacion-iniciar.md](sequences/post-simulacion-iniciar.md) | [post-simulacion-iniciar.mmd](diagrams/sequences/post-simulacion-iniciar.mmd) |
+| 5 | `POST /simulacion/detener` | `SimulacionResource.detener` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/SimulacionResource.java) | [post-simulacion-detener.md](sequences/post-simulacion-detener.md) | [post-simulacion-detener.mmd](diagrams/sequences/post-simulacion-detener.mmd) |
+| 6 | `PUT /simulacion/autos/{carId}/velocidad` | `SimulacionResource.velocidad` | [`SimulacionResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/SimulacionResource.java) | [put-simulacion-autos-carid-velocidad.md](sequences/put-simulacion-autos-carid-velocidad.md) | [put-simulacion-autos-carid-velocidad.mmd](diagrams/sequences/put-simulacion-autos-carid-velocidad.mmd) |
+| 7 | `GET /autos` | `AutosResource.listar` | [`AutosResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/AutosResource.java) | [get-autos.md](sequences/get-autos.md) | [get-autos.mmd](diagrams/sequences/get-autos.mmd) |
+| 8 | `GET /viajes` | `ViajesResource.listar` | [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/ViajesResource.java) | [get-viajes.md](sequences/get-viajes.md) | [get-viajes.mmd](diagrams/sequences/get-viajes.mmd) |
+| 9 | `GET /viajes/{viajeId}` | `ViajesResource.detalle` | [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/ViajesResource.java) | [get-viajes-viajeid.md](sequences/get-viajes-viajeid.md) | [get-viajes-viajeid.mmd](diagrams/sequences/get-viajes-viajeid.mmd) |
+| 10 | `GET /viajes/{viajeId}/posiciones` | `ViajesResource.posiciones` | [`ViajesResource.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/rest/ViajesResource.java) | [get-viajes-viajeid-posiciones.md](sequences/get-viajes-viajeid-posiciones.md) | [get-viajes-viajeid-posiciones.mmd](diagrams/sequences/get-viajes-viajeid-posiciones.mmd) |
+| 11 | `WS /ws/autos` | `AutosWs y AutosBroadcaster.emitir` | [`AutosWs.java`](../../telemetry-api/src/main/java/dev/bryan/infrastructure/in/ws/AutosWs.java) | [ws-autos.md](sequences/ws-autos.md) | [ws-autos.mmd](diagrams/sequences/ws-autos.mmd) |
 
 **Cobertura:** 10 operaciones REST encontradas en los controllers → 10 secuencias (100 %). Además hay 1 endpoint WebSocket con su secuencia.
 
