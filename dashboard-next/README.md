@@ -1,11 +1,60 @@
-# Dashboard de telemetría
+# dashboard-next
 
-Next.js 16, React 19, Carbon Design System con flag v12 y mapcn/MapLibre. Las pantallas son Carrera (`/`), Viajes (`/viajes`), Repetición (`/viajes/[viajeId]`) y Operación (`/operacion`).
+Interfaz web de la demo de telemetría en tiempo real: sigue la carrera de tres autos sobre un mapa, revisa los viajes guardados y muestra la salud del sistema. La arquitectura completa está en [`docs/c4/`](docs/c4/README.md).
 
-Copia `.env.example` a `.env.local` y ejecuta `npm ci` y `npm run dev`. La API debe estar disponible en `NEXT_PUBLIC_API_URL`; el WebSocket usa `NEXT_PUBLIC_WS_URL` y el enlace a Flink, `NEXT_PUBLIC_FLINK_UI_URL`. En Docker, estas variables son argumentos del build.
+## Pantallas
 
-Verificación: `npm test`, `npm run lint` y `npm run build`. Vitest prueba funciones puras de `features/` y `lib/`.
+| Ruta | Qué muestra |
+|---|---|
+| `/` | **Carrera:** mapa con los autos en vivo, clasificación, control de velocidad por auto, filtro por empresa y flota, y modo claro u oscuro |
+| `/viajes` | **Viajes:** carreras del día agrupadas, con filtros por estado, ruta y fecha |
+| `/viajes/[viajeId]` | **Repetición:** recorrido de un viaje con reproductor (1x, 4x, 16x) y gráfico de velocidad |
+| `/operacion` | **Operación:** salud de la API, flujo de eventos y métricas de ingesta |
 
-`predev` y `prebuild` compilan `app/carbon.scss` con Sass a `app/carbon.generated.css` (no se versiona). Si editas Sass con el servidor abierto, ejecuta `npm run carbon:css`. `app/carbon.css` coloca Carbon en la capa CSS anterior a las utilidades de Tailwind, que no carga preflight. Las fuentes IBM Plex se sirven localmente con Fontsource.
+## Tecnología
 
-Desde la raíz: `docker compose up -d --build dashboard`. El contrato y las decisiones están en `docs/specs/telemetria.md` §10 y `knowledge/adrs/ADR-005-ui-carbon-v12.md`.
+Next.js 16 · React 19 · TypeScript · Carbon Design System v12 · MapLibre (mapcn) · axios · Vitest.
+
+Qué tiene de particular:
+
+- **Organización por features** (`features/autos`, `features/viajes`, `features/operacion`): cada una con su cliente HTTP y su lógica, y comunicadas solo por su `index.ts`.
+- **Mapa fluido:** el estado de los autos vive fuera de React y el movimiento se interpola entre eventos del WebSocket.
+- **Lógica en funciones puras** con pruebas (interpolación, filtros, agrupación de carreras, parseo de métricas).
+- **Reconexión automática** del WebSocket con espera creciente.
+
+## Cómo ejecutarlo
+
+Requiere **Node.js** y la API en marcha (`telemetry-api`).
+
+```bash
+cp .env.example .env.local     # URL de la API, del WebSocket y de la UI de Flink
+npm install
+npm run dev                    # http://localhost:3000
+```
+
+| Variable | Para qué sirve |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | URL de la API REST (por defecto `http://localhost:8080`) |
+| `NEXT_PUBLIC_WS_URL` | URL del WebSocket de posiciones |
+| `NEXT_PUBLIC_FLINK_UI_URL` | Enlace a la UI de Flink en la pantalla Operación |
+
+En Docker estas variables son argumentos del build, porque las usa el navegador. Desde la raíz del repositorio: `docker compose up -d --build dashboard`.
+
+## Verificación
+
+```bash
+npm test          # Vitest
+npm run lint
+npm run build
+```
+
+## Notas
+
+- `app/carbon.generated.css` se genera con Sass (`npm run carbon:css`, que corre solo antes de `dev` y `build`) y no se versiona.
+- `components/ui/map.tsx` lo genera mapcn; no se edita.
+- Esta versión de Next.js tiene cambios incompatibles: consulta `node_modules/next/dist/docs/` antes de modificar la configuración (ver [`AGENTS.md`](AGENTS.md)).
+- Decisión de interfaz: [`ADR-005`](../knowledge/adrs/ADR-005-ui-carbon-v12.md).
+
+## Documentación
+
+[Arquitectura C4](docs/c4/README.md): contexto, contenedores, componentes, código y siete recorridos de usuario.
