@@ -2,6 +2,8 @@
 
 **Estado:** Aceptado · **Fecha:** 2026-10-15 · **Detalle:** `docs/specs/persistencia-posiciones-viajes.md` · **Reemplaza:** el punto «Persistencia: ninguna» de `ADR-003`
 
+> **Nota:** el punto «Acceso: JDBC… Sin ORM» fue reemplazado por [`ADR-007`](ADR-007-persistencia-hibernate-panache.md) (Hibernate ORM con Panache). Lo demás de este ADR sigue vigente.
+
 La última posición de cada auto y el historial de viajes se guardan en PostgreSQL:
 
 - **Base de datos:** PostgreSQL 17 (imagen `postgres:17`) en Docker Compose, con volumen `postgres-datos` y credenciales por variables de entorno (`.env`, ver `.env.example`).

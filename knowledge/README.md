@@ -15,7 +15,7 @@ Definido en [`ADR-003`](adrs/ADR-003-stack-quarkus-flink-embebido-nextjs.md), co
 | Mensajería | Apache Kafka en Docker (KRaft) |
 | Frontend | React 19 + Next.js 16 + Carbon Design System (flag v12) + mapcn ([ADR-005](adrs/ADR-005-ui-carbon-v12.md)), axios + WebSocket |
 | Simulación | Quarkus (feature `simulacion`), controlada desde el dashboard |
-| Persistencia | PostgreSQL 17 con JDBC (Agroal) y Flyway, sin ORM ([`ADR-004`](adrs/ADR-004-persistencia-postgresql-jdbc.md)) |
+| Persistencia | PostgreSQL 17 con Hibernate ORM + Panache y Flyway ([`ADR-007`](adrs/ADR-007-persistencia-hibernate-panache.md), esquema en [`ADR-004`](adrs/ADR-004-persistencia-postgresql-jdbc.md)) |
 
 Donde un standard muestre ejemplos de otro framework, se aplica su equivalente en Quarkus.
 
@@ -41,6 +41,7 @@ Decisiones de arquitectura puntuales, declaradas de forma directa (sin opciones 
 | [`ADR-004-persistencia-postgresql-jdbc.md`](adrs/ADR-004-persistencia-postgresql-jdbc.md) | Última posición e historial de viajes en PostgreSQL 17 con JDBC y Flyway; consumidores que confirman offsets después del commit. | Aceptado |
 | [`ADR-005-ui-carbon-v12.md`](adrs/ADR-005-ui-carbon-v12.md) | UI con `@carbon/react`, flag `enable-v12-release`, temas White/G100, acción principal gris y mapa base gris. | Aceptado |
 | [`ADR-006-arquitectura-hexagonal-backend.md`](adrs/ADR-006-arquitectura-hexagonal-backend.md) | Backend en capas hexagonales (`domain`, `application`, `infrastructure`) con puertos y adaptadores; reemplaza la sección Backend de `STD-ARCH-001`. Sin Lombok. | Aceptado |
+| [`ADR-007-persistencia-hibernate-panache.md`](adrs/ADR-007-persistencia-hibernate-panache.md) | Persistencia con Hibernate ORM + Panache (repository); Flyway manda y Hibernate valida; SQL nativo para upsert, idempotencia y snapshot. Reemplaza «sin ORM» de ADR-004. | Aceptado |
 
 ## Grafo de conocimiento (`graphify-out/`, raíz del repo)
 
