@@ -29,4 +29,18 @@ class ViajeDetalleTest {
         assertEquals(detalle.getLong("viaje.ultimoTs"),detalle.getLong("resumen.ultimoTs"));
         given().get("/viajes/"+UUID.randomUUID()).then().statusCode(404);
     }
+    @Test void detalleNoDejaConexionesEnSoloLecturaEnElPool()throws Exception{
+        try(var c=ds.getConnection();var s=c.createStatement()){
+            s.executeUpdate("DELETE FROM tb_posicion_historial");s.executeUpdate("DELETE FROM tb_viaje");
+        }
+        store.guardarLote(List.of(ViajesStoreTest.evento(1,1000,"INICIO",null)));
+        String path="/viajes/"+ViajesStoreTest.VIAJE;
+        // SET TRANSACTION vale solo para la transaccion del detalle: las escrituras posteriores no deben fallar
+        for(int i=2;i<14;i++){
+            given().get(path).then().statusCode(200);
+            var r=store.guardarLote(List.of(ViajesStoreTest.evento(i,1000L+i,"POSICION",null)));
+            assertEquals(1,r.insertados());
+        }
+        assertEquals(13,given().get(path).then().statusCode(200).extract().jsonPath().getInt("resumen.cantidadMuestras"));
+    }
 }

@@ -40,4 +40,10 @@ public class AutosStoreTest {
         assertThrows(RuntimeException.class,()->store.guardarLote(List.of(evento("store-a",100),invalido)));
         assertTrue(store.todos().stream().noneMatch(a->a.carId().startsWith("store-")));
     }
+    @Test void violacionDeCheckSeTraduceSinExponerSql() {
+        var invalido=new AutoEvento("store-z",null,null,100,-77,0,"ON",80,200);   // lat fuera de rango: CHECK de la tabla
+        var ex=assertThrows(IllegalStateException.class,()->store.guardarLote(List.of(invalido)));
+        assertEquals("No se pudieron persistir posiciones",ex.getMessage());
+        assertFalse(ex.getMessage().contains("INSERT")||ex.getMessage().contains("jdbc"));
+    }
 }
