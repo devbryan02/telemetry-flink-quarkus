@@ -1,9 +1,17 @@
 # Telemetría en tiempo real: Kafka, API (Quarkus + Flink embebido) y dashboard (Next.js).
 #   docker compose up -d --build     levanta todo   →  http://localhost:3000
 #   docker compose up -d kafka       solo Kafka, para desarrollar la API o el dashboard en local
+# Rotación de logs para que los contenedores no llenen el disco del host.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:17
+    logging: *logging
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB}
@@ -24,6 +32,7 @@ services:
     # deja inutilizable el coordinador de grupos y los consumidores no pueden unirse ni confirmar offsets.
     image: apache/kafka:4.2.1
     container_name: telemetria-kafka
+    logging: *logging
     restart: unless-stopped
     ports:
       - "9092:9092"
@@ -72,6 +81,10 @@ services:
     build: ./telemetry-api
     image: telemetria/telemetry-api:latest
     container_name: telemetria-api
+    init: true
+    logging: *logging
+    # Heap = 75 % (MaxRAMPercentage); el resto queda para metaspace, hilos de Flink y buffers de Kafka
+    mem_limit: 2g
     restart: unless-stopped
     depends_on:
       postgres:
@@ -105,6 +118,9 @@ services:
         NEXT_PUBLIC_FLINK_UI_URL: ${NEXT_PUBLIC_FLINK_UI_URL:-http://localhost:8081}
     image: telemetria/dashboard:latest
     container_name: telemetria-dashboard
+    init: true
+    logging: *logging
+    mem_limit: 512m
     restart: unless-stopped
     depends_on:
       telemetry-api:

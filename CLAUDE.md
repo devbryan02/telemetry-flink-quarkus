@@ -24,7 +24,8 @@ Next.js 16 + Carbon v12 + mapcn (MapLibre) ◄── axios (autos, ruta, simulac
 ```
 
 Decisiones que no son obvias si no se lee toda la spec:
-- **Las features del backend se comunican solo por los topics**, aunque compartan JVM:
+- **Backend hexagonal (`ADR-006`):** `domain/` (records y reglas), `application/` (`port/in`, `port/out`, `service`) e `infrastructure/` (`in/{rest,ws,messaging}`, `out/{jdbc,kafka,ws,classpath,metrics,vertx}`, `flink`, `config`). Las dependencias apuntan hacia adentro: `domain` y `application` no importan Quarkus, Vert.x, Flink, Kafka, JDBC ni Jackson, y `ArquitecturaHexagonalTest` (ArchUnit) lo hace cumplir. Los servicios de `application` no llevan anotaciones de CDI: los crea `infrastructure/config/ServiciosConfig` con `@Produces @Singleton`. Una clase nueva va en su capa; un acceso nuevo a I/O es un puerto de salida con su adaptador. Sin Lombok: los DTOs son `record` escritos a mano.
+- **Las features del backend (`simulacion`, `flink`, `autos`, `viajes`) se comunican solo por los topics**, aunque compartan JVM:
   - `simulacion` publica en `telemetria`;
   - `flink` lee de `telemetria` y publica en `ultima-posicion`;
   - `autos` consume `ultima-posicion`;
@@ -82,7 +83,7 @@ powershell -NoProfile -File scripts/probar-persistencia.ps1   # E2E con Kafka y 
 
 `knowledge/` es una plantilla corporativa genérica. El stack de este proyecto está fijado en `ADR-003`, y la persistencia en `ADR-004` (PostgreSQL con JDBC y Flyway). La UI se define en `ADR-005` (Carbon v12). Algunas reglas aplican aquí y otras no:
 - **Aplican:**
-  - `STD-ARCH-001`: organización **por features**, en backend (`simulacion/`, `flink/`, `autos/`, `viajes/`, `shared/`) y en frontend (`features/<x>/` con `index.ts` público). Los DTOs son `record` escritos a mano. El contrato JSON está en la spec §4.
+  - `STD-ARCH-001` y `ADR-006`: backend hexagonal (`domain`, `application`, `infrastructure`) y frontend **por features** (`features/<x>/` con `index.ts` público). Los DTOs son `record` escritos a mano. El contrato JSON está en la spec §4.
   - `STD-GIT-001`: Conventional Commits; ramas `feature/<ticket>-<slug>` desde `develop`; sin PR/MR. **Todo cambio se versiona:** se trabaja en una rama de feature, nunca directo en `main` ni en `develop`, y cada tarea termina con su commit.
   - `STD-ERR-001`: contrato de error JSON con `requestId` y sin stack traces (`@ServerExceptionMapper`). Los errores de BD no exponen SQL ni credenciales.
   - `ADR-002`: tablas con prefijo `tb_` y en `snake_case`. Su regla de `@Table(name)` no aplica, porque no hay ORM.

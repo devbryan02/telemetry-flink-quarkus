@@ -1,6 +1,10 @@
 node_modules
 .next
-.env*.local
+.git
+.gitignore
+.env*
+coverage
+*.md
 Dockerfile
 .dockerignore
 npm-debug.log*
