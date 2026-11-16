@@ -1,4 +1,4 @@
-package dev.bryan.infrastructure.out.jdbc.autos;
+package dev.bryan.infrastructure.out.persistence.autos;
 
 import dev.bryan.application.port.out.AutosRepositorio;
 import jakarta.enterprise.context.ApplicationScoped;

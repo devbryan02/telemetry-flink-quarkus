@@ -9,7 +9,7 @@ import javax.sql.DataSource;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import dev.bryan.application.port.out.ViajesRepositorio;
-import dev.bryan.infrastructure.out.jdbc.viajes.ViajesStoreTest;
+import dev.bryan.infrastructure.out.persistence.viajes.ViajesStoreTest;
 @QuarkusTest
 @QuarkusTestResource(InMemoryKafkaResource.class)
 class ViajesResourceTest {

@@ -1,4 +1,4 @@
-package dev.bryan.infrastructure.out.jdbc.viajes;
+package dev.bryan.infrastructure.out.persistence.viajes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.bryan.application.port.out.ViajesRepositorio;

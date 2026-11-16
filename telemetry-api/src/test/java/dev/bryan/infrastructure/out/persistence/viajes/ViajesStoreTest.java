@@ -1,4 +1,4 @@
-package dev.bryan.infrastructure.out.jdbc.viajes;
+package dev.bryan.infrastructure.out.persistence.viajes;
 import static org.junit.jupiter.api.Assertions.*;
 import dev.bryan.InMemoryKafkaResource;
 import io.quarkus.test.common.QuarkusTestResource;

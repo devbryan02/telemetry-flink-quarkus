@@ -1,4 +1,4 @@
-package dev.bryan.infrastructure.out.jdbc.viajes;
+package dev.bryan.infrastructure.out.persistence.viajes;
 import dev.bryan.application.port.out.ViajesConsultaRepositorio;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
