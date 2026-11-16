@@ -1,9 +1,11 @@
 ---
 okf_version: 0.2
 generated: 2026-11-16
-verified: false
-human-reviewed: false
-status: REQUIRES_REVIEW
+verified: true
+human-reviewed: true
+review_date: 2026-11-16
+review_evidence: confirmacion expresa del responsable del repositorio en la sesion de Claude Code
+status: READY_FOR_DEV
 provenance: agent-generated
 sources:
   - ../../../CLAUDE.md
@@ -25,7 +27,7 @@ component_path: dashboard-next
 
 Pack C4 (**COMPONENT_MODE**) del dashboard: aplicación Next.js 16 con React 19, Carbon Design System con el flag v12 y MapLibre (mapcn). Tiene cuatro pantallas: Carrera (`/`), Viajes (`/viajes`), Repetición (`/viajes/[viajeId]`) y Operación (`/operacion`). Generado desde el código real del 2026-11-16.
 
-**Estado:** `REQUIRES_REVIEW`. Falta la revisión humana y los diagramas no se validaron con Mermaid. Detalle en [documentation-review.md](documentation-review.md).
+**Estado:** `READY_FOR_DEV`. El responsable del repositorio revisó el pack y confirmó marcarlo como verificado y revisado el 2026-11-16 (`human-reviewed: true`, con la confirmación expresa como evidencia). Quedan abiertos los puntos de [documentation-review.md](documentation-review.md), entre ellos que los diagramas no se validaron con Mermaid.
 
 **Arquitectura descubierta:** frontend **por features** (`STD-ARCH-001`: `app/` → `features/<x>/` por su `index.ts` → `lib/`), con App Router. No hay Application Shell ni micro UI, y tampoco BFF: el navegador llama a `telemetry-api` directamente.
 

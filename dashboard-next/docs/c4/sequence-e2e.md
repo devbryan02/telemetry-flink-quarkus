@@ -1,9 +1,11 @@
 ---
 okf_version: 0.2
 generated: 2026-11-16
-verified: false
-human-reviewed: false
-status: REQUIRES_REVIEW
+verified: true
+human-reviewed: true
+review_date: 2026-11-16
+review_evidence: confirmacion expresa del responsable del repositorio en la sesion de Claude Code
+status: READY_FOR_DEV
 provenance: agent-generated
 sources:
   - ../../app/
@@ -19,7 +21,7 @@ component_path: dashboard-next
 
 # Secuencias E2E
 
-El dashboard es un cliente web, no una API REST: no se documenta un endpoint por secuencia, sino los **recorridos críticos del usuario** que cruzan pantalla, estado, cliente HTTP o WebSocket y `telemetry-api`. Cada recorrido muestra también sus errores. Estado: `REQUIRES_REVIEW`.
+El dashboard es un cliente web, no una API REST: no se documenta un endpoint por secuencia, sino los **recorridos críticos del usuario** que cruzan pantalla, estado, cliente HTTP o WebSocket y `telemetry-api`. Cada recorrido muestra también sus errores. Estado: `READY_FOR_DEV`.
 
 ## Recorrido de punta a punta
 

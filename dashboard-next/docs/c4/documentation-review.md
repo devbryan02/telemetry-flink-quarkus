@@ -1,9 +1,11 @@
 ---
 okf_version: 0.2
 generated: 2026-11-16
-verified: false
-human-reviewed: false
-status: REQUIRES_REVIEW
+verified: true
+human-reviewed: true
+review_date: 2026-11-16
+review_evidence: confirmacion expresa del responsable del repositorio en la sesion de Claude Code
+status: READY_FOR_DEV
 provenance: agent-generated
 sources:
   - ../../features/
@@ -18,7 +20,7 @@ component_path: dashboard-next
 
 # Revisión de la documentación
 
-**Estado del pack:** `REQUIRES_REVIEW`. No se emite `READY_FOR_DEV`: falta la revisión humana (`human-reviewed: false`) y los diagramas no se validaron con Mermaid.
+**Estado del pack:** `READY_FOR_DEV`. El responsable del repositorio lo revisó y confirmó marcarlo como verificado y revisado el 2026-11-16; la evidencia es esa confirmación expresa en la sesión de Claude Code. `READY_FOR_DEV` no es una auditoría independiente: los puntos abiertos siguen listados abajo.
 
 ## Gates de calidad
 
@@ -55,8 +57,8 @@ component_path: dashboard-next
 
 Script ad hoc del 2026-11-16 sobre `docs/c4/**/*.md`: 182 enlaces relativos y 63 fuentes de frontmatter, 0 rotos. 12 diagramas, cada uno como bloque en su `.md` y como archivo `.mmd`, con exactamente un foco (comprobado), y el `.mmd` de cada secuencia coincide con el bloque de su `.md` (comprobado).
 
-## Pendiente para `READY_FOR_DEV`
+## Pendiente y decisiones tomadas
 
-- [ ] Revisión humana identificada del pack.
-- [ ] Ejecutar una validación Mermaid sobre los diagramas.
+- [x] Revisión humana: confirmada por el responsable del repositorio el 2026-11-16.
+- [ ] Ejecutar una validación Mermaid sobre los diagramas (no se ejecutó).
 - [ ] Opcional: corregir las divergencias 1 a 3.
