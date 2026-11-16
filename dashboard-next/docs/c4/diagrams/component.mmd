@@ -1,0 +1,30 @@
+flowchart TB
+  app["app/<br/>layout · / · /viajes · /viajes/[viajeId] · /operacion"]
+  shell["components/<br/>Encabezado · SelectorTema<br/>ThemeProvider · FlagsCarbon"]
+  autos["features/autos<br/>AutosMap · AutosLayer · RutaLayer · CarreraPanel<br/>BarraMapa · api · animacion · metricas · filtros<br/>use-autos-socket · use-estilos-mapa"]
+  viajes["features/viajes<br/>ViajesPantalla · RepeticionPantalla · Reproductor<br/>api · carreras · repeticion · use-carreras · use-repeticion"]
+  oper["features/operacion<br/>OperacionPantalla · api · salud · prometheus"]
+  http["lib/http<br/>axios con baseURL y timeout de 15 s"]
+  map["components/ui/map.tsx<br/>mapcn sobre MapLibre, generado"]
+  api["telemetry-api"]
+  ws["telemetry-api · WS /ws/autos"]
+  of["OpenFreeMap"]
+  app -->|"index.ts"| autos
+  app -->|"index.ts"| viajes
+  app -->|"index.ts"| oper
+  autos --> shell
+  viajes --> shell
+  oper --> shell
+  viajes -->|"index.ts: useEstilosMapa y varColor"| autos
+  autos --> http
+  viajes --> http
+  oper --> http
+  autos --> map
+  viajes --> map
+  http -->|"REST"| api
+  autos -->|"WebSocket nativo"| ws
+  autos -->|"estilo del mapa base"| of
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class app,shell,viajes,oper,http,map,api,ws,of other
+  class autos focus

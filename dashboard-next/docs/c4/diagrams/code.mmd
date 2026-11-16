@@ -1,0 +1,34 @@
+flowchart TB
+  page["app/page.tsx<br/>Home"]
+  dash["AutosDashboard<br/>dynamic ssr false"]
+  mapa["AutosMap<br/>carga inicial · sondeo · seguir al líder<br/>ejecutar · iniciar · detener · velocidad<br/>fusionar · animar · resumir"]
+  sock["useAutosSocket<br/>WebSocket con backoff 1 a 10 s"]
+  est["useEstilosMapa<br/>estilo positron recoloreado"]
+  api["autos/api<br/>obtenerAutos · listarRutas · obtenerRuta<br/>obtenerSimulacion · iniciarCarrera<br/>detenerCarrera · cambiarVelocidad"]
+  anim["Animador<br/>interpola posición y rumbo"]
+  met["Metricas<br/>lotes por segundo · edad · latencia p95"]
+  fil["filtros<br/>empresa y flota · expresionFiltro"]
+  capa["AutosLayer<br/>fuente GeoJSON y capa symbol"]
+  ruta["RutaLayer · SalidaMeta · ControlesMapa · Leyenda"]
+  panel["PanelVivo<br/>refresca cada 1 s"]
+  carrera["CarreraPanel y FilaCorredor<br/>control, clasificación y slider"]
+  barra["BarraMapa<br/>filtro y métricas"]
+  http["lib/http<br/>axios"]
+  page --> dash
+  dash -->|"carga solo en el cliente"| mapa
+  mapa --> sock
+  mapa --> est
+  mapa --> api
+  mapa -->|"estado fuera de React con useRef"| anim
+  mapa --> met
+  mapa --> fil
+  mapa -->|"pintar por frame"| capa
+  mapa --> ruta
+  mapa --> panel
+  panel --> carrera
+  panel --> barra
+  api --> http
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class page,dash,sock,est,api,anim,met,fil,capa,ruta,panel,carrera,barra,http other
+  class mapa focus

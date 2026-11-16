@@ -1,0 +1,23 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant R as AutosMap · foco
+  participant API as telemetry-api
+  participant WS as WebSocket ws/autos
+  participant V as Viajes
+  participant O as Operación
+  U->>R: abre la pantalla Carrera
+  R->>API: GET autos, rutas, simulacion y ruta
+  R->>WS: abre la conexión y recibe lotes cada 500 ms
+  U->>R: elige ruta e inicia la carrera
+  R->>API: POST simulacion iniciar
+  loop mientras corre
+    WS-->>R: lote de posiciones, el mapa interpola
+    R->>API: GET simulacion cada 1 s para la clasificación
+  end
+  U->>R: ajusta la velocidad de un auto
+  R->>API: PUT simulacion autos carId velocidad
+  U->>V: abre Viajes y luego la repetición de un auto
+  V->>API: GET viajes, viajes por id y posiciones
+  U->>O: abre Operación
+  O->>API: GET q health ready y q metrics cada 5 s

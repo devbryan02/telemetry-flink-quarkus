@@ -1,0 +1,34 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant U as Usuario
+  participant P as CarreraPanel
+  participant R as AutosMap · foco
+  participant A as autos/api
+  participant API as telemetry-api
+  participant Z as Notificación de error
+  alt el usuario pulsa Iniciar o Nueva carrera
+    U->>P: clic en el botón
+    P->>R: onIniciar()
+    R->>R: ejecutar con ocupado=true
+    R->>A: iniciarCarrera(rutaSeleccionada)
+    A->>API: POST /simulacion/iniciar con ruta
+    alt 200
+      API-->>A: EstadoSimulacion EN_CURSO
+      A-->>R: setSimulacion y error=null
+      R-->>P: estado En curso, ruta bloqueada y cronómetro
+    else 400 o 404
+      API-->>A: error con code y requestId
+      A-->>R: excepción de axios
+      R->>Z: No se pudo iniciar la carrera
+    end
+  else el usuario pulsa Detener carrera
+    U->>P: clic en Detener
+    P->>R: onDetener()
+    R->>A: detenerCarrera()
+    A->>API: POST /simulacion/detener
+    API-->>A: EstadoSimulacion LISTA
+    A-->>R: setSimulacion
+    R-->>P: estado Lista
+  end
+  R->>R: ocupado=false
+  Note over R,API: con la carrera en curso el sondeo de GET /simulacion pasa a 1 s
