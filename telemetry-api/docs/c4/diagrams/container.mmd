@@ -1,0 +1,24 @@
+flowchart TB
+  navegador["Navegador del usuario"]
+  dash["dashboard<br/>Next.js 16 standalone :3000"]
+  subgraph apiBox["telemetry-api · Quarkus 3.40.1, Java 17, :8080 y :8081"]
+    api["telemetry-api<br/>REST, WebSocket, simulación,<br/>consumidores Kafka"]
+    flink["Flink 2.2.1 MiniCluster<br/>job ultima-posicion, UI :8081"]
+  end
+  kafka["kafka<br/>apache/kafka:4.2.1 KRaft<br/>9092 host · kafka:29092 interno"]
+  init["kafka-init<br/>crea los topics y termina"]
+  pg["postgres<br/>postgres:17 · :5432 · volumen postgres-datos"]
+  navegador --> dash
+  navegador -->|"REST y WS /ws/autos"| api
+  dash -.->|"NEXT_PUBLIC_* incrustadas al construir"| api
+  api -->|"publica telemetria key carId"| kafka
+  kafka -->|"KafkaSource"| flink
+  flink -->|"KafkaSink ultima-posicion"| kafka
+  kafka -->|"lotes de ultima-posicion<br/>grupo quarkus-dash-postgres"| api
+  kafka -->|"lotes de telemetria<br/>grupo quarkus-viajes-postgres"| api
+  api -->|"Hibernate ORM y Panache sobre Agroal<br/>Flyway migrate-at-start"| pg
+  init -->|"kafka-topics.sh"| kafka
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class navegador,dash,flink,kafka,init,pg other
+  class api focus

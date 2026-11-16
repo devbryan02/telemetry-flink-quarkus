@@ -1,0 +1,36 @@
+flowchart TB
+  res["SimulacionResource<br/>estado · iniciar · detener · velocidad"]
+  pin["GestionarSimulacion<br/>puerto de entrada"]
+  sim["SimulacionService<br/>estado · iniciar · detener · velocidad<br/>apagar · avanzar · cerrarAbiertos · publicar"]
+  cat["CatalogoRutas<br/>puerto: ruta · escenario"]
+  pub["PublicadorTelemetria<br/>puerto: publicar · pendientes"]
+  tmp["Temporizador<br/>puerto: cadaMs · cancelar"]
+  corr["AutoCorredor<br/>avanzar · velocidad · evento · llego · viajeId"]
+  ruta["Ruta<br/>longitud · posicionEn"]
+  reloj["RelojEventos<br/>siguiente por carId"]
+  evt["TelemetriaEvento<br/>record v2: 9 campos de posición y 8 de contexto"]
+  dto["EstadoSimulacion · Clasificado · EstadoCarrera<br/>records de respuesta"]
+  err["NegocioException<br/>Tipo SOLICITUD_INVALIDA o NO_ENCONTRADO"]
+  acat["CatalogoRutasClasspath"]
+  apub["PublicadorTelemetriaKafka"]
+  atmp["TemporizadorVertx"]
+  cfg["ServiciosConfig<br/>@Produces @Singleton"]
+  res -->|"delegación"| pin
+  pin -.->|"implementa"| sim
+  cfg -.->|"crea con escenario e intervalo-ms"| sim
+  sim --> cat
+  sim --> pub
+  sim --> tmp
+  sim -->|"crea uno por auto"| corr
+  sim -->|"ts del evento"| reloj
+  sim -->|"devuelve"| dto
+  sim -.->|"400 o 404"| err
+  corr --> ruta
+  corr -->|"posición en ts"| evt
+  acat -.->|"implementa"| cat
+  apub -.->|"implementa"| pub
+  atmp -.->|"implementa"| tmp
+  classDef other fill:#ECEFF1,stroke:#616161,stroke-width:2px,color:#000
+  classDef focus fill:#FFEBEE,stroke:#B71C1C,stroke-width:4px,color:#000
+  class res,pin,cat,pub,tmp,corr,ruta,reloj,evt,dto,err,acat,apub,atmp,cfg other
+  class sim focus

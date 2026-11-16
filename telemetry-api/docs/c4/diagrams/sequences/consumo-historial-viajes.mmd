@@ -1,0 +1,43 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant KF as Kafka telemetria
+  participant DS as EventoViajeDeserializer
+  participant R as ViajesConsumer · foco
+  participant U as IngestaViajesService
+  participant S as ViajesStore
+  participant PG as PostgreSQL
+  participant M as MetricasMicrometer
+  KF->>DS: bytes del evento
+  alt evento inválido
+    DS-->>M: EventoViajeFailureHandler cuenta viajeInvalido
+    DS-->>KF: SerializationException y el canal se detiene
+  else evento válido
+    DS-->>R: lote de EventoViaje
+    R->>U: ingestar(eventos)
+    U->>S: guardarLote(eventos)
+    S->>PG: BEGIN
+    loop cada evento nuevo, ordenado por viajeId
+      S->>PG: INSERT tb_viaje ON CONFLICT DO NOTHING
+      S->>PG: SELECT del viaje con bloqueo de escritura
+      S->>PG: busca el eventId
+      alt eventId repetido con el mismo contenido
+        S->>S: cuenta duplicado
+      else eventId repetido con otro contenido o cierre incoherente
+        S-->>U: IllegalStateException con eventId y viajeId
+      else evento nuevo
+        S->>PG: INSERT tb_posicion_historial ON CONFLICT DO NOTHING
+        S->>PG: actualiza ultimo_ts y, si es FIN, estado, fin_ts y motivo_fin
+      end
+    end
+    S->>PG: COMMIT
+    S-->>U: ResultadoIngesta
+    U->>M: viajesIngestados(resultado)
+    U-->>R: ResultadoIngesta
+    R-->>KF: confirma el offset tras el commit
+  end
+  alt falla la persistencia
+    S-->>U: IllegalStateException
+    U->>M: viajesFalloPersistencia()
+    U-->>R: propaga el error
+    R-->>KF: failure-strategy fail: canal detenido y readiness DOWN
+  end

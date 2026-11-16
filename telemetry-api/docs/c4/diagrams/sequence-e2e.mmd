@@ -1,0 +1,27 @@
+%%{init: {'themeCSS': 'rect.actor{stroke:#616161;stroke-width:2px;} rect.actor[name="R"]{stroke:#B71C1C !important;stroke-width:4px !important;}'}}%%
+sequenceDiagram
+  participant W as Navegador
+  participant R as SimulacionService · foco
+  participant P as PublicadorTelemetriaKafka
+  participant KT as Kafka telemetria
+  participant F as Flink job
+  participant KU as Kafka ultima-posicion
+  participant A as AutosConsumer
+  participant V as ViajesConsumer
+  participant PG as PostgreSQL
+  participant B as AutosBroadcaster
+  W->>R: POST /simulacion/iniciar
+  R->>P: INICIO de cada auto
+  P->>KT: key carId
+  loop cada 1 s mientras hay autos en pista
+    R->>P: POSICION o FIN con META
+    P->>KT: key carId
+  end
+  KT->>F: KafkaSource
+  F->>KU: solo si el ts es mayor al guardado
+  KU->>A: lote de ultima-posicion
+  A->>PG: upsert por auto y commit
+  A->>B: cambios confirmados
+  B-->>W: arreglo de autos cada 500 ms por WebSocket
+  KT->>V: lote de telemetria, incluye muestras atrasadas
+  V->>PG: viaje, muestras y cierre con idempotencia por eventId y commit
