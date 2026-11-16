@@ -44,7 +44,7 @@ flowchart TB
   navegador -->|"REST JSON con axios<br/>WebSocket /ws/autos"| api
   navegador -->|"HTTPS estilos y teselas"| carto
   api -->|"produce telemetria<br/>Flink lee telemetria y escribe ultima-posicion<br/>consume ultima-posicion y telemetria · kafka:29092"| kafka
-  api -->|"JDBC Agroal · Flyway al arrancar<br/>postgres:5432"| postgres
+  api -->|"Hibernate/Panache sobre Agroal · Flyway al arrancar<br/>postgres:5432"| postgres
   init -->|"kafka-topics.sh --create --if-not-exists"| kafka
   kafka -->|"datos"| volumen
   postgres -->|"datos"| volpg
@@ -58,7 +58,7 @@ flowchart TB
 
 | Contenedor | Tecnología | Responsabilidad | Puertos | Evidencia |
 |---|---|---|---|---|
-| **telemetry-api** (foco) | Quarkus 3.40.1 LTS, Java 17, Flink 2.2.1 en MiniCluster, SmallRye Reactive Messaging, websockets-next, JDBC con Agroal (`quarkus-jdbc-postgresql`, sin ORM), Flyway, SmallRye Health, Micrometer con Prometheus | Simula la carrera y publica en `telemetria`; el job Flink deja la última posición por auto en `ultima-posicion`; la feature `autos` consume ese topic y lo persiste en `tb_ultima_posicion`; la feature `viajes` consume `telemetria` y guarda el historial en `tb_viaje` y `tb_posicion_historial`. Sirve REST y WebSocket. | 8080 (REST, WS, `/q/health`, `/q/metrics`), 8081 (UI de Flink) | [`telemetry-api/Dockerfile`](../../telemetry-api/Dockerfile), `docker-compose.yml`, [`pom.xml`](../../telemetry-api/pom.xml) · `EXTRACTED` |
+| **telemetry-api** (foco) | Quarkus 3.40.1 LTS, Java 17, Flink 2.2.1 en MiniCluster, SmallRye Reactive Messaging, websockets-next, Hibernate ORM con Panache sobre Agroal (`quarkus-hibernate-orm-panache` y `quarkus-jdbc-postgresql`), Flyway, SmallRye Health, Micrometer con Prometheus | Simula la carrera y publica en `telemetria`; el job Flink deja la última posición por auto en `ultima-posicion`; la feature `autos` consume ese topic y lo persiste en `tb_ultima_posicion`; la feature `viajes` consume `telemetria` y guarda el historial en `tb_viaje` y `tb_posicion_historial`. Sirve REST y WebSocket. | 8080 (REST, WS, `/q/health`, `/q/metrics`), 8081 (UI de Flink) | [`telemetry-api/Dockerfile`](../../telemetry-api/Dockerfile), `docker-compose.yml`, [`pom.xml`](../../telemetry-api/pom.xml) · `EXTRACTED` |
 | dashboard | Next.js 16.4 (salida `standalone`), React 19, shadcn/ui, mapcn (MapLibre), axios | Sirve la aplicación web. En el navegador: mapa, panel de carrera, filtros y tema. No consume la API de viajes. | 3000 | [`dashboard-next/Dockerfile`](../../dashboard-next/Dockerfile) · `EXTRACTED` |
 | kafka | `apache/kafka:4.2.1`, un broker KRaft | Transporte de eventos: `telemetria` (12 particiones, retención 1 h) y `ultima-posicion` (12 particiones, compact), key `carId`. | 9092 (host), 29092 (red interna) | `docker-compose.yml`, spec §6 · `EXTRACTED` |
 | kafka-init | `apache/kafka:4.2.1` | Crea los topics de forma idempotente y termina (`Exited (0)`). | — | `docker-compose.yml` · `EXTRACTED` |
@@ -75,7 +75,7 @@ flowchart TB
 | Navegador → telemetry-api | REST JSON (`/rutas`, `/simulacion`, `/autos`), timeout de axios 15 s | CORS limitado a `http://localhost:3000`. Errores según `STD-ERR-001`. `/viajes…` existe en la API pero el dashboard no lo usa. |
 | Navegador → telemetry-api | WebSocket `/ws/autos`, lote JSON cada 500 ms | Solo cambios ya confirmados en PostgreSQL. Reconexión con backoff 1 s → 10 s (`use-autos-socket.ts`). |
 | telemetry-api → kafka | Kafka, JSON con contrato v2 (spec de persistencia §4: los 9 campos de posición más `schemaVersion`, `eventId`, `carreraId`, `viajeId`, `rutaId`, `inicioViajeTs`, `tipoEvento`, `motivoFin`), key `carId` | Productor de la simulación (`telemetria-out`); `KafkaSource`/`KafkaSink` de Flink (grupo `flink-ultima-pos`); consumidor `quarkus-dash-postgres` sobre `ultima-posicion`; consumidor `quarkus-viajes-postgres` sobre `telemetria`. Los consumidores de la API leen por lotes, sin auto-commit, y confirman offsets después del commit JDBC. Los eventos legados (sin `schemaVersion` o con versión 1) se aceptan. |
-| telemetry-api → postgres | JDBC (pool Agroal), `jdbc:postgresql://postgres:5432/${POSTGRES_DB}` | Flyway migra al arrancar (`migrate-at-start`, `clean` deshabilitado). La readiness `/q/health/ready` incluye el datasource y los canales Kafka. |
+| telemetry-api → postgres | Hibernate ORM + Panache (pool Agroal, `validate`), `jdbc:postgresql://postgres:5432/${POSTGRES_DB}` | Flyway migra al arrancar (`migrate-at-start`, `clean` deshabilitado). La readiness `/q/health/ready` incluye el datasource y los canales Kafka. |
 | kafka-init → kafka | `kafka-topics.sh` | Se ejecuta antes de que arranque la API (`service_completed_successfully`). |
 
 ## Despliegue

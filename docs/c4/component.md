@@ -35,7 +35,7 @@ component_path: .
 | REST API / Controller | `*Resource` (JAX-RS), `AutosWs` (websockets-next), `AutosConsumer` y `ViajesConsumer` (`@Incoming`) |
 | Application / Use case | `Simulador`, `AutosBroadcaster`, `FlinkJobRunner`, `ViajesConsulta` |
 | Domain | `AutoCorredor`, `Ruta`, `Escenario`, `UltimaPosicionFunction`, `ResumenViajeCalculador`, `EstadoViaje` |
-| Port / Adapter | No hay interfaces de puerto. Los adaptadores son el `Emitter` de SmallRye (`PublicadorTelemetria`), `KafkaSource`/`KafkaSink` de Flink, los recursos del classpath (`CatalogoRutas`) y el acceso JDBC directo sobre el `DataSource` de Agroal (`AutosStore`, `ViajesStore`, `ViajesConsulta`), sin ORM. |
+| Port / Adapter | Desde `ADR-006` hay puertos de entrada y salida en `application/port` (ver «Estructura hexagonal»). Los adaptadores de salida son `PublicadorTelemetriaKafka` (`Emitter` de SmallRye), `CatalogoRutasClasspath`, `TemporizadorVertx`, `AutosCambios`/`AutosBroadcaster` y, desde `ADR-007`, `AutosStore`, `ViajesStore` y `ViajesConsulta` sobre Hibernate ORM con Panache. `KafkaSource`/`KafkaSink` de Flink viven en `infrastructure/flink`. |
 
 ## Vista general por features
 
@@ -59,8 +59,8 @@ flowchart TB
   flink -->|"KafkaSink key carId"| up
   up -->|"Incoming por lotes<br/>quarkus-dash-postgres"| autos
   tel -->|"Incoming por lotes<br/>quarkus-viajes-postgres"| viajes
-  autos -->|"JDBC tb_ultima_posicion"| pg
-  viajes -->|"JDBC tb_viaje y tb_posicion_historial"| pg
+  autos -->|"Panache tb_ultima_posicion"| pg
+  viajes -->|"Panache tb_viaje y tb_posicion_historial"| pg
   sim -.->|"NegocioException"| err
   autos -.->|"NegocioException"| err
   viajes -.->|"NegocioException"| err
@@ -96,7 +96,7 @@ flowchart LR
   end
   DOM["domain · model (records), service (AutoCorredor, RelojEventos, ResumenViajeCalculador), exception (NegocioException)"]
   subgraph OUT["infrastructure/out"]
-    jdbc["jdbc · AutosStore, ViajesStore, ViajesConsulta"]
+    jdbc["persistence · AutosStore, ViajesStore, ViajesConsulta (Panache)"]
     kafka["kafka · PublicadorTelemetriaKafka"]
     wsout["ws · AutosCambios, AutosBroadcaster"]
     otros["classpath · CatalogoRutasClasspath | vertx · TemporizadorVertx | metrics · MetricasMicrometer"]
@@ -109,7 +109,7 @@ flowchart LR
 
 | Capa | Regla |
 |---|---|
-| `domain` | Sin Quarkus, Vert.x, Flink, Kafka, JDBC ni Jackson. |
+| `domain` | Sin Quarkus, Vert.x, Flink, Kafka, Hibernate, JDBC ni Jackson. |
 | `application` | Solo puertos y servicios; no importa `infrastructure`. Los servicios no llevan anotaciones de CDI: los crea `infrastructure/config/ServiciosConfig`. |
 | `infrastructure` | Adaptadores. `in` no usa `out`. `flink` no depende del núcleo. |
 
@@ -185,7 +185,7 @@ flowchart TB
   topic["topic ultima-posicion<br/>grupo quarkus-dash-postgres"]
   des["AutoEventoDeserializer<br/>EventoJson valida v1 y v2"]
   cons["AutosConsumer<br/>Incoming batch · Blocking · POST_PROCESSING"]
-  store["AutosStore<br/>upsert si ts mayor y consultas JDBC"]
+  store["AutosStore<br/>upsert si ts mayor y consultas Panache"]
   pg["PostgreSQL<br/>tb_ultima_posicion"]
   cambios["AutosCambios<br/>búfer de cambios confirmados"]
   res["AutosResource<br/>GET /autos · Blocking"]
