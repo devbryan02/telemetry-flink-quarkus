@@ -12,7 +12,8 @@ target/
 node_modules/
 .next/
 dashboard-next/app/carbon.generated.css
-out/
+/out/
+/*/out/
 .env*.local
 
 # Python
