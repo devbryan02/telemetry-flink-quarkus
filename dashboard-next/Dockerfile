@@ -4,7 +4,7 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
 
 FROM node:24-alpine AS build
 WORKDIR /app
@@ -32,4 +32,6 @@ COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
 USER node
 EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=6 \
+  CMD wget -q --spider http://127.0.0.1:3000/ || exit 1
 CMD ["node", "server.js"]
