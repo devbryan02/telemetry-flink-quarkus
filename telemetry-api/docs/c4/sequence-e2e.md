@@ -1,9 +1,11 @@
 ---
 okf_version: 0.2
 generated: 2026-11-16
-verified: false
-human-reviewed: false
-status: REQUIRES_REVIEW
+verified: true
+human-reviewed: true
+review_date: 2026-11-16
+review_evidence: confirmacion expresa del responsable del repositorio en la sesion de Claude Code
+status: READY_FOR_DEV
 provenance: agent-generated
 sources:
   - ../../src/main/java/dev/bryan/infrastructure/in/rest/
@@ -19,7 +21,7 @@ component_path: telemetry-api
 
 # Secuencias E2E
 
-**Cobertura:** 10 de 10 endpoints REST de `telemetry-api`, más el WebSocket y la ingesta del historial. No hay `openapi:` ni `swagger:` en `telemetry-api/src` (se buscó en todos los `*.yaml` y `*.yml`; el único es `src/test/resources/compose-persistencia.yml`), por lo que los endpoints se **derivaron de los recursos REST** y quedan marcados `INFERRED`. Estado: `REQUIRES_REVIEW`.
+**Cobertura:** 10 de 10 endpoints REST de `telemetry-api`, más el WebSocket y la ingesta del historial. No hay `openapi:` ni `swagger:` en `telemetry-api/src` (se buscó en todos los `*.yaml` y `*.yml`; el único es `src/test/resources/compose-persistencia.yml`), por lo que los endpoints se **derivaron de los recursos REST** y quedan marcados `INFERRED`. Estado: `READY_FOR_DEV` (derivación aceptada por el responsable).
 
 ## Recorrido de punta a punta
 

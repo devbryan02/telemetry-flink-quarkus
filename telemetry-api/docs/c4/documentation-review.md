@@ -1,9 +1,11 @@
 ---
 okf_version: 0.2
 generated: 2026-11-16
-verified: false
-human-reviewed: false
-status: REQUIRES_REVIEW
+verified: true
+human-reviewed: true
+review_date: 2026-11-16
+review_evidence: confirmacion expresa del responsable del repositorio en la sesion de Claude Code
+status: READY_FOR_DEV
 provenance: agent-generated
 sources:
   - ../../src/main/java/dev/bryan/
@@ -18,7 +20,7 @@ component_path: telemetry-api
 
 # Revisión de la documentación
 
-**Estado del pack:** `REQUIRES_REVIEW`. No se emite `READY_FOR_DEV`: falta la revisión humana (`human-reviewed: false`), los endpoints no vienen de una especificación OpenAPI y los diagramas no se validaron con Mermaid.
+**Estado del pack:** `READY_FOR_DEV`. El responsable del repositorio lo revisó y confirmó marcarlo como verificado y revisado el 2026-11-16; la evidencia es esa confirmación expresa en la sesión de Claude Code. `READY_FOR_DEV` no es una auditoría independiente: los puntos abiertos siguen listados abajo.
 
 ## Gates de calidad
 
@@ -29,7 +31,7 @@ component_path: telemetry-api
 | Coherencia Context → Container → Component → Code | ✅ | Mismas entidades en todos los niveles: `telemetry-api` → Flink en la misma JVM, `kafka`, `postgres` → capas hexagonales → `SimulacionService`. |
 | Code respaldado por código real | ✅ | Todas las clases enlazadas existen en `src/main/java`; los enlaces se comprobaron con un script (ver abajo). |
 | Secuencias E2E por las capas reales | ✅ | Cada secuencia recorre recurso o consumidor → puerto de entrada → servicio → dominio → puerto de salida → adaptador → PostgreSQL, Kafka o classpath. |
-| Una secuencia por endpoint | ⚠️ `REQUIRES_REVIEW` | 10 de 10 endpoints cubiertos, pero derivados de los recursos REST (`INFERRED`): no hay especificación OpenAPI ni Swagger en `telemetry-api/src`. |
+| Una secuencia por endpoint | ✅ aceptado por el responsable | 10 de 10 endpoints cubiertos, pero derivados de los recursos REST (`INFERRED`): no hay especificación OpenAPI ni Swagger en `telemetry-api/src`. |
 | Arquitectura con fuente | ✅ | `ADR-006` (hexagonal), `ADR-007` (Panache), `ADR-004` (esquema) y `ArquitecturaHexagonalTest`. |
 | Seguridad | ⚠️ sin controles | El servicio no tiene autenticación ni autorización; solo CORS al origen del dashboard. Las credenciales de PostgreSQL vienen del `.env` (no versionado). |
 | Observabilidad | ✅ con observación | Readiness `/q/health/ready` y métricas `/q/metrics`: `viajes_eventos_{insertados,duplicados,legados,invalidos}`, `viajes_persistencia_fallos`, `autos_persistencia_fallos`, `viajes_sin_cierre` y el binder de Kafka. No hay correlation ID de entrada: el `requestId` solo existe en los errores. |
@@ -54,9 +56,9 @@ component_path: telemetry-api
 
 Script ad hoc del 2026-11-16 sobre `docs/c4/**/*.md`: 261 enlaces relativos y 80 fuentes de frontmatter, 0 rotos. 17 diagramas, cada uno como bloque en su `.md` y como archivo `.mmd`, cada diagrama con exactamente un foco (comprobado), y el `.mmd` de cada secuencia coincide con el bloque de su `.md` (comprobado).
 
-## Pendiente para `READY_FOR_DEV`
+## Pendiente y decisiones tomadas
 
-- [ ] Revisión humana identificada del pack.
-- [ ] Decidir si se publica OpenAPI o se acepta la derivación desde los recursos.
-- [ ] Ejecutar una validación Mermaid sobre los diagramas.
+- [x] Revisión humana: confirmada por el responsable del repositorio el 2026-11-16.
+- [x] Derivación de los endpoints desde los recursos REST (`INFERRED`) en lugar de una especificación OpenAPI: aceptada por el responsable al marcar el pack como revisado. Publicar una con `quarkus-smallrye-openapi` sigue siendo una mejora posible.
+- [ ] Ejecutar una validación Mermaid sobre los diagramas (no se ejecutó).
 - [ ] Opcional: corregir las divergencias 2 a 5 y 7.

@@ -1,9 +1,11 @@
 ---
 okf_version: 0.2
 generated: 2026-11-16
-verified: false
-human-reviewed: false
-status: REQUIRES_REVIEW
+verified: true
+human-reviewed: true
+review_date: 2026-11-16
+review_evidence: confirmacion expresa del responsable del repositorio en la sesion de Claude Code
+status: READY_FOR_DEV
 provenance: agent-generated
 sources:
   - ../../../CLAUDE.md
@@ -25,7 +27,7 @@ component_path: telemetry-api
 
 Pack C4 (**COMPONENT_MODE**) del microservicio `telemetry-api`: Quarkus 3.40.1 con Flink 2.2.1 embebido, arquitectura hexagonal ([`ADR-006`](../../../knowledge/adrs/ADR-006-arquitectura-hexagonal-backend.md)) y persistencia con Hibernate ORM y Panache ([`ADR-007`](../../../knowledge/adrs/ADR-007-persistencia-hibernate-panache.md)). Generado desde el código real del 2026-11-16 (rama `develop` con `inc-26`).
 
-**Estado:** `REQUIRES_REVIEW`. Falta la revisión humana y el servicio no tiene especificación OpenAPI, así que los endpoints se derivaron de los recursos REST (`INFERRED`). Detalle en [documentation-review.md](documentation-review.md).
+**Estado:** `READY_FOR_DEV`. El responsable del repositorio revisó el pack y confirmó marcarlo como verificado y revisado el 2026-11-16 (`human-reviewed: true`, con la confirmación expresa como evidencia). Quedan abiertos los puntos de [documentation-review.md](documentation-review.md), entre ellos que los diagramas no se validaron con Mermaid.
 
 ## Cómo leer las vistas
 
